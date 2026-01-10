@@ -69,29 +69,10 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, _unused: str
             console.log(`Finished syncing ${messages.length} historical messages`);
         }
 
-        // Sync contacts from history
-        if (contacts && contacts.length > 0) {
-            for (const c of contacts) {
-                try {
-                    if (!c.id) continue;
-                    await prisma.contact.upsert({
-                        where: { sessionId_jid: { sessionId: dbSessionId, jid: c.id } },
-                        create: {
-                            sessionId: dbSessionId,
-                            jid: c.id,
-                            name: c.name || c.notify,
-                            notify: c.notify
-                        },
-                        update: {
-                            name: c.name || undefined,
-                            notify: c.notify || undefined
-                        }
-                    });
-                } catch (e) {
-                    console.error("Error saving contact from history", e);
-                }
-            }
-        }
+
+        // Note: Contacts and Chats are synced by src/modules/whatsapp/store/contacts.ts
+        // We only handle messages here to avoid P2002 Unique Constraint Race Conditions.
+        console.log(`Finished syncing ${messages.length} historical messages`);
     });
 
     // Handle Contacts Upsert
