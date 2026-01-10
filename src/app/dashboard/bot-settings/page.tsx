@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useContext } from "react";
-import { SessionContext } from "@/components/providers";
+import { useEffect, useState } from "react";
+import { useSession } from "@/components/dashboard/session-provider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -21,8 +21,7 @@ interface BotConfig {
 }
 
 export default function BotSettingsPage() {
-    const sessionContext = useContext(SessionContext);
-    const currentSessionId = sessionContext?.currentSessionId;
+    const { sessionId: currentSessionId } = useSession();
     const [config, setConfig] = useState<BotConfig>({
         enabled: true,
         publicMode: false,
