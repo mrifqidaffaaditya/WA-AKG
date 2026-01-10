@@ -67,7 +67,9 @@ model Session {
   autoReplies AutoReply[]
   stories     Story[]
   scheduledMessages ScheduledMessage[]
+  scheduledMessages ScheduledMessage[]
   webhooks    Webhook[]
+  botConfig   BotConfig?
 }
 
 model Contact {
@@ -199,4 +201,20 @@ model Webhook {
   
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   session     Session? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model BotConfig {
+  id            String   @id @default(cuid())
+  sessionId     String   @unique
+  enabled       Boolean  @default(true)
+  publicMode    Boolean  @default(false) // If true, anyone can use commands. If false, only me.
+  enableSticker Boolean  @default(true)
+  enablePing    Boolean  @default(true)
+  enableUptime  Boolean  @default(true)
+  removeBgApiKey String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  session       Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
