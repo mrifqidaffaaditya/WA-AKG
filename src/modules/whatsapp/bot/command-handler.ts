@@ -17,6 +17,7 @@ const DEFAULT_CONFIG = {
     enableSticker: true,
     enablePing: true,
     enableUptime: true,
+    botName: "WA-AKG Bot",
     removeBgApiKey: null as string | null
 };
 
@@ -204,8 +205,8 @@ export async function handleBotCommand(
 
                     // Convert
                     const sticker = new Sticker(buffer as Buffer, {
-                        pack: "WA-AKG Bot",
-                        author: "By WA-AKG",
+                        pack: (config as any).botName || "WA-AKG Bot",
+                        author: "By " + ((config as any).botName || "WA-AKG Bot"),
                         type: "full", // full, crop, circle
                         quality: 50
                     });
@@ -225,8 +226,9 @@ export async function handleBotCommand(
             
             case "menu":
             case "help": {
+                 const botName = (config as any).botName || "WA-AKG Bot";
                  const menu = `
-🤖 *WA-AKG Bot Menu* 🤖
+🤖 *${botName} Menu* 🤖
 
 📌 *Commands:*
 • *#sticker* / *#s*: Convert Image to Sticker

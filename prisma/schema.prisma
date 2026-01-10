@@ -214,6 +214,7 @@ model BotConfig {
   enabled       Boolean  @default(true)
   
   // Bot Command Access
+  botName       String   @default("WA-AKG Bot")
   botMode       AccessMode @default(OWNER)
   botAllowedJids Json?     // Array of JIDs ["628123@s.whatsapp.net"]
 
@@ -230,4 +231,13 @@ model BotConfig {
   updatedAt     DateTime @updatedAt
 
   session       Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model SystemConfig {
+  id            String   @id @default("default") // Singleton ID
+  appName       String   @default("WA-AKG")
+  logoUrl       String?
+  faviconUrl    String?
+  
+  updatedAt     DateTime @updatedAt
 }

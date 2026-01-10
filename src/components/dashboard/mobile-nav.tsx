@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
-export function MobileNav() {
+export function MobileNav({ appName = "WA-AKG" }: { appName?: string }) {
     const [open, setOpen] = useState(false);
     const pathname = usePathname();
 
@@ -47,7 +47,7 @@ export function MobileNav() {
             </SheetTrigger>
             <SheetContent side="left" className="w-[80vw] sm:w-[350px] p-0">
                 <SheetHeader className="p-6 text-left border-b">
-                    <SheetTitle className="text-2xl font-bold text-gray-800">WA-AKG</SheetTitle>
+                    <SheetTitle className="text-2xl font-bold text-gray-800">{appName}</SheetTitle>
                 </SheetHeader>
                 <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto h-[calc(100vh-5rem)]">
                     {links.map(({ href, label, Icon }) => (

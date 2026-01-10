@@ -15,6 +15,7 @@ import { Loader2, Bot, Wand2, Shield, Activity, Image as ImageIcon, MessageSquar
 interface BotConfig {
     id?: string;
     enabled: boolean;
+    botName: string;
     botMode: 'ALL' | 'OWNER' | 'SPECIFIC';
     botAllowedJids: string[];
     autoReplyMode: 'ALL' | 'OWNER' | 'SPECIFIC';
@@ -29,6 +30,7 @@ export default function BotSettingsPage() {
     const { sessionId: currentSessionId } = useSession();
     const [config, setConfig] = useState<BotConfig>({
         enabled: true,
+        botName: "WA-AKG Bot",
         botMode: 'OWNER',
         botAllowedJids: [],
         autoReplyMode: 'ALL',
@@ -60,6 +62,7 @@ export default function BotSettingsPage() {
                 const data = await res.json();
                 setConfig({
                     ...data,
+                    botName: data.botName || "WA-AKG Bot",
                     botMode: data.botMode || 'OWNER',
                     autoReplyMode: data.autoReplyMode || 'ALL',
                     botAllowedJids: Array.isArray(data.botAllowedJids) ? data.botAllowedJids : [],
@@ -158,6 +161,31 @@ export default function BotSettingsPage() {
                             onCheckedChange={(checked) => setConfig(prev => ({ ...prev, enabled: checked }))}
                         />
                     </CardHeader>
+                </Card>
+
+                {/* Bot Identity */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                            <Bot className="h-5 w-5" /> Bot Identity
+                        </CardTitle>
+                        <CardDescription>
+                            Customize how your bot identifies itself.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>Bot Name</Label>
+                            <Input
+                                placeholder="e.g. WA-AKG Bot"
+                                value={config.botName || ""}
+                                onChange={(e) => setConfig(prev => ({ ...prev, botName: e.target.value }))}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Displayed in stickermaker watermarks and help menus.
+                            </p>
+                        </div>
+                    </CardContent>
                 </Card>
 
                 {/* Access Control */}

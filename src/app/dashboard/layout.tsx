@@ -16,6 +16,7 @@ import {
     Bot
 } from "lucide-react";
 
+import { prisma } from "@/lib/prisma"; // Add prisma import
 import { Toaster } from "sonner"; // Assuming sonner is installed
 
 export default async function DashboardLayout({
@@ -24,6 +25,9 @@ export default async function DashboardLayout({
     children: React.ReactNode;
 }) {
     const session = await auth();
+    // @ts-ignore
+    const systemConfig = await prisma.systemConfig.findUnique({ where: { id: "default" } });
+    const appName = systemConfig?.appName || "WA-AKG";
 
     return (
         <SessionProvider>
@@ -31,7 +35,7 @@ export default async function DashboardLayout({
                 {/* Sidebar */}
                 <aside className="w-64 bg-white shadow-md hidden md:flex flex-col h-full sticky left-0 top-0 z-20">
                     <div className="p-6">
-                        <h1 className="text-2xl font-bold text-gray-800">WA-AKG</h1>
+                        <h1 className="text-2xl font-bold text-gray-800">{appName}</h1>
                     </div>
 
                     <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
@@ -105,7 +109,7 @@ export default async function DashboardLayout({
 
                 {/* Main Content */}
                 <div className="flex-1 flex flex-col overflow-hidden">
-                    <Navbar />
+                    <Navbar appName={appName} />
                     <main className="flex-1 overflow-auto p-8 bg-gray-50">
                         {children}
                     </main>

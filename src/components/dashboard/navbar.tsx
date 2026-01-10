@@ -1,16 +1,20 @@
-import { SessionSelector } from "./session-selector";
+import { MobileNav } from "@/components/dashboard/mobile-nav";
+import { UserNav } from "@/components/dashboard/user-nav";
+import { SessionSelector } from "@/components/dashboard/session-selector";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { MobileNav } from "./mobile-nav";
 
-export function Navbar() {
+interface NavbarProps {
+    appName?: string;
+}
+
+export function Navbar({ appName }: NavbarProps) {
     return (
-        <header className="bg-white border-b px-4 md:px-6 py-3 flex items-center justify-between sticky top-0 z-10">
+        <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 sticky top-0 z-10 w-full">
             <div className="flex items-center gap-4">
-               <MobileNav />
-               {/* Left side content if any */}
+                <MobileNav appName={appName} />
             </div>
-            
+
             <div className="flex items-center gap-4">
                 <SessionSelector />
                 <div className="h-6 w-px bg-gray-200 mx-2" />

@@ -30,7 +30,7 @@ export async function GET(
         }
 
         // Return config or default if null
-        const config = session.botConfig || {
+        session.botConfig = session.botConfig || {
             enabled: true,
             botMode: 'OWNER',
             botAllowedJids: [],
@@ -39,10 +39,11 @@ export async function GET(
             enableSticker: true,
             enablePing: true,
             enableUptime: true,
-            removeBgApiKey: ""
+            botName: "WA-AKG Bot",
+            removeBgApiKey: null
         };
 
-        return NextResponse.json(config);
+        return NextResponse.json(session.botConfig);
     } catch (error) {
         console.error("Get Bot Config Error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
@@ -90,11 +91,11 @@ export async function POST(
                 removeBgApiKey: body.removeBgApiKey || null,
             },
             update: {
-                botMode: body.botMode || 'OWNER',
-                botAllowedJids: body.botAllowedJids || [],
-                autoReplyMode: body.autoReplyMode || 'ALL',
-                autoReplyAllowedJids: body.autoReplyAllowedJids || [],
-                
+                botMode: body.botMode,
+                botAllowedJids: body.botAllowedJids,
+                autoReplyMode: body.autoReplyMode,
+                autoReplyAllowedJids: body.autoReplyAllowedJids,
+                botName: body.botName,
                 enableSticker: body.enableSticker,
                 enablePing: body.enablePing,
                 enableUptime: body.enableUptime,

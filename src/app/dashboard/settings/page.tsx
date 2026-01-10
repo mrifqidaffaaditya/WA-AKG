@@ -19,34 +19,58 @@ export default function SettingsPage() {
 
     const [sessions, setSessions] = useState<any[]>([]);
 
+    const [systemConfig, setSystemConfig] = useState({
+        appName: "WA-AKG",
+        logoUrl: ""
+    });
+    const [systemLoading, setSystemLoading] = useState(false);
+
     useEffect(() => {
-        // Fetch sessions first
+        // Fetch sessions
         fetch('/api/sessions').then(r => r.json()).then(data => {
-            const connected = data.filter((s: any) => s.status === 'CONNECTED');
-            setSessions(connected);
-            if (connected.length > 0) {
-                setSessionId(connected[0].sessionId);
+            if (Array.isArray(data)) {
+                const connected = data.filter((s: any) => s.status === 'CONNECTED');
+                setSessions(connected);
+                if (connected.length > 0) {
+                    setSessionId(connected[0].sessionId);
+                }
+            }
+        });
+
+        // Fetch System Config
+        fetch('/api/settings/system').then(r => r.json()).then(data => {
+            if (data && !data.error) {
+                setSystemConfig({
+                    appName: data.appName || "WA-AKG",
+                    logoUrl: data.logoUrl || ""
+                });
             }
         });
     }, []);
 
-    useEffect(() => {
-        if (!sessionId) return;
-        // Fetch config for selected session
-        // Note: The API /api/sessions returns config in the list? Or we need to fetch specific?
-        // Let's find it in the sessions list for now
-        const session = sessions.find(s => s.sessionId === sessionId);
-        if (session && session.config) {
-             setConfig(session.config);
-        } else {
-            // Reset or fetch fresh if needed
-             setConfig({
-                ghostMode: false,
-                antiDelete: false,
-                readReceipts: true,
+    // ... existing useEffect for session config ...
+
+    const handleSaveSystem = async () => {
+        setSystemLoading(true);
+        try {
+            const res = await fetch('/api/settings/system', {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(systemConfig)
             });
+
+            if (res.ok) {
+                toast.success("System settings updated. Refresh to see changes.");
+            } else {
+                toast.error("Failed to update system settings");
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Error saving system settings");
+        } finally {
+            setSystemLoading(false);
         }
-    }, [sessionId, sessions]);
+    };
 
     const handleSave = async () => {
         if (!sessionId) return;
@@ -58,7 +82,6 @@ export default function SettingsPage() {
             });
             if (res.ok) {
                 toast.success("Settings saved successfully");
-                // Update local state or re-fetch?
             } else {
                 toast.error("Failed to save settings");
             }
@@ -74,20 +97,45 @@ export default function SettingsPage() {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
-                 <div className="flex items-center gap-2">
-                     <span className="text-sm font-medium">Session:</span>
-                     <select 
+                <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Session:</span>
+                    <select
                         className="flex h-10 w-[200px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        value={sessionId} 
+                        value={sessionId}
                         onChange={(e) => setSessionId(e.target.value)}
-                     >
-                         <option value="" disabled>Select Session</option>
-                         {sessions.map((s: any) => (
-                             <option key={s.sessionId} value={s.sessionId}>{s.name}</option>
-                         ))}
-                     </select>
-                 </div>
+                    >
+                        <option value="" disabled>Select Session</option>
+                        {sessions.map((s: any) => (
+                            <option key={s.sessionId} value={s.sessionId}>{s.name}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
+
+            {/* System Configuration (Global) */}
+            <Card className="border-primary/20 bg-primary/5">
+                <CardHeader>
+                    <CardTitle className="text-xl">App Configuration</CardTitle>
+                    <CardDescription>Global settings for the application branding.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="grid gap-2">
+                        <Label>Application Name</Label>
+                        <div className="flex gap-2">
+                            <input
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                placeholder="WA-AKG"
+                                value={systemConfig.appName}
+                                onChange={(e) => setSystemConfig(prev => ({ ...prev, appName: e.target.value }))}
+                            />
+                            <Button onClick={handleSaveSystem} disabled={systemLoading}>
+                                {systemLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                            </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Changes the name in the sidebar and browser title.</p>
+                    </div>
+                </CardContent>
+            </Card>
 
             <Card>
                 <CardHeader>
@@ -100,22 +148,22 @@ export default function SettingsPage() {
                             <span>Ghost Mode</span>
                             <span className="font-normal text-xs text-muted-foreground">View status and read messages without sending blue ticks.</span>
                         </Label>
-                        <Switch 
-                            id="ghost-mode" 
+                        <Switch
+                            id="ghost-mode"
                             checked={config.ghostMode}
-                            onCheckedChange={c => setConfig({...config, ghostMode: c})}
+                            onCheckedChange={c => setConfig({ ...config, ghostMode: c })}
                         />
                     </div>
-                    
+
                     <div className="flex items-center justify-between space-x-2">
                         <Label htmlFor="anti-delete" className="flex flex-col space-y-1">
                             <span>Anti-Delete</span>
                             <span className="font-normal text-xs text-muted-foreground">Keep messages even if the sender deletes them for everyone.</span>
                         </Label>
-                        <Switch 
-                            id="anti-delete" 
+                        <Switch
+                            id="anti-delete"
                             checked={config.antiDelete}
-                            onCheckedChange={c => setConfig({...config, antiDelete: c})}
+                            onCheckedChange={c => setConfig({ ...config, antiDelete: c })}
                         />
                     </div>
 
