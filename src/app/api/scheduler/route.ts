@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
-import { fromZonedTime } from "date-fns-tz";
+
 
 // GET: List Scheduled Messages
 export async function GET(request: NextRequest) {
@@ -75,13 +75,16 @@ export async function POST(request: NextRequest) {
         }
 
 
+import moment from "moment-timezone";
+
+// ... inside POST
         // @ts-ignore
         const systemConfig = await prisma.systemConfig.findUnique({ where: { id: "default" } });
         const timezone = systemConfig?.timezone || "Asia/Jakarta";
 
-        // Convert local time (sendAt) to UTC based on timezone
-        // The input 'sendAt' is expected to be "YYYY-MM-DDTHH:mm" (local time string)
-        const utcDate = fromZonedTime(sendAt, timezone);
+        // Convert local time (sendAt) to UTC Date object using moment-timezone
+        // sendAt is "YYYY-MM-DDTHH:mm" (local time string from input type="datetime-local")
+        const utcDate = moment.tz(sendAt, timezone).toDate();
 
         const scheduled = await prisma.scheduledMessage.create({
             data: {
