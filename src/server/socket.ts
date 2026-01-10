@@ -13,5 +13,11 @@ export function setupSocket(io: Server) {
         socket.join(sessionId);
         console.log(`Socket ${socket.id} joined session room: ${sessionId}`);
     });
+
+    // Handle joining user-specific room for notifications
+    socket.on("join-user-room", (userId: string) => {
+        socket.join(`user:${userId}`);
+        console.log(`Socket ${socket.id} joined user room: user:${userId}`);
+    });
   });
 }

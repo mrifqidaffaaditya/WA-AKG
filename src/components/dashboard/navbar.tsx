@@ -6,9 +6,12 @@ import { SessionSelector } from "@/components/dashboard/session-selector";
 import { Button } from "@/components/ui/button";
 import { RealtimeClock } from "@/components/dashboard/realtime-clock";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Bell, Inbox, Check } from "lucide-react";
+import { Bell, Inbox } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
+import { io, Socket } from "socket.io-client";
 
 interface NavbarProps {
     appName?: string;
@@ -26,9 +29,11 @@ interface Notification {
 
 export function Navbar({ appName }: NavbarProps) {
     const router = useRouter();
+    const { data: session } = useSession();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
+    const [socket, setSocket] = useState<Socket | null>(null);
 
     const fetchNotifications = async () => {
         try {
@@ -44,10 +49,45 @@ export function Navbar({ appName }: NavbarProps) {
     };
 
     useEffect(() => {
+        // Initial fetch
         fetchNotifications();
-        const interval = setInterval(fetchNotifications, 60000); // Poll every minute
-        return () => clearInterval(interval);
-    }, []);
+
+        // Setup Socket.IO connection
+        if (session?.user?.id) {
+            const socketInstance = io({
+                path: "/api/socket/io",
+            });
+
+            socketInstance.on("connect", () => {
+                console.log("Socket connected for notifications");
+                // Join user-specific room
+                socketInstance.emit("join-user-room", session.user.id);
+            });
+
+            socketInstance.on("notification:new", (notification: Notification) => {
+                console.log("New notification received:", notification);
+
+                // Add to notifications list
+                setNotifications(prev => [notification, ...prev]);
+                setUnreadCount(prev => prev + 1);
+
+                // Show toast popup
+                toast.info(notification.title, {
+                    description: notification.message,
+                    action: notification.href ? {
+                        label: "View",
+                        onClick: () => router.push(notification.href!)
+                    } : undefined,
+                });
+            });
+
+            setSocket(socketInstance);
+
+            return () => {
+                socketInstance.disconnect();
+            };
+        }
+    }, [session?.user?.id]);
 
     const markAsRead = async (id?: string) => {
         try {

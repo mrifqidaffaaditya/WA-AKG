@@ -46,10 +46,25 @@ export async function POST(req: Request) {
             }));
             
             await prisma.notification.createMany({ data: notifications });
+            
+            // Emit Socket.IO event for each user
+            const io = (global as any).io;
+            if (io) {
+                allUsers.forEach((u: { id: string }) => {
+                    io.to(`user:${u.id}`).emit('notification:new', {
+                        userId: u.id,
+                        title,
+                        message,
+                        type: type || "INFO",
+                        href
+                    });
+                });
+            }
+            
             return NextResponse.json({ success: true, count: allUsers.length });
         } else if (targetUserId) {
             // Send to specific user
-            await prisma.notification.create({
+            const notification = await prisma.notification.create({
                 data: {
                     userId: targetUserId,
                     title,
@@ -58,6 +73,21 @@ export async function POST(req: Request) {
                     href,
                 }
             });
+            
+            // Emit Socket.IO event
+            const io = (global as any).io;
+            if (io) {
+                io.to(`user:${targetUserId}`).emit('notification:new', {
+                    id: notification.id,
+                    userId: targetUserId,
+                    title,
+                    message,
+                    type: type || "INFO",
+                    href,
+                    createdAt: notification.createdAt
+                });
+            }
+            
              return NextResponse.json({ success: true });
         }
         

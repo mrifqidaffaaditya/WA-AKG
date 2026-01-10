@@ -33,7 +33,7 @@ export async function POST(req: Request) {
         }
 
         // Create notification
-        await prisma.notification.create({
+        const notification = await prisma.notification.create({
             data: {
                 userId: session.user.id,
                 title: title,
@@ -42,6 +42,20 @@ export async function POST(req: Request) {
                 href: release.html_url
             }
         });
+
+        // Emit Socket.IO event
+        const io = (global as any).io;
+        if (io) {
+            io.to(`user:${session.user.id}`).emit('notification:new', {
+                id: notification.id,
+                userId: session.user.id,
+                title,
+                message: notification.message,
+                type: "SYSTEM",
+                href: release.html_url,
+                createdAt: notification.createdAt
+            });
+        }
 
         return NextResponse.json({ success: true, message: "Notification sent", version });
 
