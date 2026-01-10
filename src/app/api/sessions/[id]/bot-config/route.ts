@@ -4,9 +4,9 @@ import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: Promise<{ sessionId: string }> }
+    { params }: { params: Promise<{ id: string }> }
 ) {
-    const { sessionId } = await params;
+    const { id: sessionId } = await params;
 
     try {
         const user = await getAuthenticatedUser(request);
@@ -48,9 +48,9 @@ export async function GET(
 
 export async function POST(
     request: NextRequest,
-    { params }: { params: Promise<{ sessionId: string }> }
+    { params }: { params: Promise<{ id: string }> }
 ) {
-    const { sessionId } = await params;
+    const { id: sessionId } = await params;
 
     try {
         const user = await getAuthenticatedUser(request);
