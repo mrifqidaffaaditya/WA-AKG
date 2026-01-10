@@ -1,8 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { WASocket, WAMessage } from "@whiskeysockets/baileys";
 import { downloadMediaMessage } from "@whiskeysockets/baileys";
-import Sticker from "wa-sticker-formatter";
-import { formatDistanceToNow } from "date-fns"; 
+import Sticker from "wa-sticker-formatter"; 
 
 // Map to track start times for uptime
 const startTimes = new Map<string, number>();

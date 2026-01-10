@@ -67,7 +67,6 @@ model Session {
   autoReplies AutoReply[]
   stories     Story[]
   scheduledMessages ScheduledMessage[]
-  scheduledMessages ScheduledMessage[]
   webhooks    Webhook[]
   botConfig   BotConfig?
 }
