@@ -51,8 +51,12 @@ export async function bindAutoReply(sock: WASocket, sessionId: string) {
              include: { botConfig: true } 
         });
         
-        if (!session?.botConfig?.enabled) return;
-        const config = session.botConfig;
+        if (!session) return;
+        
+        // @ts-ignore
+        const config = (session as any).botConfig;
+        
+        if (!config || !config.enabled) return;
 
         for (const msg of messages) {
             const fromMe = msg.key.fromMe || false;
