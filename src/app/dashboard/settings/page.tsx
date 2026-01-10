@@ -132,6 +132,40 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
 
+            {/* System Updates */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>System Updates</CardTitle>
+                    <CardDescription>Check for the latest version from GitHub.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={async () => {
+                            setSystemLoading(true);
+                            try {
+                                const res = await fetch("/api/system/check-updates", { method: "POST" });
+                                const data = await res.json();
+                                if (data.success) {
+                                    toast.success(data.message || "Check complete!");
+                                } else {
+                                    toast.error(data.message || "Failed to check updates");
+                                }
+                            } catch (e) {
+                                toast.error("Error checking updates");
+                            } finally {
+                                setSystemLoading(false);
+                            }
+                        }}
+                        disabled={systemLoading}
+                    >
+                        <RefreshCw className={`mr-2 h-4 w-4 ${systemLoading ? 'animate-spin' : ''}`} />
+                        Check for Updates
+                    </Button>
+                </CardContent>
+            </Card>
+
             <Card>
                 <CardHeader>
                     <CardTitle>Privacy & Utility</CardTitle>
