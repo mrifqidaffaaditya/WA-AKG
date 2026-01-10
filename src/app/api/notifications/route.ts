@@ -56,7 +56,9 @@ export async function POST(req: Request) {
                         title,
                         message,
                         type: type || "INFO",
-                        href
+                        href,
+                        createdAt: new Date().toISOString(),
+                        read: false
                     });
                 });
             }
