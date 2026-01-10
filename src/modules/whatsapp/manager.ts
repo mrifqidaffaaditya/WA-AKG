@@ -38,7 +38,15 @@ export class WhatsAppManager {
     }
 
     async createSession(userId: string, name: string) {
-        if (!this.io) throw new Error("Socket.IO not initialized");
+        // Fallback to global IO if instance IO is missing (Next.js Context Issue)
+        if (!this.io && (global as any).io) {
+            this.io = (global as any).io;
+        }
+
+        if (!this.io) {
+             console.error("Socket.IO not initialized in WhatsAppManager, and global fallback failed.");
+             throw new Error("Socket.IO not initialized");
+        }
         
         // Generate a random session ID (or use cuid from DB)
         // We create DB entry first to get ID? Or generate ID first?

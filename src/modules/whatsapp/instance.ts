@@ -67,68 +67,87 @@ export class WhatsAppInstance {
     async handleConnectionUpdate(update: Partial<ConnectionState>) {
         const { connection, lastDisconnect, qr } = update;
 
-        if (qr) {
-            this.qr = qr;
-            this.status = "SCAN_QR";
-            
-            // Emit QR to Socket Room
-            this.io.to(this.sessionId).emit("connection.update", { status: this.status, qr });
-            
-            // Update DB
-            await prisma.session.update({
-                where: { sessionId: this.sessionId },
-                data: { qr, status: "SCAN_QR" }
-            });
-        }
-        
-        if (connection === "close") {
-            const code = (lastDisconnect?.error as any)?.output?.statusCode;
-            const shouldReconnect = code !== DisconnectReason.loggedOut;
-            
-            this.status = "DISCONNECTED";
-             this.io.to(this.sessionId).emit("connection.update", { status: this.status, qr: null });
-             await prisma.session.update({
-                where: { sessionId: this.sessionId },
-                data: { status: "DISCONNECTED", qr: null }
-            });
-
-            if (shouldReconnect) {
-                this.init();
-            } else {
-                 console.log(`Session ${this.sessionId} logged out. Deleting...`);
-                 await prisma.session.update({
+        try {
+            if (qr) {
+                this.qr = qr;
+                this.status = "SCAN_QR";
+                
+                // Emit QR to Socket Room
+                this.io?.to(this.sessionId).emit("connection.update", { status: this.status, qr });
+                
+                // Update DB
+                await prisma.session.update({
                     where: { sessionId: this.sessionId },
-                    data: { status: "LOGGED_OUT", qr: null }
-                 });
-                 this.socket = null;
-            }
-        }
-
-        if (connection === "open") {
-            this.status = "CONNECTED";
-            this.qr = null;
-            
-            this.io.to(this.sessionId).emit("connection.update", { status: this.status, qr: null });
-            
-            // Sync Groups from WhatsApp (with error handling)
-            try {
-                await syncGroups(this.socket as WASocket, this.sessionId);
-            } catch (e) {
-                console.error("Group sync failed:", e);
+                    data: { qr, status: "SCAN_QR" }
+                });
             }
             
-            // Bind Auto Reply
-            bindAutoReply(this.socket as WASocket, this.sessionId);
-            
-            // Bind PP Guard
-            bindPpGuard(this.socket as WASocket, this.sessionId);
+            if (connection === "close") {
+                const code = (lastDisconnect?.error as any)?.output?.statusCode;
+                const shouldReconnect = code !== DisconnectReason.loggedOut;
+                
+                this.status = "DISCONNECTED";
+                 this.io?.to(this.sessionId).emit("connection.update", { status: this.status, qr: null });
+                 
+                 // Use try-catch specifically for update as session might be deleted
+                 try {
+                     await prisma.session.update({
+                        where: { sessionId: this.sessionId },
+                        data: { status: "DISCONNECTED", qr: null }
+                    });
+                 } catch (e) {
+                     // Ignore if session not found (deleted)
+                 }
 
-            await prisma.session.update({
-                where: { sessionId: this.sessionId },
-                data: { status: "CONNECTED", qr: null }
-            });
-            
-            console.log(`Session ${this.sessionId} connected and synced successfully`);
+                if (shouldReconnect) {
+                    this.init();
+                } else {
+                     console.log(`Session ${this.sessionId} logged out. Deleting...`);
+                     try {
+                         await prisma.session.update({
+                            where: { sessionId: this.sessionId },
+                            data: { status: "LOGGED_OUT", qr: null }
+                         });
+                     } catch (e) { /* ignore */ }
+                     this.socket = null;
+                }
+            }
+
+            if (connection === "open") {
+                this.status = "CONNECTED";
+                this.qr = null;
+                
+                this.io?.to(this.sessionId).emit("connection.update", { status: this.status, qr: null });
+                
+                // Sync Groups from WhatsApp (with error handling)
+                try {
+                    await syncGroups(this.socket as WASocket, this.sessionId);
+                } catch (e) {
+                    console.error("Group sync failed:", e);
+                }
+                
+                // Bind Auto Reply
+                bindAutoReply(this.socket as WASocket, this.sessionId);
+                
+                // Bind PP Guard
+                bindPpGuard(this.socket as WASocket, this.sessionId);
+
+                await prisma.session.update({
+                    where: { sessionId: this.sessionId },
+                    data: { status: "CONNECTED", qr: null }
+                });
+                
+                console.log(`Session ${this.sessionId} connected and synced successfully`);
+            }
+        } catch (error: any) {
+            // Catch global errors in handler (like Record Not Found if session deleted mid-process)
+            if (error.code === 'P2025') {
+                console.warn(`Session ${this.sessionId} record not found during update. Stopping instance.`);
+                this.socket?.end(undefined);
+                this.socket = null;
+            } else {
+                console.error("Error in handleConnectionUpdate:", error);
+            }
         }
     }
 }
