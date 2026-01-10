@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "@/components/dashboard/session-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -9,15 +10,13 @@ import { RefreshCw, Save } from "lucide-react";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
-    const [sessionId, setSessionId] = useState("");
+    const { sessionId } = useSession();
     const [config, setConfig] = useState({
         ghostMode: false,
         antiDelete: false,
         readReceipts: true,
     });
     const [loading, setLoading] = useState(false);
-
-    const [sessions, setSessions] = useState<any[]>([]);
 
     const [systemConfig, setSystemConfig] = useState({
         appName: "WA-AKG",
@@ -26,17 +25,6 @@ export default function SettingsPage() {
     const [systemLoading, setSystemLoading] = useState(false);
 
     useEffect(() => {
-        // Fetch sessions
-        fetch('/api/sessions').then(r => r.json()).then(data => {
-            if (Array.isArray(data)) {
-                const connected = data.filter((s: any) => s.status === 'CONNECTED');
-                setSessions(connected);
-                if (connected.length > 0) {
-                    setSessionId(connected[0].sessionId);
-                }
-            }
-        });
-
         // Fetch System Config
         fetch('/api/settings/system').then(r => r.json()).then(data => {
             if (data && !data.error) {
@@ -97,19 +85,7 @@ export default function SettingsPage() {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
-                <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Session:</span>
-                    <select
-                        className="flex h-10 w-[200px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        value={sessionId}
-                        onChange={(e) => setSessionId(e.target.value)}
-                    >
-                        <option value="" disabled>Select Session</option>
-                        {sessions.map((s: any) => (
-                            <option key={s.sessionId} value={s.sessionId}>{s.name}</option>
-                        ))}
-                    </select>
-                </div>
+
             </div>
 
             {/* System Configuration (Global) */}

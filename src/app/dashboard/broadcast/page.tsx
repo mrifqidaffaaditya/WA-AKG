@@ -10,28 +10,19 @@ import { Slider } from "@/components/ui/slider";
 import { RefreshCw, Send, Users } from "lucide-react";
 import { toast } from "sonner";
 
+import { useSession } from "@/components/dashboard/session-provider";
+
 export default function BroadcastPage() {
-    const [sessionId, setSessionId] = useState("");
+    const { sessionId } = useSession();
     const [contacts, setContacts] = useState(""); // Raw text input
     const [message, setMessage] = useState("");
     const [delay, setDelay] = useState([2000]);
     const [loading, setLoading] = useState(false);
 
-    // Fetch active session on mount
-    const [sessions, setSessions] = useState<any[]>([]);
-
-    useEffect(() => {
-        fetch('/api/sessions').then(r => r.json()).then(data => {
-            const connected = data.filter((s: any) => s.status === 'CONNECTED');
-            setSessions(connected);
-            if (connected.length > 0) setSessionId(connected[0].sessionId);
-        });
-    }, []);
-
     const handleSend = async () => {
         if (!sessionId) return alert("No active session found");
         setLoading(true);
-        
+
         try {
             // Parse contacts
             const recipients = contacts.split(/[\n,]+/).map(s => s.trim()).filter(Boolean).map(s => {
@@ -49,7 +40,7 @@ export default function BroadcastPage() {
                     delay: delay[0]
                 })
             });
-            
+
             if (res.ok) {
                 toast.success("Broadcast started!");
                 setContacts("");
@@ -70,23 +61,8 @@ export default function BroadcastPage() {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2 className="text-3xl font-bold tracking-tight">Broadcast / Blast</h2>
-                
-                {/* Session Selector */}
-                 <div className="flex items-center gap-2">
-                     <span className="text-sm font-medium">Session:</span>
-                     <select 
-                        className="flex h-10 w-[200px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        value={sessionId} 
-                        onChange={(e) => setSessionId(e.target.value)}
-                     >
-                         <option value="" disabled>Select Session</option>
-                         {sessions.map((s: any) => (
-                             <option key={s.sessionId} value={s.sessionId}>{s.name}</option>
-                         ))}
-                     </select>
-                 </div>
             </div>
-            
+
             <div className="grid gap-6 md:grid-cols-2">
                 <Card>
                     <CardHeader>
@@ -96,8 +72,8 @@ export default function BroadcastPage() {
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label>Target Numbers (e.g., 628123456789)</Label>
-                            <Textarea 
-                                placeholder="628123456789&#10;628987654321" 
+                            <Textarea
+                                placeholder="628123456789&#10;628987654321"
                                 className="min-h-[200px]"
                                 value={contacts}
                                 onChange={e => setContacts(e.target.value)}
@@ -114,27 +90,27 @@ export default function BroadcastPage() {
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label>Message</Label>
-                            <Textarea 
-                                placeholder="Type your message here..." 
-                                className="min-h-[150px]" 
+                            <Textarea
+                                placeholder="Type your message here..."
+                                className="min-h-[150px]"
                                 value={message}
                                 onChange={e => setMessage(e.target.value)}
                             />
                         </div>
-                        
+
                         <div className="space-y-4 pt-4">
                             <div className="space-y-2">
                                 <Label>Delay (ms): {delay[0]}</Label>
-                                <Slider 
-                                    defaultValue={[2000]} 
-                                    max={10000} 
-                                    step={100} 
-                                    value={delay} 
-                                    onValueChange={setDelay} 
+                                <Slider
+                                    defaultValue={[2000]}
+                                    max={10000}
+                                    step={100}
+                                    value={delay}
+                                    onValueChange={setDelay}
                                 />
                                 <p className="text-xs text-muted-foreground">Randomized delay to prevent ban.</p>
                             </div>
-                            
+
                             <Button className="w-full" onClick={handleSend} disabled={loading || !sessionId}>
                                 {loading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                                 Start Broadcast
