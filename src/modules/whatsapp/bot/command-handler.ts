@@ -6,6 +6,16 @@ import Sticker from "wa-sticker-formatter";
 // Map to track start times for uptime
 const startTimes = new Map<string, number>();
 
+// Default bot config
+const DEFAULT_CONFIG = {
+    enabled: true,
+    publicMode: false,
+    enableSticker: true,
+    enablePing: true,
+    enableUptime: true,
+    removeBgApiKey: null as string | null
+};
+
 export function setSessionStartTime(sessionId: string) {
     if (!startTimes.has(sessionId)) {
         startTimes.set(sessionId, Date.now());
@@ -19,9 +29,8 @@ export async function handleBotCommand(
 ) {
     if (!sock || !msg.message || !msg.key.remoteJid) return;
 
-    const keyId = msg.key.id;
     const remoteJid = msg.key.remoteJid;
-    const fromMe = msg.key.fromMe || false; // Default to false if undefined, but treated cautiously
+    const fromMe = msg.key.fromMe || false;
     
     // Get text content
     let text = "";
@@ -39,34 +48,27 @@ export async function handleBotCommand(
 
     if (!text.startsWith("#")) return;
 
-    // Fetch Config for the session (Using dbSessionId implicitly via relation would be better, but we only have sessionId string here)
-    // We need the DB ID really.
-    // Let's rely on cached config or fetch it. For now, fetch is safer.
+    // Fetch session first
     const session = await prisma.session.findUnique({
         where: { sessionId },
-        include: { botConfig: true }
+        select: { id: true }
     });
 
     if (!session) return;
     
-    const config = session.botConfig || {
-        enabled: true,
-        publicMode: false,
-        enableSticker: true,
-        enablePing: true,
-        enableUptime: true,
-        removeBgApiKey: null
-    };
+    // Fetch BotConfig separately to avoid TypeScript include issues
+    const botConfig = await prisma.botConfig.findUnique({
+        where: { sessionId: session.id }
+    });
+    
+    const config = botConfig || DEFAULT_CONFIG;
 
     if (!config.enabled) return;
     
     // Public Mode Check:
-    // If publicMode is FALSE, only allow messages FROM ME.
-    // However, usually bots are meant to reply to others.
-    // If publicMode is TRUE, anyone can use it.
     // If publicMode is FALSE, ONLY the owner (fromMe) can use it.
     if (!config.publicMode && !fromMe) {
-        return; // Ignore command
+        return;
     }
 
     const [command, ...args] = text.trim().split(" ");
@@ -113,7 +115,6 @@ export async function handleBotCommand(
                 // If quoted, check quoted
                 const quoted = messageContent.extendedTextMessage?.contextInfo?.quotedMessage;
                 if (quoted) {
-                    // Create a fake WAMessage for downloadMediaMessage
                     mediaMsg = {
                         key: {
                             remoteJid,
@@ -145,12 +146,14 @@ export async function handleBotCommand(
                     const isRemoveBg = args.includes("nobg") || args.includes("removebg");
                     if (isRemoveBg && config.removeBgApiKey) {
                         try {
+                            // Convert Buffer to Uint8Array for Blob compatibility
+                            const uint8Array = new Uint8Array(buffer);
+                            const blob = new Blob([uint8Array], { type: 'image/png' });
+                            
                             const formData = new FormData();
-                            const blob = new Blob([buffer]);
-                            formData.append('image_file', blob);
+                            formData.append('image_file', blob, 'image.png');
                             formData.append('size', 'auto');
 
-                            // We need to use fetch mostly
                             const res = await fetch('https://api.remove.bg/v1.0/removebg', {
                                 method: 'POST',
                                 headers: {
