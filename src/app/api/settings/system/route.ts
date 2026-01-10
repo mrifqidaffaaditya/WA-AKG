@@ -24,13 +24,13 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { appName, logoUrl } = body;
+        const { appName, logoUrl, timezone } = body;
 
         // @ts-ignore
         const config = await prisma.systemConfig.upsert({
             where: { id: "default" },
-            update: { appName, logoUrl },
-            create: { id: "default", appName, logoUrl: logoUrl || "" }
+            update: { appName, logoUrl, timezone },
+            create: { id: "default", appName, logoUrl: logoUrl || "", timezone: timezone || "Asia/Jakarta" }
         });
 
         return NextResponse.json(config);

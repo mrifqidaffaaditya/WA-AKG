@@ -73,13 +73,24 @@ export async function POST(request: NextRequest) {
              return NextResponse.json({ error: "Session not found" }, { status: 404 });
         }
 
+import { fromZonedTime } from "date-fns-tz";
+
+// ... inside POST
+        // @ts-ignore
+        const systemConfig = await prisma.systemConfig.findUnique({ where: { id: "default" } });
+        const timezone = systemConfig?.timezone || "Asia/Jakarta";
+
+        // Convert local time (sendAt) to UTC based on timezone
+        // The input 'sendAt' is expected to be "YYYY-MM-DDTHH:mm" (local time string)
+        const utcDate = fromZonedTime(sendAt, timezone);
+
         const scheduled = await prisma.scheduledMessage.create({
             data: {
                 sessionId: session.id,
                 jid,
                 content,
                 mediaUrl,
-                sendAt: new Date(sendAt),
+                sendAt: utcDate,
                 status: "PENDING"
             }
         });

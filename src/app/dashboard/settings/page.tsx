@@ -20,7 +20,8 @@ export default function SettingsPage() {
 
     const [systemConfig, setSystemConfig] = useState({
         appName: "WA-AKG",
-        logoUrl: ""
+        logoUrl: "",
+        timezone: "Asia/Jakarta"
     });
     const [systemLoading, setSystemLoading] = useState(false);
 
@@ -30,7 +31,8 @@ export default function SettingsPage() {
             if (data && !data.error) {
                 setSystemConfig({
                     appName: data.appName || "WA-AKG",
-                    logoUrl: data.logoUrl || ""
+                    logoUrl: data.logoUrl || "",
+                    timezone: data.timezone || "Asia/Jakarta"
                 });
             }
         });
@@ -104,11 +106,28 @@ export default function SettingsPage() {
                                 value={systemConfig.appName}
                                 onChange={(e) => setSystemConfig(prev => ({ ...prev, appName: e.target.value }))}
                             />
+                        </div>
+                        <p className="text-xs text-muted-foreground">Changes the name in the sidebar and browser title.</p>
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label>Timezone</Label>
+                        <div className="flex gap-2">
+                            <select
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                value={systemConfig.timezone}
+                                onChange={(e) => setSystemConfig(prev => ({ ...prev, timezone: e.target.value }))}
+                            >
+                                <option value="Asia/Jakarta">Asia/Jakarta (WIB)</option>
+                                <option value="Asia/Makassar">Asia/Makassar (WITA)</option>
+                                <option value="Asia/Jayapura">Asia/Jayapura (WIT)</option>
+                                <option value="UTC">UTC</option>
+                            </select>
                             <Button onClick={handleSaveSystem} disabled={systemLoading}>
                                 {systemLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                             </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground">Changes the name in the sidebar and browser title.</p>
+                        <p className="text-xs text-muted-foreground">Scheduler will use this timezone to parse local times.</p>
                     </div>
                 </CardContent>
             </Card>
