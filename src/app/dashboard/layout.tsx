@@ -13,7 +13,8 @@ import {
     ImageIcon,
     Webhook,
     CalendarClock,
-    Bot
+    Bot,
+    Bell
 } from "lucide-react";
 
 import { prisma } from "@/lib/prisma"; // Add prisma import
@@ -87,6 +88,15 @@ export default async function DashboardLayout({
                             <Settings size={20} />
                             <span>Settings</span>
                         </Link>
+                        {
+                            // @ts-ignore
+                            session?.user?.role === "SUPERADMIN" && (
+                                <Link href="/dashboard/notifications" className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md">
+                                    <Bell size={20} />
+                                    <span>Notification Manager</span>
+                                </Link>
+                            )
+                        }
                     </nav>
 
                     <div className="p-4 border-t">
