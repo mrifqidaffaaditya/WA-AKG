@@ -1,5 +1,5 @@
 import { MobileNav } from "@/components/dashboard/mobile-nav";
-import { UserNav } from "@/components/dashboard/user-nav";
+
 import { SessionSelector } from "@/components/dashboard/session-selector";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
