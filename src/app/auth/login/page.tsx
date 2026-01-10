@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -16,7 +16,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -25,6 +25,8 @@ const formSchema = z.object({
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -49,12 +51,13 @@ export default function LoginPage() {
       if (result?.error) {
         setError("Invalid email or password");
       } else {
-        router.push('/dashboard');
+        router.push(callbackUrl);
+        router.refresh(); // Ensure session cookies are applied immediately
       }
     } catch (err) {
-        setError("An error occurred");
+      setError("An error occurred");
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   }
 
@@ -65,40 +68,40 @@ export default function LoginPage() {
           <CardTitle>Login to WA-AKG</CardTitle>
         </CardHeader>
         <CardContent>
-            {error && <div className="text-red-500 mb-4 text-sm">{error}</div>}
-            <Form {...form}>
+          {error && <div className="text-red-500 mb-4 text-sm">{error}</div>}
+          <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
+              <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
-                    <FormItem>
+                  <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                        <Input placeholder="email@example.com" {...field} />
+                      <Input placeholder="email@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
-                    </FormItem>
+                  </FormItem>
                 )}
-                />
-                <FormField
+              />
+              <FormField
                 control={form.control}
                 name="password"
                 render={({ field }) => (
-                    <FormItem>
+                  <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                        <Input type="password" placeholder="Password" {...field} />
+                      <Input type="password" placeholder="Password" {...field} />
                     </FormControl>
                     <FormMessage />
-                    </FormItem>
+                  </FormItem>
                 )}
-                />
-                <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Logging in..." : "Login"}
-                </Button>
+              />
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Logging in..." : "Login"}
+              </Button>
             </form>
-            </Form>
+          </Form>
         </CardContent>
       </Card>
     </div>
