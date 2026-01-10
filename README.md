@@ -11,7 +11,7 @@
 **A powerful, self-hosted WhatsApp Gateway, Dashboard, and Bot Management System.**  
 Built for developers and businesses to manage multi-session WhatsApp accounts, schedule messages, create auto-replies, and integrate with external apps via Webhooks.
 
-[Features](#-features) • [User Guide](docs/USER_GUIDE.md) • [API Documentation](#-api-reference) • [Installation](#-installation)
+[Features](#-features) • [User Guide](docs/USER_GUIDE.md) • [API Documentation](docs/API_DOCUMENTATION.md) • [Database Setup](docs/DATABASE_SETUP.md) • [Installation](#-installation)
 
 
 </div>
