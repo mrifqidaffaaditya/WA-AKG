@@ -71,9 +71,20 @@ AUTH_SECRET="generate-a-strong-secret-here"
 ```
 
 ### 4. Setup Database
+For detailed instructions, see [Database Setup Guide](docs/DATABASE_SETUP.md).
+
 ```bash
-npx prisma db push
-npx prisma generate
+# Push schema and generate client
+npm run db:push
+
+# (Optional) Open Prisma Studio to view data
+npm run db:studio
+```
+
+### 5. Create Admin User
+```bash
+# syntax: npm run make-admin <email> <password>
+npm run make-admin admin@example.com password123
 ```
 
 ### 5. Start the Application

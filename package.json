@@ -6,7 +6,10 @@
     "dev": "npx tsx src/server/index.ts",
     "build": "next build",
     "start": "NODE_ENV=production npx tsx src/server/index.ts",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:push": "prisma db push && prisma generate",
+    "db:studio": "prisma studio",
+    "make-admin": "node scripts/setup-admin.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
