@@ -51,7 +51,6 @@ export default function StickerPage() {
     };
 
     return (
-    return (
         <SessionGuard>
             <div className="space-y-6">
                 <div className="flex justify-between items-center">
@@ -92,6 +91,5 @@ export default function StickerPage() {
                 </Card>
             </div>
         </SessionGuard>
-    );
     );
 }

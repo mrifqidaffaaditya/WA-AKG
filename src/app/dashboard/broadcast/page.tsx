@@ -59,7 +59,6 @@ export default function BroadcastPage() {
     };
 
     return (
-    return (
         <SessionGuard>
             <div className="space-y-6">
                 <div className="flex justify-between items-center">
@@ -124,6 +123,5 @@ export default function BroadcastPage() {
                 </div>
             </div>
         </SessionGuard>
-    );
     );
 }
