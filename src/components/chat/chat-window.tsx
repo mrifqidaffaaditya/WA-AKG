@@ -29,9 +29,9 @@ export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const fetchMessages = async () => {
-         try {
-             // We need to implement this API endpoint specifically later, 
-             // for now assume /api/chat/:sessionId/:jid or query param
+        try {
+            // We need to implement this API endpoint specifically later, 
+            // for now assume /api/chat/:sessionId/:jid or query param
             const res = await fetch(`/api/chat/${sessionId}/${encodeURIComponent(jid)}`);
             if (res.ok) {
                 const data = await res.json();
@@ -47,22 +47,22 @@ export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
         fetchMessages();
         // Setup socket listener for new messages here? 
         // Or refetch interval for simplicity first.
-        const interval = setInterval(fetchMessages, 3000); 
+        const interval = setInterval(fetchMessages, 3000);
         return () => clearInterval(interval);
     }, [sessionId, jid]);
 
 
     const handleSend = async () => {
         if (!newMessage.trim()) return;
-        
+
         try {
             await fetch(`/api/chat/send`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                   sessionId,
-                   jid,
-                   message: { text: newMessage } 
+                    sessionId,
+                    jid,
+                    message: { text: newMessage }
                 })
             });
             setNewMessage("");
@@ -80,27 +80,27 @@ export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
                     <AvatarFallback>{(name || jid).slice(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>
-                   <h3 className="font-semibold">{name || jid}</h3>
-                   <span className="text-xs text-muted-foreground">{jid}</span>
+                    <h3 className="font-semibold">{name || jid}</h3>
+                    <span className="text-xs text-muted-foreground">{jid}</span>
                 </div>
             </div>
 
             {/* Messages Area */}
-            <ScrollArea className="flex-1 p-4">
+            <ScrollArea className="flex-1 min-h-0 p-4">
                 <div className="space-y-4" ref={scrollRef}>
                     {messages.map((msg) => (
-                        <div 
-                            key={msg.keyId} 
+                        <div
+                            key={msg.keyId}
                             className={cn(
                                 "flex w-fit max-w-[75%] flex-col gap-2 rounded-lg px-3 py-2 text-sm shadow-sm break-words whitespace-pre-wrap",
-                                msg.fromMe 
-                                    ? "ml-auto bg-primary text-primary-foreground" 
+                                msg.fromMe
+                                    ? "ml-auto bg-primary text-primary-foreground"
                                     : "bg-white border"
                             )}
                         >
                             {msg.content}
                             <span className={cn("text-[10px] self-end opacity-70", msg.fromMe ? "text-primary-foreground" : "text-muted-foreground")}>
-                                {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                         </div>
                     ))}
@@ -109,19 +109,19 @@ export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
 
             {/* Input Area */}
             <div className="p-4 bg-white border-t flex items-center gap-2">
-                 <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon">
                     <Paperclip className="h-5 w-5 text-muted-foreground" />
-                 </Button>
-                 <Input 
-                    placeholder="Type a message..." 
+                </Button>
+                <Input
+                    placeholder="Type a message..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSend()}
                     className="flex-1"
-                 />
-                 <Button onClick={handleSend} disabled={!newMessage.trim()}>
+                />
+                <Button onClick={handleSend} disabled={!newMessage.trim()}>
                     <Send className="h-4 w-4" />
-                 </Button>
+                </Button>
             </div>
         </div>
     )
