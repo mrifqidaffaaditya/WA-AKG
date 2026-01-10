@@ -11,7 +11,8 @@
 **A powerful, self-hosted WhatsApp Gateway, Dashboard, and Bot Management System.**  
 Built for developers and businesses to manage multi-session WhatsApp accounts, schedule messages, create auto-replies, and integrate with external apps via Webhooks.
 
-[Features](#-features) • [Installation](#-installation) • [API Documentation](#-api-reference) • [Contributing](#-contributing)
+[Features](#-features) • [User Guide](docs/USER_GUIDE.md) • [API Documentation](#-api-reference) • [Installation](#-installation)
+
 
 </div>
 
@@ -106,7 +107,7 @@ Interact with your WhatsApp sessions programmatically.
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/api/messages/send` | Send text or media message |
+| `POST` | `/api/chat/send` | Send text or media message |
 | `POST` | `/api/scheduler` | Schedule a future message |
 | `GET` | `/api/sessions` | List connected sessions |
 | `POST` | `/api/sessions` | Create a new session |
@@ -114,7 +115,7 @@ Interact with your WhatsApp sessions programmatically.
 
 ### Example: Send Message
 ```bash
-curl -X POST http://localhost:3000/api/messages/send \
+curl -X POST http://localhost:3000/api/chat/send \
   -H "Content-Type: application/json" \
   -d '{
     "sessionId": "session_1",
