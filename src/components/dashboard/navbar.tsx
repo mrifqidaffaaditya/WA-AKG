@@ -6,7 +6,7 @@ import { SessionSelector } from "@/components/dashboard/session-selector";
 import { Button } from "@/components/ui/button";
 import { RealtimeClock } from "@/components/dashboard/realtime-clock";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Bell, Inbox } from "lucide-react";
+import { Bell, Inbox, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { useSession } from "next-auth/react";
@@ -93,7 +93,8 @@ export function Navbar({ appName }: NavbarProps) {
         try {
             const ids = id ? [id] : []; // Empty array means mark all
             const res = await fetch("/api/notifications/read", {
-                method: "POST",
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ids })
             });
             if (res.ok) {
@@ -107,6 +108,25 @@ export function Navbar({ appName }: NavbarProps) {
             }
         } catch (e) {
             console.error("Failed to mark read");
+        }
+    };
+
+    const deleteNotification = async (id: string) => {
+        try {
+            const res = await fetch(`/api/notifications/delete?id=${id}`, {
+                method: "DELETE"
+            });
+            if (res.ok) {
+                setNotifications(prev => prev.filter(n => n.id !== id));
+                setUnreadCount(prev => {
+                    const notification = notifications.find(n => n.id === id);
+                    return notification && !notification.read ? Math.max(0, prev - 1) : prev;
+                });
+                toast.success("Notification deleted");
+            }
+        } catch (e) {
+            console.error("Failed to delete notification");
+            toast.error("Failed to delete notification");
         }
     };
 
@@ -164,11 +184,13 @@ export function Navbar({ appName }: NavbarProps) {
                                     {notifications.map(n => (
                                         <div
                                             key={n.id}
-                                            className={`p-4 hover:bg-slate-50 cursor-pointer transition-colors ${!n.read ? 'bg-blue-50/50' : ''}`}
-                                            onClick={() => handleNotificationClick(n)}
+                                            className={`p-4 hover:bg-slate-50 transition-colors ${!n.read ? 'bg-blue-50/50' : ''}`}
                                         >
                                             <div className="flex justify-between items-start gap-3">
-                                                <div className="flex-1 space-y-1">
+                                                <div
+                                                    className="flex-1 space-y-1 cursor-pointer"
+                                                    onClick={() => handleNotificationClick(n)}
+                                                >
                                                     <p className={`text-sm font-medium leading-none ${!n.read ? 'text-blue-700' : 'text-slate-900'}`}>
                                                         {n.title}
                                                     </p>
@@ -179,7 +201,20 @@ export function Navbar({ appName }: NavbarProps) {
                                                         {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
                                                     </p>
                                                 </div>
-                                                {!n.read && <span className="h-2 w-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" />}
+                                                <div className="flex items-center gap-2">
+                                                    {!n.read && <span className="h-2 w-2 bg-blue-500 rounded-full flex-shrink-0" />}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            deleteNotification(n.id);
+                                                        }}
+                                                    >
+                                                        <Trash2 className="h-4 w-4 text-red-500" />
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
