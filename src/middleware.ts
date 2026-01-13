@@ -15,6 +15,7 @@ export async function middleware(request: NextRequest) {
     if (
         pathname.startsWith("/_next") ||
         pathname.startsWith("/favicon") ||
+        pathname.startsWith("/media") ||
         pathname.includes(".") // static files
     ) {
         return NextResponse.next();
@@ -83,6 +84,6 @@ export const config = {
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
          */
-        "/((?!_next/static|_next/image|favicon.ico).*)",
+        "/((?!_next/static|_next/image|favicon.ico|media).*)",
     ],
 };

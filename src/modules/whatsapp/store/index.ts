@@ -257,9 +257,9 @@ async function processAndSaveMessage(msg: WAMessage, dbSessionId: string, sessio
     // Trigger webhook for new messages only (not history sync)
     if (triggerWebhook) {
         if (fromMe) {
-            onMessageSent(sessionId, msg);
+            onMessageSent(sessionId, msg).catch(e => console.error("Error in onMessageSent", e));
         } else {
-            onMessageReceived(sessionId, msg);
+            onMessageReceived(sessionId, msg).catch(e => console.error("Error in onMessageReceived", e));
         }
     }
 }

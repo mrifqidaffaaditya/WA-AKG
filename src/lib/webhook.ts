@@ -1,6 +1,9 @@
 import { prisma } from "./prisma";
 import crypto from "crypto";
-import { normalizeMessageContent } from "@whiskeysockets/baileys";
+import { normalizeMessageContent, downloadMediaMessage, WAMessage } from "@whiskeysockets/baileys";
+import { writeFile, mkdir } from "fs/promises";
+import path from "path";
+import pino from "pino";
 
 // Event types that can trigger webhooks
 export type WebhookEventType = 
@@ -140,42 +143,211 @@ async function sendWebhookRequest(url: string, payload: WebhookPayload, secret?:
 }
 
 /**
+ * Helper to download and save media
+ */
+async function downloadAndSaveMedia(message: WAMessage, sessionId: string): Promise<string | null> {
+    try {
+        const messageContent = normalizeMessageContent(message.message);
+        if (!messageContent) {
+            console.log("MediaDownload: No content normalized");
+            return null;
+        }
+
+        const messageType = Object.keys(messageContent)[0];
+        console.log(`MediaDownload: Types checking... Found: ${messageType}`);
+
+        if (!['imageMessage', 'videoMessage', 'audioMessage', 'documentMessage', 'stickerMessage'].includes(messageType)) {
+             console.log(`MediaDownload: Message type ${messageType} is not a downloadable media.`);
+            return null;
+        }
+        
+        console.log(`MediaDownload: Attempting to download ${messageType}...`);
+
+        const buffer = await downloadMediaMessage(
+            message,
+            "buffer",
+            {}
+        ) as Buffer;
+
+        if (!buffer) {
+             console.log("MediaDownload: Buffer is empty/null");
+             return null;
+        }
+        
+        console.log(`MediaDownload: Downloaded ${buffer.length} bytes.`);
+
+        // Generate filename
+        const extMap: Record<string, string> = {
+            imageMessage: 'jpg',
+            videoMessage: 'mp4',
+            audioMessage: 'mp3',
+            documentMessage: 'bin',
+            stickerMessage: 'webp'
+        };
+        
+        let ext = extMap[messageType] || 'bin';
+        
+        // Try to get extension from mimetype if available
+        const mime = (messageContent as any)[messageType]?.mimetype;
+        if (mime) {
+            const mimeExt = mime.split('/')[1]?.split(';')[0];
+            if (mimeExt) ext = mimeExt;
+        }
+
+        const filename = `${sessionId}-${message.key.id}.${ext}`;
+        const filePath = path.join(process.cwd(), "public", "media", filename);
+
+        console.log(`MediaDownload: Saving to ${filePath}`);
+
+        // Ensure directory exists (redundant if handled by OS, but safe)
+        await mkdir(path.dirname(filePath), { recursive: true });
+        
+        await writeFile(filePath, buffer);
+        
+        // Return URL path (assuming served from /media)
+        // In a real app you might want full URL, but relative is safer for now.
+        // User requested URL.
+        const fileUrl = `/media/${filename}`;
+        console.log(`MediaDownload: Success. URL: ${fileUrl}`);
+        return fileUrl;
+
+    } catch (e) {
+        console.error("Failed to download media:", e);
+        return null;
+    }
+}
+
+/**
  * Helper to dispatch message received event
  * Normalizes message content to match API structure
  */
-export function onMessageReceived(sessionId: string, message: any) {
-    const normalized = extractMessageContent(message);
+export async function onMessageReceived(sessionId: string, message: any) {
+    // Re-calculate fields to match store logic EXACTLY
     const remoteJid = message.key?.remoteJid || "";
+    const fromMe = message.key?.fromMe || false;
+    const isGroup = remoteJid.endsWith("@g.us");
+    const participant = isGroup ? (message.key?.participant || message.participant) : undefined;
+    
+    // Extract Alt JID (e.g. Phone Number JID when remoteJid is LID)
+    // Note: Baileys puts this in key sometimes
+    const remoteJidAlt = message.key?.remoteJidAlt || null;
+
+    // "from" is usually the chat JID (remoteJid)
+    // "sender" is who sent it. In DM: remoteJid. In Group: participant.
+    // If DM and remoteJidAlt exists (Phone JID), user prefers that as sender.
+    let sender: any = isGroup ? participant : remoteJid;
+    if (!isGroup && remoteJidAlt) {
+        sender = remoteJidAlt;
+    }
+    
+    // Enrich Participant Data if Group
+    let participantDetail: any = participant;
+    
+    if (isGroup && typeof sender === 'string') {
+        try {
+            // Need dbSessionId
+            const session = await prisma.session.findUnique({ 
+                where: { sessionId },
+                select: { id: true }
+            });
+            
+            if (session) {
+                const group = await prisma.group.findUnique({
+                    where: { 
+                        sessionId_jid: { 
+                            sessionId: session.id, 
+                            jid: remoteJid 
+                        } 
+                    },
+                    select: { participants: true }
+                });
+                
+                if (group && group.participants) {
+                    const parts = group.participants as any[];
+                    // Try to match sender or participant JID
+                    const found = parts.find(p => p.id === sender || p.id === participant);
+                    if (found) {
+                        sender = found;
+                        participantDetail = found;
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Failed to enrich participant", e);
+        }
+    }
+
+    // Download media if available
+    let fileUrl: string | null = null;
+    try {
+        fileUrl = await downloadAndSaveMedia(message, sessionId);
+    } catch (e) {
+         console.error("Error handling media download", e);
+    }
+
+    const normalized = extractMessageContent(message);
     
     dispatchWebhook(sessionId, "message.received", {
-        keyId: message.key?.id,
-        remoteJid: remoteJid,
-        chatType: getChatType(remoteJid),
-        fromMe: message.key?.fromMe || false,
+        key: {
+            id: message.key?.id,
+            remoteJid: remoteJid,
+            fromMe: fromMe,
+            participant: participantDetail
+        },
         pushName: message.pushName,
+        messageTimestamp: message.messageTimestamp,
+        
+        // Simplified Fields
+        from: remoteJid,            // Chat ID
+        sender: sender,             // Who Sent It (Preferred JID or Object)
+        remoteJidAlt: remoteJidAlt, // Explicit Alt Field
+        isGroup: isGroup,           // Boolean
+        
+        // Message Content
         type: normalized.type,
         content: normalized.content,
-        timestamp: message.messageTimestamp 
-            ? Number(message.messageTimestamp) * 1000 
-            : Date.now()
+        fileUrl: fileUrl,           // Link to file if media
+        caption: normalized.caption, // Separate caption
+        
+        // Raw Data (Requested by User)
+        raw: message
     });
 }
 
 /**
  * Helper to dispatch message sent event
  */
-export function onMessageSent(sessionId: string, message: any) {
+export async function onMessageSent(sessionId: string, message: any) {
     const normalized = extractMessageContent(message);
     const remoteJid = message.key?.remoteJid || "";
+    
+    // Download media for sent messages too (optional but good)
+    let fileUrl: string | null = null;
+    try {
+        fileUrl = await downloadAndSaveMedia(message, sessionId);
+    } catch (e) { /* ignore */ }
+    
+    // For sent messages, sender is always ME (or represented by the bot)
+    // If it's a group, the participant might be undefined in the key if sent by us, 
+    // but typically we are the sender.
+    const sender = message.key?.participant || (message.key?.fromMe ? "ME" : remoteJid);
+    const remoteJidAlt = message.key?.remoteJidAlt || null;
 
     dispatchWebhook(sessionId, "message.sent", {
-        keyId: message.key?.id,
-        remoteJid: remoteJid,
-        chatType: getChatType(remoteJid),
-        fromMe: true,
+        key: message.key,
+        
+        from: remoteJid,
+        sender: sender,
+        remoteJidAlt: remoteJidAlt, 
+        isGroup: remoteJid.endsWith("@g.us"),
+        
         type: normalized.type,
         content: normalized.content,
-        timestamp: Date.now() // Sent now
+        fileUrl: fileUrl,
+        caption: normalized.caption,
+        
+        timestamp: Date.now(),
+        raw: message
     });
 }
 
@@ -197,16 +369,17 @@ function getChatType(jid: string): "PERSONAL" | "GROUP" | "STATUS" | "NEWSLETTER
 export function onConnectionUpdate(sessionId: string, status: string, qr?: string) {
     dispatchWebhook(sessionId, "connection.update", {
         status,
-        qr: qr ? "QR_GENERATED" : null // Don't send actual QR, just indicator
+        qr: qr || null
     });
 }
 
 /**
  * Extract content and type from Baileys message
  */
-function extractMessageContent(msg: any): { type: string, content: string } {
+function extractMessageContent(msg: any): { type: string, content: string, caption?: string } {
     const messageContent = normalizeMessageContent(msg.message);
     let text = "";
+    let caption = undefined;
     let messageType = "TEXT";
 
     if (!messageContent) return { type: "UNKNOWN", content: "" };
@@ -217,15 +390,18 @@ function extractMessageContent(msg: any): { type: string, content: string } {
         text = messageContent.extendedTextMessage.text;
     } else if (messageContent.imageMessage) {
         messageType = "IMAGE";
-        text = messageContent.imageMessage.caption || "";
+        caption = messageContent.imageMessage.caption || "";
+        text = caption; // Content often used as text display
     } else if (messageContent.videoMessage) {
         messageType = "VIDEO";
-        text = messageContent.videoMessage.caption || "";
+        caption = messageContent.videoMessage.caption || "";
+        text = caption;
     } else if (messageContent.audioMessage) {
         messageType = "AUDIO";
     } else if (messageContent.documentMessage) {
         messageType = "DOCUMENT";
         text = messageContent.documentMessage.fileName || "";
+        caption = messageContent.documentMessage.caption || "";
     } else if (messageContent.stickerMessage) {
         messageType = "STICKER";
     } else if (messageContent.locationMessage) {
@@ -236,5 +412,6 @@ function extractMessageContent(msg: any): { type: string, content: string } {
         text = messageContent.contactMessage.displayName || "";
     }
 
-    return { type: messageType, content: text };
+    return { type: messageType, content: text, caption };
 }
+

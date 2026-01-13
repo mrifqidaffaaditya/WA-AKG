@@ -42,6 +42,35 @@ export async function GET(
             take: 100
         });
 
+        // Enrich with participant info if it's a group
+        if (decodedJid.endsWith('@g.us')) {
+            const group = await prisma.group.findUnique({
+                where: {
+                    sessionId_jid: {
+                        sessionId: dbSessionId,
+                        jid: decodedJid
+                    }
+                },
+                select: { participants: true }
+            });
+
+            if (group && group.participants) {
+                const parts = group.participants as any[];
+                
+                const enrichedMessages = messages.map((msg: any) => {
+                    const sender = msg.senderJid || msg.remoteJid; // Fallback
+                    const participant = parts.find(p => p.id === sender);
+                    
+                    return {
+                        ...msg,
+                        sender: participant || sender // Replace or add sender field with object or string
+                    };
+                });
+                
+                return NextResponse.json(enrichedMessages);
+            }
+        }
+
         return NextResponse.json(messages);
     } catch (error) {
         console.error("Fetch messages error:", error);
