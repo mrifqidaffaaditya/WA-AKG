@@ -34,21 +34,33 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Name, URL, and at least one event are required" }, { status: 400 });
         }
 
+        let targetSessionId = null;
+        if (sessionId) {
+            const session = await prisma.session.findUnique({
+                where: { sessionId: sessionId },
+                select: { id: true }
+            });
+            if (!session) {
+                return NextResponse.json({ error: "Session not found" }, { status: 404 });
+            }
+            targetSessionId = session.id;
+        }
+
         const webhook = await prisma.webhook.create({
             data: {
                 userId: user.id,
                 name,
                 url,
                 secret: secret || null,
-                sessionId: sessionId || null,
+                sessionId: targetSessionId,
                 events,
                 isActive: true
             }
         });
 
         return NextResponse.json(webhook);
-    } catch (error) {
-        console.error("Create webhook error:", error);
-        return NextResponse.json({ error: "Failed to create webhook" }, { status: 500 });
+    } catch (error: any) {
+        console.error("Create webhook error detailed:", error);
+        return NextResponse.json({ error: "Failed to create webhook", details: error.message }, { status: 500 });
     }
 }

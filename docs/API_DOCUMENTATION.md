@@ -2,23 +2,20 @@
 
 This document provides a complete reference for the WA-AKG REST API.
 
-**Base URL**: `http://localhost:3000` (Default)
+**Base URL**: `http://localhost:3000`
+> **Note**: For Production, replace `localhost:3000` with the production domain.
 
 ## 🔐 Authentication
 
-All API endpoints require authentication. You can authenticate using one of two methods:
+All API endpoints require authentication via **API Key**.
 
-### 1. API Key (Server-to-Server)
-Recommended for external applications, webhooks, or scripts.
-Pass the key in the `X-API-Key` header.
+**Header:**
+`X-API-Key: your_api_key_here`
 
-```bash
-curl http://localhost:3000/api/sessions \
-  -H "X-API-Key: wag_your_generated_api_key"
-```
-
-### 2. Session Cookie (Browser/Frontend)
-Used for the dashboard. The `authjs.session-token` cookie must be present.
+To obtain an API Key:
+1.  Log in to the Dashboard.
+2.  Go to **Webhooks & API** settings.
+3.  Generate or copy your API Key.
 
 ---
 
@@ -35,10 +32,11 @@ Returns all sessions accessible to the authenticated user.
 ```json
 [
   {
-    "id": "clxxx...", 
+    "id": "cmk...",
     "sessionId": "marketing-1",
     "name": "Marketing Main",
     "status": "CONNECTED",
+    "qr": null,
     "createdAt": "2024-01-01T12:00:00Z"
   }
 ]
@@ -47,24 +45,51 @@ Returns all sessions accessible to the authenticated user.
 ### Create Session
 `POST /api/sessions`
 
-Initialize a new session. It will start in `STOPPED` or `SCANNING` state.
+Initialize a new session.
 
 **Body:**
 ```json
 {
-  "sessionId": "marketing-1" // Custom unique identifier
+  "name": "My New Session",
+  "sessionId": "custom-id-optional" // Optional. If omitted, random ID is generated.
 }
 ```
-
-### Get QR Code
-`GET /api/sessions/[sessionId]/qrcode`
-
-Retrieve the QR code if the session is in `SCANNING` state.
 
 **Response:**
 ```json
 {
-  "qr": "data:image/png;base64,..." // Base64 encoded QR image
+  "id": "cmk...",
+  "sessionId": "custom-id-optional",
+  "name": "My New Session",
+  "status": "DISCONNECTED"
+}
+```
+
+### Get Session Config (Bot)
+`GET /api/sessions/[sessionId]/bot-config`
+
+**Response:**
+```json
+{
+  "enabled": true,
+  "botMode": "OWNER",
+  "botAllowedJids": [],
+  "autoReplyMode": "ALL",
+  "enableSticker": true
+  // ...other config
+}
+```
+
+### Update Session Config (Bot)
+`POST /api/sessions/[sessionId]/bot-config`
+
+**Body:**
+```json
+{
+  "enabled": true,
+  "botMode": "OWNER", // OWNER, ALL, SPECIFIC
+  "enableSticker": true,
+  "autoReplyMode": "ALL"
 }
 ```
 
@@ -77,96 +102,98 @@ Logout and remove the session data.
 
 ## 💬 Chat & Messages
 
+### Get Chat List
+`GET /api/chat/[sessionId]`
+
+Get list of contacts with their last message, sorted by most recent.
+
+**Response:**
+```json
+[
+  {
+    "jid": "62812345678@s.whatsapp.net",
+    "name": "John Doe",
+    "lastMessage": {
+      "content": "Hello",
+      "timestamp": "2024-01-01T12:00:00Z",
+      "type": "text"
+    }
+  }
+]
+```
+
+### Get Messages (Chat History)
+`GET /api/chat/[sessionId]/[jid]`
+
+Retrieve stored messages for a specific contact. `jid` must be URL-encoded.
+
 ### Send Message
 `POST /api/chat/send`
 
-Send a text or media message to a contact or group.
+Send a text message to a contact or group.
 
-**Request Body (Text):**
+**Body:**
 ```json
 {
   "sessionId": "marketing-1",
-  "jid": "62812345678@s.whatsapp.net",
+  "jid": "62812345678@s.whatsapp.net", // or 12345@g.us
   "message": {
     "text": "Hello World!"
   }
 }
 ```
 
-**Request Body (Image):**
-```json
-{
-  "sessionId": "marketing-1",
-  "jid": "1234567890@g.us", // Group JID
-  "message": {
-    "image": { "url": "https://example.com/image.png" },
-    "caption": "Look at this!"
-  }
-}
-```
+### Send Sticker
+`POST /api/messages/sticker`
 
-**Supported Message Types:** `text`, `image`, `video`, `document`, `audio`.
+Send a sticker (image converted to Sticker).
 
-### Get Chat History
-`GET /api/chat/[sessionId]/[jid]`
+**FormData:**
+- `sessionId`: "marketing-1"
+- `jid`: "62812345678@s.whatsapp.net"
+- `file`: (Binary File - Image)
 
-Retrieve stored messages for a specific chat.
+### Spam / Bulk Send
+`POST /api/messages/spam`
 
-**URL Params:**
-- `sessionId`: Your custom session ID.
-- `jid`: The contact JID (e.g., `628123...@s.whatsapp.net`).
-
----
-
-## 👥 Groups
-
-### List Groups
-`GET /api/groups/[sessionId]`
-
-Get a list of all groups the session is a participant in.
-
-**Response:**
-```json
-[
-  {
-    "jid": "123456@g.us",
-    "subject": "My Community",
-    "size": 25,
-    "creation": 1700000000
-  }
-]
-```
-
----
-
-## 📅 Scheduler
-
-### Schedule Message
-`POST /api/scheduler`
-
-Queue a message to be sent at a specific time.
+Send multiple messages rapidly (Use with caution).
 
 **Body:**
 ```json
 {
   "sessionId": "marketing-1",
   "jid": "62812345678@s.whatsapp.net",
-  "content": "Good morning!",
-  "sendAt": "2024-12-25T07:00:00" // Local time (based on System Timezone)
+  "message": "Spam Test",
+  "count": 10,
+  "delay": 500 // milliseconds
 }
 ```
 
-### List Scheduled
-`GET /api/scheduler?sessionId=marketing-1`
-
 ---
 
-## 📢 Broadcast
+## 📢 Broadcast & Groups
+
+### List Groups
+`GET /api/groups?sessionId=[sessionId]`
+
+Get a list of groups for a specific session.
+
+### Create Group
+`POST /api/groups/create`
+
+**Body:**
+```json
+{
+  "sessionId": "marketing-1",
+  "subject": "My New Group",
+  "participants": ["62812345678@s.whatsapp.net", "62898765432@s.whatsapp.net"]
+}
+```
 
 ### Send Broadcast
 `POST /api/messages/broadcast`
 
-Send a message to multiple recipients with safe random delays (anti-ban).
+Send a message to multiple recipients with random delays (anti-ban).
 
 **Body:**
 ```json
@@ -177,7 +204,57 @@ Send a message to multiple recipients with safe random delays (anti-ban).
     "62898765432@s.whatsapp.net"
   ],
   "message": "Promo content here...",
-  "delay": 5000 // Base delay in ms
+  "delay": 10000 // Base delay in ms (optional, default handled by server)
+}
+```
+
+---
+
+## 📸 Status / Stories
+
+### Update Status
+`POST /api/status/update`
+
+Post a text, image, or video to WhatsApp Status.
+
+**Body (Text):**
+```json
+{
+  "sessionId": "marketing-1",
+  "content": "Hello Status!",
+  "type": "TEXT",
+  "backgroundColor": 4278190335, // Optional ARGB
+  "font": 1 // Optional
+}
+```
+
+**Body (Image/Video):**
+```json
+{
+  "sessionId": "marketing-1",
+  "content": "Caption here", // Caption
+  "type": "IMAGE", // or VIDEO
+  "mediaUrl": "https://example.com/image.jpg"
+}
+```
+
+---
+
+## 📅 Scheduler
+
+### List Scheduled Messages
+`GET /api/scheduler?sessionId=[sessionId]`
+
+### Create Scheduled Message
+`POST /api/scheduler`
+
+**Body:**
+```json
+{
+  "sessionId": "marketing-1",
+  "jid": "62812345678@s.whatsapp.net",
+  "content": "Good morning!",
+  "sendAt": "2024-01-02T08:00" // Local time format (YYYY-MM-DDTHH:mm)
 }
 ```
 
@@ -185,7 +262,10 @@ Send a message to multiple recipients with safe random delays (anti-ban).
 
 ## 🤖 Auto-Reply
 
-### Create Rule
+### List Auto-Replies
+`GET /api/autoreplies?sessionId=[sessionId]`
+
+### Create Auto-Reply
 `POST /api/autoreplies`
 
 **Body:**
@@ -193,16 +273,20 @@ Send a message to multiple recipients with safe random delays (anti-ban).
 {
   "sessionId": "marketing-1",
   "keyword": "price",
-  "response": "Our prices start at $10",
-  "matchType": "CONTAINS" // EXACT, CONTAINS, STARTS_WITH
+  "response": "Starts at $10",
+  "matchType": "EXACT" // EXACT, CONTAINS, STARTS_WITH
 }
 ```
+
+### Delete Auto-Reply
+`DELETE /api/autoreplies/[id]`
 
 ---
 
 ## 🔗 Webhooks
 
-Configure webhooks to receive real-time events.
+### List Webhooks
+`GET /api/webhooks`
 
 ### Create Webhook
 `POST /api/webhooks`
@@ -210,11 +294,54 @@ Configure webhooks to receive real-time events.
 **Body:**
 ```json
 {
-  "name": "CRM Integration",
-  "url": "https://my-crm.com/api/webhook",
-  "events": [
-    "message.upsert",
-    "connection.update"
-  ]
+  "name": "My Server",
+  "url": "https://callback.com",
+  "events": ["message.received", "message.sent"],
+  "sessionId": "marketing-1" // Optional, null = Global
+}
+```
+
+### Update Webhook
+`PATCH /api/webhooks/[id]`
+
+### Delete Webhook
+`DELETE /api/webhooks/[id]`
+
+---
+
+## ⚙️ System & Users (Superadmin)
+
+### List Users
+`GET /api/users`
+
+### Create User
+`POST /api/users`
+
+**Body:**
+```json
+{
+  "name": "New User",
+  "email": "user@example.com",
+  "password": "password123",
+  "role": "OWNER"
+}
+```
+
+### Update/Delete User
+- `PATCH /api/users/[id]`
+- `DELETE /api/users/[id]`
+
+### System Config
+`GET /api/settings/system`
+
+### Update System Config
+`POST /api/settings/system`
+
+**Body:**
+```json
+{
+  "appName": "My WA Gateway",
+  "logoUrl": "...",
+  "timezone": "Asia/Jakarta"
 }
 ```

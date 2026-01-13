@@ -1,6 +1,6 @@
 {
-  "name": "wa-gateway",
-  "version": "0.1.0",
+  "name": "wa-akg",
+  "version": "v1.0.5",
   "private": true,
   "scripts": {
     "dev": "npx tsx src/server/index.ts",

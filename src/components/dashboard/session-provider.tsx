@@ -35,16 +35,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
                 const data = await res.json();
                 // Filter connected only? Or showing all but disabled?
                 // Logic: Only show CONNECTED in selector for "Active" operations.
-                const connected = data.filter((s: Session) => s.status === 'CONNECTED');
-                setSessions(connected);
-                
+                // Show all sessions so users can manage disconnected ones (e.g. webhooks, settings)
+                setSessions(data);
+
                 // Sync with cookie
                 const cookieId = getCookie("sessionId");
-                if (cookieId && connected.find((s: Session) => s.sessionId === cookieId)) {
+                if (cookieId && data.find((s: Session) => s.sessionId === cookieId)) {
                     setSessionIdState(cookieId);
-                } else if (connected.length > 0) {
+                } else if (data.length > 0) {
                     // Default to first
-                    const first = connected[0].sessionId;
+                    const first = data[0].sessionId;
                     setSessionIdState(first);
                     setCookie("sessionId", first);
                 } else {
