@@ -3,22 +3,20 @@
 This document provides a complete reference for the WA-AKG REST API.
 
 **Base URL**: `http://localhost:3000` (Default)
+**Production URL**: `https://wa-akg.aikeigroup.net`
+> **Note**: For Production, replace `localhost:3000` with the production domain.
 
 ## 🔐 Authentication
 
-All API endpoints require authentication. You can authenticate using one of two methods:
+All API endpoints require authentication via **API Key**.
 
-### 1. API Key (Server-to-Server)
-Recommended for external applications, webhooks, or scripts.
-Pass the key in the `X-API-Key` header.
+**Header:**
+`X-API-Key: your_api_key_here`
 
-```bash
-curl http://localhost:3000/api/sessions \
-  -H "X-API-Key: wag_your_generated_api_key"
-```
-
-### 2. Session Cookie (Browser/Frontend)
-Used for the dashboard. The `authjs.session-token` cookie must be present.
+To obtain an API Key:
+1.  Log in to the Dashboard.
+2.  Go to **Webhooks & API** settings.
+3.  Generate or copy your API Key.
 
 ---
 
@@ -35,10 +33,11 @@ Returns all sessions accessible to the authenticated user.
 ```json
 [
   {
-    "id": "clxxx...", 
+    "id": "cmk...",
     "sessionId": "marketing-1",
     "name": "Marketing Main",
     "status": "CONNECTED",
+    "qr": null,
     "createdAt": "2024-01-01T12:00:00Z"
   }
 ]
@@ -47,12 +46,13 @@ Returns all sessions accessible to the authenticated user.
 ### Create Session
 `POST /api/sessions`
 
-Initialize a new session. The server will generate a unique `sessionId`.
+Initialize a new session.
 
 **Body:**
 ```json
 {
-  "name": "Marketing Team" // Required: Display name for the session
+  "name": "My New Session",
+  "sessionId": "custom-id-optional" // Optional. If omitted, random ID is generated.
 }
 ```
 
@@ -60,23 +60,37 @@ Initialize a new session. The server will generate a unique `sessionId`.
 ```json
 {
   "id": "cmk...",
-  "sessionId": "x9z489", // Auto-generated unique ID (use this for other endpoints)
-  "name": "Marketing Team",
-  "status": "DISCONNECTED",
-  "qr": null,
-  "createdAt": "..."
+  "sessionId": "custom-id-optional",
+  "name": "My New Session",
+  "status": "DISCONNECTED"
 }
 ```
 
-### Get QR Code
-`GET /api/sessions/[sessionId]/qrcode`
-
-Retrieve the QR code if the session is in `SCANNING` state.
+### Get Session Config (Bot)
+`GET /api/sessions/[sessionId]/bot-config`
 
 **Response:**
 ```json
 {
-  "qr": "data:image/png;base64,..." // Base64 encoded QR image
+  "enabled": true,
+  "botMode": "OWNER",
+  "botAllowedJids": [],
+  "autoReplyMode": "ALL",
+  "enableSticker": true
+  // ...other config
+}
+```
+
+### Update Session Config (Bot)
+`POST /api/sessions/[sessionId]/bot-config`
+
+**Body:**
+```json
+{
+  "enabled": true,
+  "botMode": "OWNER", // OWNER, ALL, SPECIFIC
+  "enableSticker": true,
+  "autoReplyMode": "ALL"
 }
 ```
 
@@ -87,89 +101,61 @@ Logout and remove the session data.
 
 ---
 
-## 💬 Chat & Messages
+## 💬 Chat
 
 ### Send Message
 `POST /api/chat/send`
 
-Send a text or media message to a contact or group.
+Send a text message to a contact or group.
 
-**Request Body (Text):**
+**Body:**
 ```json
 {
   "sessionId": "marketing-1",
-  "jid": "62812345678@s.whatsapp.net",
+  "jid": "62812345678@s.whatsapp.net", // or 12345@g.us
   "message": {
     "text": "Hello World!"
   }
 }
 ```
+*Note: `message` object follows Baileys `AnyMessageContent` structure.*
 
-**Request Body (Image):**
-```json
-{
-  "sessionId": "marketing-1",
-  "jid": "1234567890@g.us", // Group JID
-  "message": {
-    "image": { "url": "https://example.com/image.png" },
-    "caption": "Look at this!"
-  }
-}
-```
-
-**Supported Message Types:** `text`, `image`, `video`, `document`, `audio`.
-
-### Get Chat History
+### Get Messages
 `GET /api/chat/[sessionId]/[jid]`
 
-Retrieve stored messages for a specific chat.
-
-**URL Params:**
-- `sessionId`: The session ID (e.g., `x9z489`).
-- `jid`: The contact JID (e.g., `628123...@s.whatsapp.net`).
+Retrieve stored messages for a chat. `jid` must be URL-encoded.
 
 ---
 
 ## 👥 Groups
 
 ### List Groups
-`GET /api/groups/[sessionId]`
+`GET /api/groups?sessionId=[sessionId]`
 
-Get a list of all groups the session is a participant in.
+Get a list of groups for a specific session.
 
 **Response:**
 ```json
 [
   {
-    "jid": "123456@g.us",
-    "subject": "My Community",
-    "size": 25,
-    "creation": 1700000000
+    "id": "123@g.us",
+    "subject": "Community",
+    "size": 10
   }
 ]
 ```
 
----
-
-## 📅 Scheduler
-
-### Schedule Message
-`POST /api/scheduler`
-
-Queue a message to be sent at a specific time.
+### Create Group
+`POST /api/groups/create`
 
 **Body:**
 ```json
 {
   "sessionId": "marketing-1",
-  "jid": "62812345678@s.whatsapp.net",
-  "content": "Good morning!",
-  "sendAt": "2024-12-25T07:00:00" // Local time (based on System Timezone)
+  "subject": "My New Group",
+  "participants": ["62812345678@s.whatsapp.net", "62898765432@s.whatsapp.net"]
 }
 ```
-
-### List Scheduled
-`GET /api/scheduler?sessionId=marketing-1`
 
 ---
 
@@ -178,7 +164,7 @@ Queue a message to be sent at a specific time.
 ### Send Broadcast
 `POST /api/messages/broadcast`
 
-Send a message to multiple recipients with safe random delays (anti-ban).
+Send a message to multiple recipients with random delays (anti-ban).
 
 **Body:**
 ```json
@@ -189,7 +175,7 @@ Send a message to multiple recipients with safe random delays (anti-ban).
     "62898765432@s.whatsapp.net"
   ],
   "message": "Promo content here...",
-  "delay": 5000 // Base delay in ms
+  "delay": 10000 // Base delay in ms (optional, default handled by server)
 }
 ```
 
@@ -197,7 +183,10 @@ Send a message to multiple recipients with safe random delays (anti-ban).
 
 ## 🤖 Auto-Reply
 
-### Create Rule
+### List Auto-Replies
+`GET /api/autoreplies?sessionId=[sessionId]`
+
+### Create Auto-Reply
 `POST /api/autoreplies`
 
 **Body:**
@@ -205,16 +194,20 @@ Send a message to multiple recipients with safe random delays (anti-ban).
 {
   "sessionId": "marketing-1",
   "keyword": "price",
-  "response": "Our prices start at $10",
-  "matchType": "CONTAINS" // EXACT, CONTAINS, STARTS_WITH
+  "response": "Starts at $10",
+  "matchType": "EXACT" // EXACT, CONTAINS, STARTS_WITH
 }
 ```
+
+### Delete Auto-Reply
+`DELETE /api/autoreplies/[id]`
 
 ---
 
 ## 🔗 Webhooks
 
-Configure webhooks to receive real-time events.
+### List Webhooks
+`GET /api/webhooks`
 
 ### Create Webhook
 `POST /api/webhooks`
@@ -222,11 +215,66 @@ Configure webhooks to receive real-time events.
 **Body:**
 ```json
 {
-  "name": "CRM Integration",
-  "url": "https://my-crm.com/api/webhook",
-  "events": [
-    "message.upsert",
-    "connection.update"
-  ]
+  "name": "My Server",
+  "url": "https://callback.com",
+  "events": ["message.received", "message.sent"],
+  "sessionId": "marketing-1" // Optional, null = Global
 }
 ```
+
+### Update Webhook
+`PATCH /api/webhooks/[id]`
+
+**Body:**
+```json
+{
+  "isActive": false,
+  "events": ["message.received"]
+}
+```
+
+### Delete Webhook
+`DELETE /api/webhooks/[id]`
+
+---
+
+## 🔔 Notifications
+
+### List Notifications
+`GET /api/notifications`
+
+Request must be authenticated. Returns notifications for the user.
+
+### Send Notification (Superadmin Only)
+`POST /api/notifications`
+
+**Body (Broadcast):**
+```json
+{
+  "broadcast": true,
+  "title": "System Alert",
+  "message": "Maintenance in 1 hour",
+  "type": "WARNING"
+}
+```
+
+**Body (Target User):**
+```json
+{
+  "targetUserId": "user-uuid",
+  "title": "Hello",
+  "message": "Welcome!",
+  "type": "INFO"
+}
+```
+
+### Mark Read
+`PATCH /api/notifications/read`
+
+**Body:**
+```json
+{ "ids": ["notif-1", "notif-2"] } // omit "ids" to mark all as read
+```
+
+### Delete Notification
+`DELETE /api/notifications/delete?id=[id]`
