@@ -55,7 +55,21 @@ export async function bindAutoReply(sock: WASocket, sessionId: string) {
         if (!session) return;
         
         // @ts-ignore
-        const config = (session as any).botConfig;
+        let config = (session as any).botConfig;
+        
+        if (!config) {
+             console.log("AutoReply: No config found, creating default...");
+             config = await prisma.botConfig.create({
+                 data: {
+                     sessionId: session.id,
+                     enabled: true,
+                     botMode: 'OWNER',
+                     autoReplyMode: 'ALL'
+                 }
+             });
+        }
+
+        console.log(`AutoReply: Processing for ${sessionId}. Config:`, config ? "Found" : "Missing", config?.enabled ? "Enabled" : "Disabled");
         
         if (!config || !config.enabled) return;
 

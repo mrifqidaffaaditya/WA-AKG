@@ -17,6 +17,8 @@ import {
     Bell
 } from "lucide-react";
 
+import { UpdateChecker } from "@/components/dashboard/update-checker";
+
 import { prisma } from "@/lib/prisma"; // Add prisma import
 import { Toaster } from "sonner"; // Assuming sonner is installed
 
@@ -32,6 +34,7 @@ export default async function DashboardLayout({
 
     return (
         <SessionProvider>
+            <UpdateChecker />
             <div className="flex h-screen bg-gray-100">
                 {/* Sidebar */}
                 <aside className="w-64 bg-white shadow-md hidden md:flex flex-col h-full sticky left-0 top-0 z-20">

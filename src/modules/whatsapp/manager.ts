@@ -56,7 +56,14 @@ export class WhatsAppManager {
                 userId,
                 name,
                 sessionId,
-                status: "DISCONNECTED"
+                status: "DISCONNECTED",
+                botConfig: {
+                    create: {
+                        enabled: true,
+                        botMode: "OWNER",
+                        autoReplyMode: "ALL"
+                    }
+                }
             }
         });
 
