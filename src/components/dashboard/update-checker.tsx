@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 export function UpdateChecker() {
+    console.log("ANJAYYY")
     useEffect(() => {
         console.log("UpdateChecker: Component mounted");
         const checkUpdates = async () => {
