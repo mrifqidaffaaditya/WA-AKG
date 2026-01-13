@@ -47,12 +47,24 @@ Returns all sessions accessible to the authenticated user.
 ### Create Session
 `POST /api/sessions`
 
-Initialize a new session. It will start in `STOPPED` or `SCANNING` state.
+Initialize a new session. The server will generate a unique `sessionId`.
 
 **Body:**
 ```json
 {
-  "sessionId": "marketing-1" // Custom unique identifier
+  "name": "Marketing Team" // Required: Display name for the session
+}
+```
+
+**Response:**
+```json
+{
+  "id": "cmk...",
+  "sessionId": "x9z489", // Auto-generated unique ID (use this for other endpoints)
+  "name": "Marketing Team",
+  "status": "DISCONNECTED",
+  "qr": null,
+  "createdAt": "..."
 }
 ```
 
@@ -113,7 +125,7 @@ Send a text or media message to a contact or group.
 Retrieve stored messages for a specific chat.
 
 **URL Params:**
-- `sessionId`: Your custom session ID.
+- `sessionId`: The session ID (e.g., `x9z489`).
 - `jid`: The contact JID (e.g., `628123...@s.whatsapp.net`).
 
 ---

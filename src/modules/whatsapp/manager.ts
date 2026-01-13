@@ -37,7 +37,7 @@ export class WhatsAppManager {
         console.log(`Loaded ${sessions.length} sessions.`);
     }
 
-    async createSession(userId: string, name: string) {
+    async createSession(userId: string, name: string, customSessionId?: string) {
         // Fallback to global IO if instance IO is missing (Next.js Context Issue)
         if (!this.io && (global as any).io) {
             this.io = (global as any).io;
@@ -48,10 +48,8 @@ export class WhatsAppManager {
              throw new Error("Socket.IO not initialized");
         }
         
-        // Generate a random session ID (or use cuid from DB)
-        // We create DB entry first to get ID? Or generate ID first?
-        // Let's generate a unique ID for baileys auth.
-        const sessionId = Math.random().toString(36).substring(7); // Simple random string
+        // Use custom ID if provided, otherwise generate random
+        const sessionId = customSessionId || Math.random().toString(36).substring(7);
 
         const session = await prisma.session.create({
             data: {

@@ -10,14 +10,14 @@ import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Copy, RefreshCw, Webhook, Key, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
 interface WebhookConfig {
@@ -41,12 +41,15 @@ const AVAILABLE_EVENTS = [
     { id: "status.update", label: "Status/Story", description: "When a status is posted or viewed" },
 ];
 
+import { useSession } from "@/components/dashboard/session-provider";
+
 export default function WebhooksPage() {
+    const { sessionId } = useSession(); // Get active session ID
     const [webhooks, setWebhooks] = useState<WebhookConfig[]>([]);
     const [apiKey, setApiKey] = useState<string | null>(null);
     const [showApiKey, setShowApiKey] = useState(false);
     const [loading, setLoading] = useState(true);
-    
+
     // New webhook form
     const [showNewForm, setShowNewForm] = useState(false);
     const [newName, setNewName] = useState("");
@@ -57,14 +60,19 @@ export default function WebhooksPage() {
     useEffect(() => {
         fetchWebhooks();
         fetchApiKey();
-    }, []);
+    }, [sessionId]); // Refetch when sessionId changes (though we handle filtering in render or here)
 
     const fetchWebhooks = async () => {
+        setLoading(true);
         try {
+            // Ideally backend filters, but we filter here for now
             const res = await fetch("/api/webhooks");
             if (res.ok) {
                 const data = await res.json();
-                setWebhooks(data);
+                // Filter by active session (or global ones if we want, but let's be strict for now based on user feedback)
+                // Assuming sessionId in webhook matches the active sessionId
+                const filtered = data.filter((w: WebhookConfig) => w.sessionId === sessionId || !w.sessionId);
+                setWebhooks(filtered);
             }
         } catch (error) {
             console.error("Failed to fetch webhooks", error);
@@ -104,6 +112,11 @@ export default function WebhooksPage() {
             return;
         }
 
+        if (!sessionId) {
+            toast.error("No active session selected");
+            return;
+        }
+
         try {
             const res = await fetch("/api/webhooks", {
                 method: "POST",
@@ -112,7 +125,8 @@ export default function WebhooksPage() {
                     name: newName,
                     url: newUrl,
                     secret: newSecret || null,
-                    events: newEvents
+                    events: newEvents,
+                    sessionId: sessionId // Attach active session ID
                 })
             });
 
@@ -248,14 +262,24 @@ export default function WebhooksPage() {
                             </CardTitle>
                             <CardDescription>
                                 Send real-time events to external URLs when activities happen in WhatsApp.
+                                <br />
+                                <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded">
+                                    Active Session: {sessionId || "None"}
+                                </span>
                             </CardDescription>
                         </div>
-                        <Button onClick={() => setShowNewForm(!showNewForm)}>
+                        <Button onClick={() => setShowNewForm(!showNewForm)} disabled={!sessionId}>
                             <Plus className="h-4 w-4 mr-2" /> Add Webhook
                         </Button>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                    {!sessionId && (
+                        <div className="bg-yellow-50 p-4 border border-yellow-200 rounded text-yellow-800 text-sm">
+                            Please select a session in the top bar to manage webhooks.
+                        </div>
+                    )}
+
                     {/* New Webhook Form */}
                     {showNewForm && (
                         <Card className="border-dashed border-2">
@@ -263,16 +287,16 @@ export default function WebhooksPage() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label>Name</Label>
-                                        <Input 
-                                            placeholder="My Server" 
+                                        <Input
+                                            placeholder="My Server"
                                             value={newName}
                                             onChange={(e) => setNewName(e.target.value)}
                                         />
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Webhook URL</Label>
-                                        <Input 
-                                            placeholder="https://example.com/webhook" 
+                                        <Input
+                                            placeholder="https://example.com/webhook"
                                             value={newUrl}
                                             onChange={(e) => setNewUrl(e.target.value)}
                                         />
@@ -280,8 +304,8 @@ export default function WebhooksPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Secret (optional, for HMAC signature)</Label>
-                                    <Input 
-                                        placeholder="your-secret-key" 
+                                    <Input
+                                        placeholder="your-secret-key"
                                         value={newSecret}
                                         onChange={(e) => setNewSecret(e.target.value)}
                                     />
@@ -291,7 +315,7 @@ export default function WebhooksPage() {
                                     <div className="grid grid-cols-2 gap-2">
                                         {AVAILABLE_EVENTS.map(event => (
                                             <div key={event.id} className="flex items-center gap-2 p-2 rounded border">
-                                                <Switch 
+                                                <Switch
                                                     checked={newEvents.includes(event.id)}
                                                     onCheckedChange={(checked) => {
                                                         if (checked) {
@@ -322,7 +346,7 @@ export default function WebhooksPage() {
                         <p className="text-center text-muted-foreground py-8">Loading...</p>
                     ) : webhooks.length === 0 ? (
                         <p className="text-center text-muted-foreground py-8">
-                            No webhooks configured. Click "Add Webhook" to create one.
+                            No webhooks configured for this session. Click "Add Webhook" to create one.
                         </p>
                     ) : (
                         webhooks.map((webhook) => (
@@ -335,11 +359,16 @@ export default function WebhooksPage() {
                                                 <Badge variant={webhook.isActive ? "default" : "secondary"}>
                                                     {webhook.isActive ? "Active" : "Inactive"}
                                                 </Badge>
+                                                {webhook.sessionId && (
+                                                    <Badge variant="outline" className="text-xs">
+                                                        {webhook.sessionId}
+                                                    </Badge>
+                                                )}
                                             </h3>
                                             <p className="text-sm text-muted-foreground font-mono">{webhook.url}</p>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <Switch 
+                                            <Switch
                                                 checked={webhook.isActive}
                                                 onCheckedChange={(checked) => toggleWebhookActive(webhook.id, checked)}
                                             />
@@ -348,13 +377,13 @@ export default function WebhooksPage() {
                                             </Button>
                                         </div>
                                     </div>
-                                    
+
                                     {/* Event Toggles */}
                                     <div className="space-y-2">
                                         <Label className="text-xs">Events (click to toggle)</Label>
                                         <div className="flex flex-wrap gap-2">
                                             {AVAILABLE_EVENTS.map(event => (
-                                                <Badge 
+                                                <Badge
                                                     key={event.id}
                                                     variant={webhook.events.includes(event.id) ? "default" : "outline"}
                                                     className="cursor-pointer"
