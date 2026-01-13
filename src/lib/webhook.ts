@@ -215,9 +215,17 @@ export async function onMessageReceived(sessionId: string, message: any) {
     const isGroup = remoteJid.endsWith("@g.us");
     const participant = isGroup ? (message.key?.participant || message.participant) : undefined;
     
+    // Extract Alt JID (e.g. Phone Number JID when remoteJid is LID)
+    // Note: Baileys puts this in key sometimes
+    const remoteJidAlt = message.key?.remoteJidAlt || null;
+
     // "from" is usually the chat JID (remoteJid)
     // "sender" is who sent it. In DM: remoteJid. In Group: participant.
-    const sender = isGroup ? participant : remoteJid;
+    // If DM and remoteJidAlt exists (Phone JID), user prefers that as sender.
+    let sender = isGroup ? participant : remoteJid;
+    if (!isGroup && remoteJidAlt) {
+        sender = remoteJidAlt;
+    }
 
     // Download media if available
     let fileUrl: string | null = null;
@@ -241,8 +249,8 @@ export async function onMessageReceived(sessionId: string, message: any) {
         
         // Simplified Fields
         from: remoteJid,            // Chat ID
-        sender: sender,             // Who Sent It
-        remoteJidAlt: sender,       // Alias for sender (User Request)
+        sender: sender,             // Who Sent It (Preferred JID)
+        remoteJidAlt: remoteJidAlt, // Explicit Alt Field
         isGroup: isGroup,           // Boolean
         
         // Message Content
@@ -273,13 +281,14 @@ export async function onMessageSent(sessionId: string, message: any) {
     // If it's a group, the participant might be undefined in the key if sent by us, 
     // but typically we are the sender.
     const sender = message.key?.participant || (message.key?.fromMe ? "ME" : remoteJid);
+    const remoteJidAlt = message.key?.remoteJidAlt || null;
 
     dispatchWebhook(sessionId, "message.sent", {
         key: message.key,
         
         from: remoteJid,
         sender: sender,
-        remoteJidAlt: sender, // Alias for sender
+        remoteJidAlt: remoteJidAlt, 
         isGroup: remoteJid.endsWith("@g.us"),
         
         type: normalized.type,
