@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.0.7] - 2026-01-13
+
+### Fixed
+- **Frontend Webhooks**: Fixed an issue where the webhook list was empty. The dashboard now correctly matches both the Session String ID (`mysession`) and the Internal Database ID (CUID) when filtering webhooks.
 ## [1.0.6] - 2026-01-13
 
 ### Fixed

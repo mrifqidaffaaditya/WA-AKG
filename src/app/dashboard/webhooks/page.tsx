@@ -44,7 +44,7 @@ const AVAILABLE_EVENTS = [
 import { useSession } from "@/components/dashboard/session-provider";
 
 export default function WebhooksPage() {
-    const { sessionId } = useSession(); // Get active session ID
+    const { sessionId, sessions } = useSession(); // Get active session ID and list of sessions
     const [webhooks, setWebhooks] = useState<WebhookConfig[]>([]);
     const [apiKey, setApiKey] = useState<string | null>(null);
     const [showApiKey, setShowApiKey] = useState(false);
@@ -58,9 +58,11 @@ export default function WebhooksPage() {
     const [newEvents, setNewEvents] = useState<string[]>(["message.received", "message.sent"]);
 
     useEffect(() => {
-        fetchWebhooks();
+        if (sessions.length > 0) {
+            fetchWebhooks();
+        }
         fetchApiKey();
-    }, [sessionId]); // Refetch when sessionId changes (though we handle filtering in render or here)
+    }, [sessionId, sessions]); // Refetch when sessionId changes or sessions are loaded
 
     const fetchWebhooks = async () => {
         setLoading(true);
@@ -69,9 +71,17 @@ export default function WebhooksPage() {
             const res = await fetch("/api/webhooks");
             if (res.ok) {
                 const data = await res.json();
-                // Filter by active session (or global ones if we want, but let's be strict for now based on user feedback)
-                // Assuming sessionId in webhook matches the active sessionId
-                const filtered = data.filter((w: WebhookConfig) => w.sessionId === sessionId || !w.sessionId);
+
+                // Find current session to get its internal ID (CUID)
+                const currentSession = sessions.find(s => s.sessionId === sessionId);
+                const currentSessionCuid = currentSession?.id;
+
+                // Filter by active session (check both String ID and CUID)
+                const filtered = data.filter((w: WebhookConfig) =>
+                    w.sessionId === sessionId ||
+                    w.sessionId === currentSessionCuid ||
+                    !w.sessionId
+                );
                 setWebhooks(filtered);
             }
         } catch (error) {

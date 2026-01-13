@@ -1,6 +1,6 @@
 {
   "name": "wa-akg",
-  "version": "v1.0.5",
+  "version": "v1.0.7",
   "private": true,
   "scripts": {
     "dev": "npx tsx src/server/index.ts",
