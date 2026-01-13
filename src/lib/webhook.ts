@@ -222,9 +222,46 @@ export async function onMessageReceived(sessionId: string, message: any) {
     // "from" is usually the chat JID (remoteJid)
     // "sender" is who sent it. In DM: remoteJid. In Group: participant.
     // If DM and remoteJidAlt exists (Phone JID), user prefers that as sender.
-    let sender = isGroup ? participant : remoteJid;
+    let sender: any = isGroup ? participant : remoteJid;
     if (!isGroup && remoteJidAlt) {
         sender = remoteJidAlt;
+    }
+    
+    // Enrich Participant Data if Group
+    let participantDetail: any = participant;
+    
+    if (isGroup && typeof sender === 'string') {
+        try {
+            // Need dbSessionId
+            const session = await prisma.session.findUnique({ 
+                where: { sessionId },
+                select: { id: true }
+            });
+            
+            if (session) {
+                const group = await prisma.group.findUnique({
+                    where: { 
+                        sessionId_jid: { 
+                            sessionId: session.id, 
+                            jid: remoteJid 
+                        } 
+                    },
+                    select: { participants: true }
+                });
+                
+                if (group && group.participants) {
+                    const parts = group.participants as any[];
+                    // Try to match sender or participant JID
+                    const found = parts.find(p => p.id === sender || p.id === participant);
+                    if (found) {
+                        sender = found;
+                        participantDetail = found;
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Failed to enrich participant", e);
+        }
     }
 
     // Download media if available
@@ -242,14 +279,14 @@ export async function onMessageReceived(sessionId: string, message: any) {
             id: message.key?.id,
             remoteJid: remoteJid,
             fromMe: fromMe,
-            participant: participant
+            participant: participantDetail
         },
         pushName: message.pushName,
         messageTimestamp: message.messageTimestamp,
         
         // Simplified Fields
         from: remoteJid,            // Chat ID
-        sender: sender,             // Who Sent It (Preferred JID)
+        sender: sender,             // Who Sent It (Preferred JID or Object)
         remoteJidAlt: remoteJidAlt, // Explicit Alt Field
         isGroup: isGroup,           // Boolean
         
