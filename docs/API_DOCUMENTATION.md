@@ -2,8 +2,7 @@
 
 This document provides a complete reference for the WA-AKG REST API.
 
-**Base URL**: `http://localhost:3000` (Local)
-**Production URL**: `https://wa-akg-dev.aikeigroup.net`
+**Base URL**: `http://localhost:3000`
 > **Note**: For Production, replace `localhost:3000` with the production domain.
 
 ## 🔐 Authentication
