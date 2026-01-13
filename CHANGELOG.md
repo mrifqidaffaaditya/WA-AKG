@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.1.0] - 2026-01-13
+
+### Added
+- **Webhook Enhancements**:
+    - **Raw Data**: Added `raw` field to webhook payload containing the full Baileys message object.
+    - **Media Support**: Added automatic media downloading (Images, Video, etc.). Webhook now includes `fileUrl` pointing to the saved file in `public/media`.
+    - **Enriched Participant Data**: For group messages, the `sender` and `participant` fields are now objects containing detailed info (`id`, `phoneNumber`, `admin`).
+    - **Standardized Fields**: Added `from` (Chat JID), `sender` (Participant/User), `isGroup`, and `remoteJidAlt` (extracted from message key) fields.
+- **API Response Enrichment**:
+    - **Chat History API**: `/api/chat/[sessionId]/[jid]` now returns enriched `sender` details for group messages, matching the webhook format.
+
+### Fixed
+- **Webhook Logic**: Fixed issues where `from` and `sender` were ambiguous or incorrect. `from` now consistently refers to the Chat Room, and `sender` refers to the actual sender.
+- **Async Handling**: Updated message store to safely handle asynchronous webhook operations without blocking.
+
 ## [1.0.7] - 2026-01-13
 
 ### Fixed

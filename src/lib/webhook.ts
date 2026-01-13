@@ -148,24 +148,33 @@ async function sendWebhookRequest(url: string, payload: WebhookPayload, secret?:
 async function downloadAndSaveMedia(message: WAMessage, sessionId: string): Promise<string | null> {
     try {
         const messageContent = normalizeMessageContent(message.message);
-        if (!messageContent) return null;
-
-        const messageType = Object.keys(messageContent)[0];
-        if (!['imageMessage', 'videoMessage', 'audioMessage', 'documentMessage', 'stickerMessage'].includes(messageType)) {
+        if (!messageContent) {
+            console.log("MediaDownload: No content normalized");
             return null;
         }
+
+        const messageType = Object.keys(messageContent)[0];
+        console.log(`MediaDownload: Types checking... Found: ${messageType}`);
+
+        if (!['imageMessage', 'videoMessage', 'audioMessage', 'documentMessage', 'stickerMessage'].includes(messageType)) {
+             console.log(`MediaDownload: Message type ${messageType} is not a downloadable media.`);
+            return null;
+        }
+        
+        console.log(`MediaDownload: Attempting to download ${messageType}...`);
 
         const buffer = await downloadMediaMessage(
             message,
             "buffer",
-            {},
-            { 
-               logger: pino({ level: "silent" }) as any,
-               reuploadRequest: (msg) => new Promise((resolve) => resolve(msg)) 
-            }
+            {}
         ) as Buffer;
 
-        if (!buffer) return null;
+        if (!buffer) {
+             console.log("MediaDownload: Buffer is empty/null");
+             return null;
+        }
+        
+        console.log(`MediaDownload: Downloaded ${buffer.length} bytes.`);
 
         // Generate filename
         const extMap: Record<string, string> = {
@@ -188,6 +197,8 @@ async function downloadAndSaveMedia(message: WAMessage, sessionId: string): Prom
         const filename = `${sessionId}-${message.key.id}.${ext}`;
         const filePath = path.join(process.cwd(), "public", "media", filename);
 
+        console.log(`MediaDownload: Saving to ${filePath}`);
+
         // Ensure directory exists (redundant if handled by OS, but safe)
         await mkdir(path.dirname(filePath), { recursive: true });
         
@@ -196,7 +207,9 @@ async function downloadAndSaveMedia(message: WAMessage, sessionId: string): Prom
         // Return URL path (assuming served from /media)
         // In a real app you might want full URL, but relative is safer for now.
         // User requested URL.
-        return `/media/${filename}`;
+        const fileUrl = `/media/${filename}`;
+        console.log(`MediaDownload: Success. URL: ${fileUrl}`);
+        return fileUrl;
 
     } catch (e) {
         console.error("Failed to download media:", e);

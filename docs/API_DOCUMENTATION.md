@@ -125,7 +125,23 @@ Get list of contacts with their last message, sorted by most recent.
 ### Get Messages (Chat History)
 `GET /api/chat/[sessionId]/[jid]`
 
-Retrieve stored messages for a specific contact. `jid` must be URL-encoded.
+Retrieve stored messages for a specific contact. `jid` can be a User JID (`...s.whatsapp.net`) or Group JID (`...g.us`).
+
+**Response (Group vs Private):**
+- **Private Chat**: Standard message objects.
+- **Group Chat**: The `sender` field is **enriched** with participant details:
+  ```json
+  {
+    "key": { ... },
+    "sender": {
+        "id": "62812345678@lid",
+        "phoneNumber": "62812345678@s.whatsapp.net",
+        "admin": "admin" // or null
+    },
+    "content": "Hello Group",
+    "timestamp": "..."
+  }
+  ```
 
 ### Send Message
 `POST /api/chat/send`
@@ -298,6 +314,47 @@ Post a text, image, or video to WhatsApp Status.
   "url": "https://callback.com",
   "events": ["message.received", "message.sent"],
   "sessionId": "marketing-1" // Optional, null = Global
+}
+```
+
+### Webhook Payload Structure
+When an event occurs, your endpoint will receive a POST request.
+
+**Event: `message.received` / `message.sent`**
+```json
+{
+  "event": "message.received",
+  "sessionId": "marketing-1",
+  "timestamp": "2024-01-01T12:00:00Z",
+  "data": {
+    "key": {
+      "remoteJid": "12345@g.us",
+      "fromMe": false,
+      "id": "ABC12345",
+      "participant": "62812345678@lid" // If group
+    },
+    "pushName": "John Doe",
+    "messageTimestamp": 1704110400,
+    
+    // Standardized Fields
+    "from": "12345@g.us", // Chat JID (Room)
+    "sender": { // Enriched Sender Info (Object for Groups, String for DM)
+        "id": "62812345678@lid",
+        "phoneNumber": "62812345678@s.whatsapp.net",
+        "admin": "admin"
+    },
+    "remoteJidAlt": "62812345678@s.whatsapp.net", // Sender Phone JID (Alias)
+    "isGroup": true,
+    
+    // Content
+    "type": "IMAGE",
+    "content": "Check this out", // Caption or Text
+    "fileUrl": "/media/marketing-1-ABC12345.jpg", // Path to downloaded media
+    "caption": "Check this out",
+    
+    // Raw Data (Debugging)
+    "raw": { ...full_baileys_message_object... }
+  }
 }
 ```
 
