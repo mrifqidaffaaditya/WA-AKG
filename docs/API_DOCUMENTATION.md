@@ -383,6 +383,18 @@ When an event occurs, your endpoint will receive a POST request.
     "content": "Check this out", // Caption or Text
     "fileUrl": "/media/marketing-1-ABC12345.jpg", // Path to downloaded media
     "caption": "Check this out",
+    "quoted": { // Optional: Present if replying to a message
+        "key": {
+            "remoteJid": "12345@g.us",
+            "participant": "62898765432@s.whatsapp.net",
+            "id": "QUOTED_ID"
+            "id": "QUOTED_ID"
+        },
+        "type": "IMAGE",
+        "content": "Caption",
+        "caption": "Caption",
+        "fileUrl": "/media/marketing-1-QUOTED_ID.jpg" // Include if available in DB
+    },
     
     // Raw Data (Debugging)
     "raw": { ...full_baileys_message_object... }
