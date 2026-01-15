@@ -225,8 +225,8 @@ export async function handleBotCommand(
                             await fs.writeFile(tempInput, buffer);
                             
                             // Compress Video using ffmpeg
-                            // Scale to 512px, 12fps (lower fps = smaller size for webp), High CRF (35) for compression
-                            await execAsync(`ffmpeg -y -i "${tempInput}" -vf "scale=512:512:force_original_aspect_ratio=decrease,fps=12" -c:v libx264 -preset veryfast -crf 35 -an "${tempOutput}"`);
+                            // Scale to 512px, 10fps (very low fps), CRF 40 (high compression), ultrafast
+                            await execAsync(`ffmpeg -y -i "${tempInput}" -vf "scale=512:512:force_original_aspect_ratio=decrease,fps=10" -c:v libx264 -preset ultrafast -crf 40 -an "${tempOutput}"`);
                             
                             buffer = await fs.readFile(tempOutput);
                             
@@ -281,7 +281,7 @@ export async function handleBotCommand(
                         pack: (config as any).botName || "WA-AKG Bot",
                         author: "By " + ((config as any).botName || "WA-AKG Bot"),
                         type: "full", // full, crop, circle
-                        quality: 40 // Reduce quality for smaller size
+                        quality: 30 // Aggressive quality reduction
                     });
 
                     const stickerBuffer = await sticker.toBuffer();
