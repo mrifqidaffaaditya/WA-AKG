@@ -22,8 +22,16 @@ import {
     PaginationNext,
     PaginationPrevious
 } from "@/components/ui/pagination";
-import { Search, Loader2, User } from "lucide-react";
+
+import { Search, Loader2, User, ChevronDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 interface Contact {
     id: string;
@@ -43,6 +51,7 @@ export default function ContactListPage() {
     // Filters
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState("10");
     const [meta, setMeta] = useState({ total: 0, totalPages: 1 });
 
     // Debounce Search
@@ -54,10 +63,10 @@ export default function ContactListPage() {
         return () => clearTimeout(timer);
     }, [search]);
 
-    // Fetch on page/session change
+    // Fetch on page/session/limit change
     useEffect(() => {
         fetchContacts();
-    }, [page, sessionId]);
+    }, [page, sessionId, limit]);
 
     const fetchContacts = async () => {
         if (!sessionId) return;
@@ -66,7 +75,7 @@ export default function ContactListPage() {
             const params = new URLSearchParams({
                 sessionId: sessionId,
                 page: page.toString(),
-                limit: "10",
+                limit: limit,
                 search: search
             });
 
@@ -106,14 +115,28 @@ export default function ContactListPage() {
                                 Total: {meta.total} contacts found
                             </CardDescription>
                         </div>
-                        <div className="relative w-full md:w-64">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search contacts..."
-                                className="pl-8"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
+                        <div className="flex items-center gap-2 w-full md:w-auto">
+                            <Select value={limit} onValueChange={(val) => { setLimit(val); setPage(1); }}>
+                                <SelectTrigger className="w-[100px]">
+                                    <SelectValue placeholder="Limit" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {[5, 10, 25, 50, 100, 200, 250, 500, 1000, 2000, 3000].map((l) => (
+                                        <SelectItem key={l} value={l.toString()}>
+                                            {l}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <div className="relative w-full md:w-64">
+                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search contacts..."
+                                    className="pl-8"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                />
+                            </div>
                         </div>
                     </div>
                 </CardHeader>
