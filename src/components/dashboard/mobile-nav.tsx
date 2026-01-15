@@ -31,6 +31,7 @@ export function MobileNav({ appName = "WA-AKG" }: { appName?: string }) {
         { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
         { href: "/dashboard/chat", label: "Chat", Icon: MessageSquare },
         { href: "/dashboard/groups", label: "Groups", Icon: Users },
+        { href: "/dashboard/contacts", label: "Contacts", Icon: Users },
         { href: "/dashboard/sticker", label: "Sticker Maker", Icon: ImageIcon },
         { href: "/dashboard/broadcast", label: "Broadcast", Icon: Users },
         { href: "/dashboard/sessions", label: "Sessions / QR", Icon: QrCode },

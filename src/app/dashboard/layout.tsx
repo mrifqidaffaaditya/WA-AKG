@@ -57,6 +57,10 @@ export default async function DashboardLayout({
                             <Users size={20} />
                             <span>Groups</span>
                         </Link>
+                        <Link href="/dashboard/contacts" className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md">
+                            <Users size={20} />
+                            <span>Contacts</span>
+                        </Link>
                         <Link href="/dashboard/sticker" className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md">
                             <ImageIcon size={20} />
                             <span>Sticker Maker</span>
