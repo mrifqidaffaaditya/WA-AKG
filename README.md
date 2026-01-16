@@ -13,6 +13,11 @@ Built for developers and businesses to manage multi-session WhatsApp accounts, s
 
 [Features](#-features) • [User Guide](docs/USER_GUIDE.md) • [API Documentation](docs/API_DOCUMENTATION.md) • [Database Setup](docs/DATABASE_SETUP.md) • [Update Guide](docs/UPDATE_GUIDE.md) • [Installation](#-installation)
 
+## 📖 Documentation
+- **[Master Project Documentation](docs/PROJECT_DOCUMENTATION.md)**: Full architecture, database, and frontend guide.
+- **[API Documentation](docs/API_DOCUMENTATION.md)**: Detailed API endpoints and parameters.
+- **[Environment Variables](docs/ENVIRONMENT_VARIABLES.md)**: Configuration guide.
+
 
 </div>
 

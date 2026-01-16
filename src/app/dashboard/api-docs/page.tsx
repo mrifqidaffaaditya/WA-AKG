@@ -20,18 +20,18 @@ export default function ApiDocsPage() {
     const apiEndpoints = [
         // Sessions
         { category: "Sessions", method: "GET", path: "/api/sessions", description: "List all sessions", params: "-" },
-        { category: "Sessions", method: "POST", path: "/api/sessions", description: "Create new session", params: "Body: { sessionId }" },
-        { category: "Sessions", method: "DELETE", path: "/api/sessions/[id]", description: "Delete session", params: "Path: id" },
+        { category: "Sessions", method: "POST", path: "/api/sessions", description: "Create new session", params: "Body: { name, sessionId }" },
         { category: "Sessions", method: "GET", path: "/api/sessions/[id]/qr", description: "Get QR code", params: "Path: id" },
         { category: "Sessions", method: "GET", path: "/api/sessions/[id]/bot-config", description: "Get bot config", params: "Path: id" },
-        { category: "Sessions", method: "PUT", path: "/api/sessions/[id]/bot-config", description: "Update bot config", params: "Path: id, Body: { config }" },
+        { category: "Sessions", method: "PUT", path: "/api/sessions/[id]/bot-config", description: "Update bot config", params: "Path: id, Body: { ... }" },
         { category: "Sessions", method: "PUT", path: "/api/sessions/[id]/settings", description: "Update settings", params: "Path: id, Body: { settings }" },
+        { category: "Sessions", method: "DELETE", path: "/api/sessions/[id]/settings", description: "Delete session", params: "Path: id" },
 
         // Groups
         { category: "Groups", method: "GET", path: "/api/groups", description: "List groups", params: "Query: sessionId" },
         { category: "Groups", method: "POST", path: "/api/groups/create", description: "Create group", params: "Body: { sessionId, subject, participants }" },
         { category: "Groups", method: "POST", path: "/api/groups/invite/accept", description: "Accept invite", params: "Body: { sessionId, code }" },
-        { category: "Groups", method: "PUT", path: "/api/groups/[jid]/picture", description: "Update group picture", params: "Path: jid, Body: { sessionId, image }" },
+        { category: "Groups", method: "PUT", path: "/api/groups/[jid]/picture", description: "Update group picture", params: "Path: jid, Body: { sessionId, file } (multipart/form-data)" },
         { category: "Groups", method: "DELETE", path: "/api/groups/[jid]/picture", description: "Remove group picture", params: "Path: jid, Query: sessionId" },
         { category: "Groups", method: "PUT", path: "/api/groups/[jid]/subject", description: "Update group name", params: "Path: jid, Body: { sessionId, subject }" },
         { category: "Groups", method: "PUT", path: "/api/groups/[jid]/description", description: "Update description", params: "Path: jid, Body: { sessionId, description }" },
@@ -46,7 +46,7 @@ export default function ApiDocsPage() {
         { category: "Profile", method: "GET", path: "/api/profile", description: "Get own profile", params: "Query: sessionId" },
         { category: "Profile", method: "PUT", path: "/api/profile/name", description: "Update name", params: "Body: { sessionId, name }" },
         { category: "Profile", method: "PUT", path: "/api/profile/status", description: "Update status", params: "Body: { sessionId, status }" },
-        { category: "Profile", method: "PUT", path: "/api/profile/picture", description: "Update picture", params: "Body: { sessionId, image }" },
+        { category: "Profile", method: "PUT", path: "/api/profile/picture", description: "Update picture", params: "Body: { sessionId, image } (multipart/form-data)" },
         { category: "Profile", method: "DELETE", path: "/api/profile/picture", description: "Remove picture", params: "Query: sessionId" },
 
         // Messaging
@@ -57,7 +57,7 @@ export default function ApiDocsPage() {
         { category: "Messaging", method: "POST", path: "/api/messages/contact", description: "Send contact", params: "Body: { sessionId, jid, vcard }" },
         { category: "Messaging", method: "POST", path: "/api/messages/react", description: "Send reaction", params: "Body: { sessionId, jid, reaction }" },
         { category: "Messaging", method: "POST", path: "/api/messages/forward", description: "Forward message", params: "Body: { sessionId, jid, messageId }" },
-        { category: "Messaging", method: "POST", path: "/api/messages/sticker", description: "Send sticker", params: "Body: { sessionId, jid, sticker }" },
+        { category: "Messaging", method: "POST", path: "/api/messages/sticker", description: "Send sticker", params: "Body: { sessionId, jid, sticker } (multipart/form-data)" },
         { category: "Messaging", method: "POST", path: "/api/messages/broadcast", description: "Broadcast message", params: "Body: { sessionId, jids[], message }" },
         { category: "Messaging", method: "POST", path: "/api/messages/spam", description: "Report spam", params: "Body: { sessionId, jid }" },
         { category: "Messaging", method: "DELETE", path: "/api/messages/delete", description: "Delete message", params: "Body: { sessionId, jid, messageId }" },
@@ -81,22 +81,22 @@ export default function ApiDocsPage() {
         { category: "Contacts", method: "POST", path: "/api/contacts/unblock", description: "Unblock contact", params: "Body: { sessionId, jid }" },
 
         // Labels
-        { category: "Labels", method: "GET", path: "/api/labels", description: "List labels", params: "-" },
-        { category: "Labels", method: "POST", path: "/api/labels", description: "Create label", params: "Body: { name, color }" },
+        { category: "Labels", method: "GET", path: "/api/labels", description: "List labels", params: "Query: sessionId" },
+        { category: "Labels", method: "POST", path: "/api/labels", description: "Create label", params: "Body: { name, color, sessionId }" },
         { category: "Labels", method: "PUT", path: "/api/labels/[id]", description: "Update label", params: "Path: id, Body: { name, color }" },
         { category: "Labels", method: "DELETE", path: "/api/labels/[id]", description: "Delete label", params: "Path: id" },
         { category: "Labels", method: "GET", path: "/api/labels/chat-labels", description: "Get chat labels", params: "Query: jid, sessionId" },
-        { category: "Labels", method: "PUT", path: "/api/labels/chat-labels", description: "Add/remove labels", params: "Query: jid, Body: { sessionId, labelIds[] }" },
+        { category: "Labels", method: "PUT", path: "/api/labels/chat-labels", description: "Add/remove labels", params: "Query: jid, Body: { sessionId, labelIds[], action }" },
 
         // Auto Reply
-        { category: "Auto Reply", method: "GET", path: "/api/autoreplies", description: "List auto replies", params: "-" },
-        { category: "Auto Reply", method: "POST", path: "/api/autoreplies", description: "Create auto reply", params: "Body: { matchType, trigger, response }" },
+        { category: "Auto Reply", method: "GET", path: "/api/autoreplies", description: "List auto replies", params: "Query: sessionId" },
+        { category: "Auto Reply", method: "POST", path: "/api/autoreplies", description: "Create auto reply", params: "Body: { sessionId, keyword, response, matchType }" },
         { category: "Auto Reply", method: "GET", path: "/api/autoreplies/[id]", description: "Get auto reply", params: "Path: id" },
         { category: "Auto Reply", method: "PUT", path: "/api/autoreplies/[id]", description: "Update auto reply", params: "Path: id, Body: { ... }" },
         { category: "Auto Reply", method: "DELETE", path: "/api/autoreplies/[id]", description: "Delete auto reply", params: "Path: id" },
 
         // Scheduler
-        { category: "Scheduler", method: "GET", path: "/api/scheduler", description: "List scheduled", params: "-" },
+        { category: "Scheduler", method: "GET", path: "/api/scheduler", description: "List scheduled", params: "Query: sessionId" },
         { category: "Scheduler", method: "POST", path: "/api/scheduler", description: "Create scheduled", params: "Body: { sessionId, jid, message, triggerAt }" },
         { category: "Scheduler", method: "GET", path: "/api/scheduler/[id]", description: "Get scheduled", params: "Path: id" },
         { category: "Scheduler", method: "PUT", path: "/api/scheduler/[id]", description: "Update scheduled", params: "Path: id, Body: { ... }" },
@@ -104,14 +104,14 @@ export default function ApiDocsPage() {
 
         // Webhooks
         { category: "Webhooks", method: "GET", path: "/api/webhooks", description: "List webhooks", params: "-" },
-        { category: "Webhooks", method: "POST", path: "/api/webhooks", description: "Create webhook", params: "Body: { url, events[] }" },
+        { category: "Webhooks", method: "POST", path: "/api/webhooks", description: "Create webhook", params: "Body: { name, url, secret, sessionId, events[] }" },
         { category: "Webhooks", method: "GET", path: "/api/webhooks/[id]", description: "Get webhook", params: "Path: id" },
         { category: "Webhooks", method: "PUT", path: "/api/webhooks/[id]", description: "Update webhook", params: "Path: id, Body: { ... }" },
         { category: "Webhooks", method: "DELETE", path: "/api/webhooks/[id]", description: "Delete webhook", params: "Path: id" },
 
         // Notifications
         { category: "Notifications", method: "GET", path: "/api/notifications", description: "List notifications", params: "-" },
-        { category: "Notifications", method: "POST", path: "/api/notifications", description: "Create notification", params: "Body: { title, message }" },
+        { category: "Notifications", method: "POST", path: "/api/notifications", description: "Create notification", params: "Body: { title, message, ... }" },
         { category: "Notifications", method: "PATCH", path: "/api/notifications/read", description: "Mark as read", params: "Body: { ids[] }" },
         { category: "Notifications", method: "DELETE", path: "/api/notifications/delete", description: "Delete notifications", params: "Query: id" },
 
@@ -126,10 +126,11 @@ export default function ApiDocsPage() {
 
         // System
         { category: "System", method: "GET", path: "/api/settings/system", description: "Get system settings", params: "-" },
-        { category: "System", method: "PUT", path: "/api/settings/system", description: "Update system settings", params: "Body: { appName, ... }" },
+        { category: "System", method: "PUT", path: "/api/settings/system", description: "Update system settings", params: "Body: { ... }" },
         { category: "System", method: "POST", path: "/api/status/update", description: "Update status", params: "Body: { status }" },
         { category: "System", method: "GET", path: "/api/system/check-updates", description: "Check updates", params: "-" },
     ];
+
 
     const categories = ["All", ...Array.from(new Set(apiEndpoints.map(e => e.category)))];
 
@@ -163,9 +164,43 @@ export default function ApiDocsPage() {
         <div className="min-h-screen bg-gray-50 p-6">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-800 mb-2">API Documentation</h1>
-                    <p className="text-gray-600">Complete API reference with {apiEndpoints.length} endpoints</p>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+                            <FileText className="w-8 h-8 text-blue-600" />
+                            API Documentation
+                        </h1>
+                        <p className="text-gray-500 mt-2">
+                            Complete reference for all {apiEndpoints.length} API endpoints.
+                        </p>
+                    </div>
+                    <a
+                        href="/docs"
+                        target="_blank"
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                    >
+                        <Code className="w-4 h-4" />
+                        Open Swagger UI
+                        <ExternalLink className="w-4 h-4" />
+                    </a>
+                </div>
+
+                {/* Master Documentation Alert */}
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r shadow-sm mb-6">
+                    <div className="flex items-start">
+                        <div className="flex-shrink-0">
+                            <FileText className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div className="ml-3">
+                            <h3 className="text-sm font-medium text-blue-800">📘 Project Documentation Available</h3>
+                            <div className="mt-2 text-sm text-blue-700">
+                                <p>
+                                    For a deep dive into the <strong>Project Architecture</strong>, <strong>Database Schema</strong>, and <strong>Frontend Routing</strong>,
+                                    please refer to the <a href="/docs/PROJECT_DOCUMENTATION.md" className="font-bold underline hover:text-blue-900">Master Project Documentation</a> file in your codebase.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Quick Links */}

@@ -11,7 +11,7 @@ export const getApiDocs = () => {
                 description: `
 # WhatsApp AI Gateway - API Reference
 
-Complete documentation for all **64 API endpoints**.
+Complete documentation for all **64+ API endpoints**.
 
 ## Authentication
 All endpoints require authentication:
@@ -43,268 +43,170 @@ All endpoints require authentication:
             paths: {
                 // ==================== SESSIONS (7 Endpoints) ====================
                 "/sessions": {
-                    get: { tags: ["Sessions"], summary: "List all sessions", responses: { 200: { description: "List of sessions" } } },
-                    post: { 
-                        tags: ["Sessions"], 
-                        summary: "Create new session", 
-                        requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId"], properties: { sessionId: { type: "string" } } } } } }, 
-                        responses: { 200: { description: "Created" } } 
-                    },
-                    delete: {
-                        tags: ["Sessions"],
-                        summary: "Delete session (via body)",
-                        requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId"], properties: { sessionId: { type: "string" } } } } } },
-                        responses: { 200: { description: "Deleted" } }
-                    }
+                    get: { tags: ["Sessions"], summary: "List all sessions", responses: { 200: { description: "OK" } } },
+                    post: { tags: ["Sessions"], summary: "Create new session", requestBody: { content: { "application/json": { schema: { type: "object", required: ["name", "sessionId"], properties: { name: { type: "string" }, sessionId: { type: "string" } } } } } }, responses: { 200: { description: "Created" } } }
                 },
                 "/sessions/{id}/qr": {
-                    get: { 
-                        tags: ["Sessions"], 
-                        summary: "Get QR Code", 
-                        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" }, description: "Session ID (e.g. mysession)" }], 
-                        responses: { 200: { description: "QR Image or JSON" } } 
-                    }
+                    get: { tags: ["Sessions"], summary: "Get QR Code", parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }], responses: { 200: { description: "OK" } } }
                 },
                 "/sessions/{id}/bot-config": {
-                    get: { tags: ["Sessions"], summary: "Get bot config", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Config data" } } },
+                    get: { tags: ["Sessions"], summary: "Get bot config", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "OK" } } },
                     put: { tags: ["Sessions"], summary: "Update bot config", parameters: [{ name: "id", in: "path", required: true }], requestBody: { content: { "application/json": { schema: { type: "object" } } } }, responses: { 200: { description: "Updated" } } }
                 },
                 "/sessions/{id}/settings": {
-                    put: { tags: ["Sessions"], summary: "Update session settings", parameters: [{ name: "id", in: "path", required: true }], requestBody: { content: { "application/json": { schema: { type: "object" } } } }, responses: { 200: { description: "Updated" } } }
+                    put: { tags: ["Sessions"], summary: "Update settings", parameters: [{ name: "id", in: "path", required: true }], requestBody: { content: { "application/json": { schema: { type: "object" } } } }, responses: { 200: { description: "Updated" } } },
+                    delete: { tags: ["Sessions"], summary: "Delete session", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Deleted" } } }
                 },
 
                 // ==================== MESSAGING (12 Endpoints) ====================
                 "/chat/send": {
-                    post: { 
-                        tags: ["Messaging"], 
-                        summary: "Send Text Message", 
-                        description: "Send a text message to a specific JID",
-                        requestBody: { 
-                            content: { 
-                                "application/json": { 
-                                    schema: { 
-                                        type: "object", 
-                                        required: ["sessionId", "jid", "message"], 
-                                        properties: { 
-                                            sessionId: { type: "string" }, 
-                                            jid: { type: "string" }, 
-                                            message: { type: "object", properties: { text: { type: "string" } } } 
-                                        } 
-                                    } 
-                                } 
-                            } 
-                        }, 
-                        responses: { 200: { description: "Message sent" } } 
-                    }
+                    post: { tags: ["Messaging"], summary: "Send Text Message", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid", "message"], properties: { sessionId: { type: "string" }, jid: { type: "string" }, message: { type: "object" } } } } } }, responses: { 200: { description: "Sent" } } }
                 },
-                "/messages/poll": { post: { tags: ["Messaging"], summary: "Send Poll", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid", "poll"], properties: { sessionId: { type: "string" }, jid: { type: "string" }, poll: { type: "object" } } } } } }, responses: { 200: { description: "Sent" } } } },
-                "/messages/list": { post: { tags: ["Messaging"], summary: "Send List Message", responses: { 200: { description: "Sent" } } } },
-                "/messages/location": { post: { tags: ["Messaging"], summary: "Send Location", responses: { 200: { description: "Sent" } } } },
-                "/messages/contact": { post: { tags: ["Messaging"], summary: "Send Contact", responses: { 200: { description: "Sent" } } } },
-                "/messages/react": { post: { tags: ["Messaging"], summary: "Send Reaction", responses: { 200: { description: "Sent" } } } },
-                "/messages/forward": { post: { tags: ["Messaging"], summary: "Forward Message", responses: { 200: { description: "Sent" } } } },
-                "/messages/sticker": { post: { tags: ["Messaging"], summary: "Send Sticker", responses: { 200: { description: "Sent" } } } },
-                "/messages/broadcast": { post: { tags: ["Messaging"], summary: "Send Broadcast", responses: { 200: { description: "Sent" } } } },
-                "/messages/spam": { post: { tags: ["Messaging"], summary: "Report Spam", responses: { 200: { description: "Reported" } } } },
-                "/messages/delete": { 
-                    delete: { 
-                        tags: ["Messaging"], 
-                        summary: "Delete Message", 
-                        requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid", "messageId"], properties: { sessionId: { type: "string" }, jid: { type: "string" }, messageId: { type: "string" } } } } } },
-                        responses: { 200: { description: "Deleted" } } 
-                    } 
-                },
+                "/messages/poll": { post: { tags: ["Messaging"], summary: "Send Poll", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid", "poll"] } } } }, responses: { 200: { description: "Sent" } } } },
+                "/messages/list": { post: { tags: ["Messaging"], summary: "Send List", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid"] } } } }, responses: { 200: { description: "Sent" } } } },
+                "/messages/location": { post: { tags: ["Messaging"], summary: "Send Location", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid", "location"] } } } }, responses: { 200: { description: "Sent" } } } },
+                "/messages/contact": { post: { tags: ["Messaging"], summary: "Send Contact", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid", "vcard"] } } } }, responses: { 200: { description: "Sent" } } } },
+                "/messages/react": { post: { tags: ["Messaging"], summary: "Send Reaction", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid", "reaction"] } } } }, responses: { 200: { description: "Sent" } } } },
+                "/messages/forward": { post: { tags: ["Messaging"], summary: "Forward Message", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid", "messageId"] } } } }, responses: { 200: { description: "Sent" } } } },
+                "/messages/sticker": { post: { tags: ["Messaging"], summary: "Send Sticker", requestBody: { content: { "multipart/form-data": { schema: { type: "object", required: ["sessionId", "jid", "sticker"] } } } }, responses: { 200: { description: "Sent" } } } },
+                "/messages/broadcast": { post: { tags: ["Messaging"], summary: "Broadcast Message", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jids", "message"] } } } }, responses: { 200: { description: "Sent" } } } },
+                "/messages/spam": { post: { tags: ["Messaging"], summary: "Send Spam", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid", "message", "count"] } } } }, responses: { 200: { description: "Started" } } } },
+                "/messages/delete": { post: { tags: ["Messaging"], summary: "Delete Message", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid", "messageId"] } } } }, responses: { 200: { description: "Deleted" } } } },
                 "/messages/{id}/media": {
-                    get: { 
-                        tags: ["Messaging"], 
-                        summary: "Download Media", 
-                        parameters: [
-                            { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Message ID" },
-                            { name: "sessionId", in: "query", required: true, schema: { type: "string" }, description: "Session ID" }
-                        ], 
-                        responses: { 200: { description: "File stream" } } 
-                    }
+                    get: { tags: ["Messaging"], summary: "Download Media", parameters: [{ name: "id", in: "path", required: true }, { name: "sessionId", in: "query", required: true }], responses: { 200: { description: "OK" } } }
                 },
 
-                // ==================== CHAT MANAGEMENT (11 Endpoints) ====================
+                // ==================== CHAT MANAGEMENT (10 Endpoints) ====================
                 "/chat/{sessionId}": { 
-                    get: { 
-                        tags: ["Chat"], 
-                        summary: "Get Chat List", 
-                        parameters: [
-                            { name: "sessionId", in: "path", required: true, schema: { type: "string" } },
-                            { name: "page", in: "query", schema: { type: "integer" } },
-                            { name: "limit", in: "query", schema: { type: "integer" } }
-                        ], 
-                        responses: { 200: { description: "List of chats" } } 
-                    } 
+                    get: { tags: ["Chat"], summary: "Get Chat List", parameters: [{ name: "sessionId", in: "path", required: true }, { name: "page", in: "query" }, { name: "limit", in: "query" }], responses: { 200: { description: "OK" } } } 
                 },
                 "/chat/{sessionId}/{jid}": { 
-                    get: { 
-                        tags: ["Chat"], 
-                        summary: "Get Chat History", 
-                        parameters: [
-                            { name: "sessionId", in: "path", required: true, schema: { type: "string" } }, 
-                            { name: "jid", in: "path", required: true, schema: { type: "string" } },
-                            { name: "limit", in: "query", schema: { type: "integer" } }
-                        ], 
-                        responses: { 200: { description: "Chat messages" } } 
-                    } 
+                    get: { tags: ["Chat"], summary: "Get History", parameters: [{ name: "sessionId", in: "path", required: true }, { name: "jid", in: "path", required: true }, { name: "limit", in: "query" }], responses: { 200: { description: "OK" } } } 
                 },
-                "/chat/check": { post: { tags: ["Chat"], summary: "Check Numbers", responses: { 200: { description: "Checked" } } } },
-                "/chat/read": { put: { tags: ["Chat"], summary: "Mark as Read", responses: { 200: { description: "Updated" } } } },
-                "/chat/archive": { put: { tags: ["Chat"], summary: "Archive/Unarchive", responses: { 200: { description: "Updated" } } } },
-                "/chat/presence": { post: { tags: ["Chat"], summary: "Send Presence", responses: { 200: { description: "Updated" } } } },
-                "/chat/profile-picture": { post: { tags: ["Chat"], summary: "Get Profile Picture", responses: { 200: { description: "URL" } } } },
-                "/chat/mute": { put: { tags: ["Chat"], summary: "Mute/Unmute", responses: { 200: { description: "Updated" } } } },
-                "/chat/pin": { put: { tags: ["Chat"], summary: "Pin/Unpin", responses: { 200: { description: "Updated" } } } },
+                "/chat/check": { post: { tags: ["Chat"], summary: "Check Numbers", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "phones"] } } } }, responses: { 200: { description: "OK" } } } },
+                "/chat/read": { put: { tags: ["Chat"], summary: "Mark Read", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid"] } } } }, responses: { 200: { description: "OK" } } } },
+                "/chat/archive": { put: { tags: ["Chat"], summary: "Archive Chat", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid", "archive"] } } } }, responses: { 200: { description: "OK" } } } },
+                "/chat/presence": { post: { tags: ["Chat"], summary: "Send Presence", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid", "presence"] } } } }, responses: { 200: { description: "OK" } } } },
+                "/chat/profile-picture": { post: { tags: ["Chat"], summary: "Get Picture", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid"] } } } }, responses: { 200: { description: "OK" } } } },
+                "/chat/mute": { put: { tags: ["Chat"], summary: "Mute Chat", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid", "mute"] } } } }, responses: { 200: { description: "OK" } } } },
+                "/chat/pin": { put: { tags: ["Chat"], summary: "Pin Chat", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid", "pin"] } } } }, responses: { 200: { description: "OK" } } } },
                 "/chats/by-label/{labelId}": { 
-                    get: { 
-                        tags: ["Chat"], 
-                        summary: "Filter Chats by Label", 
-                        parameters: [{ name: "labelId", in: "path", required: true, schema: { type: "string" } }], 
-                        responses: { 200: { description: "Filtered chats" } } 
-                    } 
+                    get: { tags: ["Chat"], summary: "Filter by Label", parameters: [{ name: "labelId", in: "path", required: true }, { name: "sessionId", in: "query", required: true }], responses: { 200: { description: "OK" } } } 
                 },
 
                 // ==================== GROUPS (13 Endpoints) ====================
                 "/groups": { 
-                    get: { 
-                        tags: ["Groups"], 
-                        summary: "List Groups", 
-                        parameters: [{ name: "sessionId", in: "query", required: true, schema: { type: "string" } }],
-                        responses: { 200: { description: "List of groups" } } 
-                    } 
+                    get: { tags: ["Groups"], summary: "List Groups", parameters: [{ name: "sessionId", in: "query", required: true }], responses: { 200: { description: "OK" } } } 
                 },
-                "/groups/create": { post: { tags: ["Groups"], summary: "Create Group", responses: { 200: { description: "Created" } } } },
-                "/groups/invite/accept": { post: { tags: ["Groups"], summary: "Accept Invite", responses: { 200: { description: "Accepted" } } } },
+                "/groups/create": { post: { tags: ["Groups"], summary: "Create Group", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "subject", "participants"] } } } }, responses: { 200: { description: "OK" } } } },
+                "/groups/invite/accept": { post: { tags: ["Groups"], summary: "Accept Invite", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "code"] } } } }, responses: { 200: { description: "OK" } } } },
                 "/groups/{jid}/picture": {
-                    put: { tags: ["Groups"], summary: "Update Picture", parameters: [{ name: "jid", in: "path", required: true }], responses: { 200: { description: "Updated" } } },
-                    delete: { tags: ["Groups"], summary: "Remove Picture", parameters: [{ name: "jid", in: "path", required: true }, { name: "sessionId", in: "query", required: true, schema: { type: "string" } }], responses: { 200: { description: "Removed" } } }
+                    put: { tags: ["Groups"], summary: "Update Picture", parameters: [{ name: "jid", in: "path", required: true }], requestBody: { content: { "multipart/form-data": { schema: { type: "object", required: ["sessionId", "file"] } } } }, responses: { 200: { description: "OK" } } },
+                    delete: { tags: ["Groups"], summary: "Remove Picture", parameters: [{ name: "jid", in: "path", required: true }, { name: "sessionId", in: "query", required: true }], responses: { 200: { description: "OK" } } }
                 },
-                "/groups/{jid}/subject": { put: { tags: ["Groups"], summary: "Update Subject", parameters: [{ name: "jid", in: "path", required: true }], responses: { 200: { description: "Updated" } } } },
-                "/groups/{jid}/description": { put: { tags: ["Groups"], summary: "Update Description", parameters: [{ name: "jid", in: "path", required: true }], responses: { 200: { description: "Updated" } } } },
-                "/groups/{jid}/invite": { get: { tags: ["Groups"], summary: "Get Invite Code", parameters: [{ name: "jid", in: "path", required: true }], responses: { 200: { description: "Code" } } } },
-                "/groups/{jid}/invite/revoke": { put: { tags: ["Groups"], summary: "Revoke Invite Code", parameters: [{ name: "jid", in: "path", required: true }], responses: { 200: { description: "Revoked" } } } },
-                "/groups/{jid}/members": { put: { tags: ["Groups"], summary: "Manage Members", parameters: [{ name: "jid", in: "path", required: true }], responses: { 200: { description: "Updated" } } } },
-                "/groups/{jid}/settings": { put: { tags: ["Groups"], summary: "Update Group Settings", parameters: [{ name: "jid", in: "path", required: true }], responses: { 200: { description: "Updated" } } } },
-                "/groups/{jid}/ephemeral": { put: { tags: ["Groups"], summary: "Toggle Disappearing", parameters: [{ name: "jid", in: "path", required: true }], responses: { 200: { description: "Updated" } } } },
-                "/groups/{jid}/leave": { post: { tags: ["Groups"], summary: "Leave Group", parameters: [{ name: "jid", in: "path", required: true }], responses: { 200: { description: "Left" } } } },
+                "/groups/{jid}/subject": { put: { tags: ["Groups"], summary: "Update Subject", parameters: [{ name: "jid", in: "path", required: true }], requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "subject"] } } } }, responses: { 200: { description: "OK" } } } },
+                "/groups/{jid}/description": { put: { tags: ["Groups"], summary: "Update Description", parameters: [{ name: "jid", in: "path", required: true }], requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "description"] } } } }, responses: { 200: { description: "OK" } } } },
+                "/groups/{jid}/invite": { 
+                    get: { tags: ["Groups"], summary: "Get Code", parameters: [{ name: "jid", in: "path", required: true }, { name: "sessionId", in: "query", required: true }], responses: { 200: { description: "OK" } } },
+                    put: { tags: ["Groups"], summary: "Revoke Code", parameters: [{ name: "jid", in: "path", required: true }], requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId"] } } } }, responses: { 200: { description: "OK" } } } 
+                },
+                "/groups/{jid}/members": { put: { tags: ["Groups"], summary: "Manage Members", parameters: [{ name: "jid", in: "path", required: true }], requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "action", "participants"] } } } }, responses: { 200: { description: "OK" } } } },
+                "/groups/{jid}/settings": { put: { tags: ["Groups"], summary: "Update Settings", parameters: [{ name: "jid", in: "path", required: true }], requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "settings"] } } } }, responses: { 200: { description: "OK" } } } },
+                "/groups/{jid}/ephemeral": { put: { tags: ["Groups"], summary: "Toggle Ephemeral", parameters: [{ name: "jid", in: "path", required: true }], requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "ephemeral"] } } } }, responses: { 200: { description: "OK" } } } },
+                "/groups/{jid}/leave": { post: { tags: ["Groups"], summary: "Leave Group", parameters: [{ name: "jid", in: "path", required: true }], requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId"] } } } }, responses: { 200: { description: "OK" } } } },
 
-                // ==================== LABELS (7 Endpoints) ====================
+                // ==================== LABELS (6 Endpoints) ====================
                 "/labels": {
-                    get: { tags: ["Labels"], summary: "List Labels", responses: { 200: { description: "OK" } } },
-                    post: { tags: ["Labels"], summary: "Create Label", responses: { 200: { description: "Created" } } }
+                    get: { tags: ["Labels"], summary: "List Labels", parameters: [{ name: "sessionId", in: "query", required: true }], responses: { 200: { description: "OK" } } },
+                    post: { tags: ["Labels"], summary: "Create Label", requestBody: { content: { "application/json": { schema: { type: "object", required: ["name", "color", "sessionId"] } } } }, responses: { 200: { description: "OK" } } }
                 },
                 "/labels/{id}": {
-                    put: { tags: ["Labels"], summary: "Update Label", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Updated" } } },
-                    delete: { tags: ["Labels"], summary: "Delete Label", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Deleted" } } }
+                    put: { tags: ["Labels"], summary: "Update Label", parameters: [{ name: "id", in: "path", required: true }], requestBody: { content: { "application/json": { schema: { type: "object", required: ["name", "color"] } } } }, responses: { 200: { description: "OK" } } },
+                    delete: { tags: ["Labels"], summary: "Delete Label", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "OK" } } }
                 },
                 "/labels/chat-labels": {
-                    get: { 
-                        tags: ["Labels"], 
-                        summary: "Get Chat Labels", 
-                        parameters: [
-                            { name: "jid", in: "query", required: true, schema: { type: "string" } },
-                            { name: "sessionId", in: "query", required: true, schema: { type: "string" } }
-                        ], 
-                        responses: { 200: { description: "OK" } } 
-                    },
-                    put: { 
-                        tags: ["Labels"], 
-                        summary: "Update Chat Labels", 
-                        parameters: [
-                            { name: "jid", in: "query", required: true, schema: { type: "string" } }
-                        ], 
-                        requestBody: { content: { "application/json": { schema: { type: "object", properties: { sessionId: { type: "string" }, action: { type: "string", enum: ["add", "remove"] }, labelIds: { type: "array", items: { type: "string" } } } } } } },
-                        responses: { 200: { description: "Updated" } } 
-                    }
+                    get: { tags: ["Labels"], summary: "Get Chat Labels", parameters: [{ name: "jid", in: "query", required: true }, { name: "sessionId", in: "query", required: true }], responses: { 200: { description: "OK" } } },
+                    put: { tags: ["Labels"], summary: "Update Chat Labels", parameters: [{ name: "jid", in: "query", required: true }], requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "labelIds", "action"] } } } }, responses: { 200: { description: "OK" } } }
                 },
 
                 // ==================== CONTACTS (3 Endpoints) ====================
-                 "/contacts": { 
-                    get: { 
-                        tags: ["Contacts"], 
-                        summary: "List Contacts", 
-                        parameters: [{ name: "sessionId", in: "query", required: true, schema: { type: "string" } }],
-                        responses: { 200: { description: "OK" } } 
-                    } 
-                },
-                "/contacts/block": { post: { tags: ["Contacts"], summary: "Block Contact", responses: { 200: { description: "Blocked" } } } },
-                "/contacts/unblock": { post: { tags: ["Contacts"], summary: "Unblock Contact", responses: { 200: { description: "Unblocked" } } } },
+                "/contacts": { get: { tags: ["Contacts"], summary: "List Contacts", parameters: [{ name: "sessionId", in: "query", required: true }], responses: { 200: { description: "OK" } } } },
+                "/contacts/block": { post: { tags: ["Contacts"], summary: "Block", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid"] } } } }, responses: { 200: { description: "OK" } } } },
+                "/contacts/unblock": { post: { tags: ["Contacts"], summary: "Unblock", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid"] } } } }, responses: { 200: { description: "OK" } } } },
 
-                // ==================== PROFILE (4 Endpoints) ====================
-                "/profile": { get: { tags: ["Profile"], summary: "Get Own Profile", responses: { 200: { description: "OK" } } } },
-                "/profile/name": { put: { tags: ["Profile"], summary: "Update Push Name", responses: { 200: { description: "Updated" } } } },
-                "/profile/status": { put: { tags: ["Profile"], summary: "Update About/Status", responses: { 200: { description: "Updated" } } } },
+                // ==================== PROFILE (5 Endpoints) ====================
+                "/profile": { get: { tags: ["Profile"], summary: "Get Profile", parameters: [{ name: "sessionId", in: "query", required: true }], responses: { 200: { description: "OK" } } } },
+                "/profile/name": { put: { tags: ["Profile"], summary: "Update Name", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "name"] } } } }, responses: { 200: { description: "OK" } } } },
+                "/profile/status": { put: { tags: ["Profile"], summary: "Update Status", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "status"] } } } }, responses: { 200: { description: "OK" } } } },
                 "/profile/picture": {
-                    put: { tags: ["Profile"], summary: "Update Profile Picture", responses: { 200: { description: "Updated" } } },
-                    delete: { tags: ["Profile"], summary: "Remove Profile Picture", parameters: [{ name: "sessionId", in: "query", required: true, schema: { type: "string" } }], responses: { 200: { description: "Removed" } } }
+                    put: { tags: ["Profile"], summary: "Update Picture", requestBody: { content: { "multipart/form-data": { schema: { type: "object", required: ["sessionId", "image"] } } } }, responses: { 200: { description: "OK" } } },
+                    delete: { tags: ["Profile"], summary: "Remove Picture", parameters: [{ name: "sessionId", in: "query", required: true }], responses: { 200: { description: "OK" } } }
                 },
 
                 // ==================== AUTO REPLY (5 Endpoints) ====================
                 "/autoreplies": {
-                    get: { tags: ["Auto Reply"], summary: "List Auto Replies", responses: { 200: { description: "OK" } } },
-                    post: { tags: ["Auto Reply"], summary: "Create Auto Reply", responses: { 200: { description: "Created" } } }
+                    get: { tags: ["Auto Reply"], summary: "List Rules", parameters: [{ name: "sessionId", in: "query", required: true }], responses: { 200: { description: "OK" } } },
+                    post: { tags: ["Auto Reply"], summary: "Create Rule", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "keyword", "response"] } } } }, responses: { 200: { description: "OK" } } }
                 },
                 "/autoreplies/{id}": {
-                    get: { tags: ["Auto Reply"], summary: "Get Auto Reply", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "OK" } } },
-                    put: { tags: ["Auto Reply"], summary: "Update Auto Reply", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Updated" } } },
-                    delete: { tags: ["Auto Reply"], summary: "Delete Auto Reply", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Deleted" } } }
+                    get: { tags: ["Auto Reply"], summary: "Get Rule", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "OK" } } },
+                    put: { tags: ["Auto Reply"], summary: "Update Rule", parameters: [{ name: "id", in: "path", required: true }], requestBody: { content: { "application/json": { schema: { type: "object" } } } }, responses: { 200: { description: "OK" } } },
+                    delete: { tags: ["Auto Reply"], summary: "Delete Rule", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "OK" } } }
                 },
 
                 // ==================== SCHEDULER (5 Endpoints) ====================
                 "/scheduler": {
-                    get: { tags: ["Scheduler"], summary: "List Scheduled", responses: { 200: { description: "OK" } } },
-                    post: { tags: ["Scheduler"], summary: "Create Schedule", responses: { 200: { description: "Created" } } }
+                    get: { tags: ["Scheduler"], summary: "List Scheduled", parameters: [{ name: "sessionId", in: "query", required: true }], responses: { 200: { description: "OK" } } },
+                    post: { tags: ["Scheduler"], summary: "Create Schedule", requestBody: { content: { "application/json": { schema: { type: "object", required: ["sessionId", "jid", "message", "triggerAt"] } } } }, responses: { 200: { description: "OK" } } }
                 },
                 "/scheduler/{id}": {
-                    get: { tags: ["Scheduler"], summary: "Get Scheduled Message", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "OK" } } },
-                    put: { tags: ["Scheduler"], summary: "Update Schedule", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Updated" } } },
-                    delete: { tags: ["Scheduler"], summary: "Delete Schedule", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Deleted" } } }
+                    get: { tags: ["Scheduler"], summary: "Get Schedule", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "OK" } } },
+                    put: { tags: ["Scheduler"], summary: "Update Schedule", parameters: [{ name: "id", in: "path", required: true }], requestBody: { content: { "application/json": { schema: { type: "object" } } } }, responses: { 200: { description: "OK" } } },
+                    delete: { tags: ["Scheduler"], summary: "Delete Schedule", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "OK" } } }
                 },
 
                 // ==================== WEBHOOKS (5 Endpoints) ====================
                 "/webhooks": {
                     get: { tags: ["Webhooks"], summary: "List Webhooks", responses: { 200: { description: "OK" } } },
-                    post: { tags: ["Webhooks"], summary: "Create Webhook", responses: { 200: { description: "Created" } } }
+                    post: { tags: ["Webhooks"], summary: "Create Webhook", requestBody: { content: { "application/json": { schema: { type: "object", required: ["name", "url", "sessionId"] } } } }, responses: { 200: { description: "OK" } } }
                 },
                 "/webhooks/{id}": {
                     get: { tags: ["Webhooks"], summary: "Get Webhook", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "OK" } } },
-                    put: { tags: ["Webhooks"], summary: "Update Webhook", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Updated" } } },
-                    delete: { tags: ["Webhooks"], summary: "Delete Webhook", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Deleted" } } }
+                    put: { tags: ["Webhooks"], summary: "Update Webhook", parameters: [{ name: "id", in: "path", required: true }], requestBody: { content: { "application/json": { schema: { type: "object" } } } }, responses: { 200: { description: "OK" } } },
+                    delete: { tags: ["Webhooks"], summary: "Delete Webhook", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "OK" } } }
                 },
 
                 // ==================== NOTIFICATIONS (4 Endpoints) ====================
                 "/notifications": {
-                    get: { tags: ["Notifications"], summary: "List Notifications", responses: { 200: { description: "OK" } } },
-                    post: { tags: ["Notifications"], summary: "Create Notification", responses: { 200: { description: "Created" } } }
+                    get: { tags: ["Notifications"], summary: "List", responses: { 200: { description: "OK" } } },
+                    post: { tags: ["Notifications"], summary: "Create", requestBody: { content: { "application/json": { schema: { type: "object", required: ["title", "message"] } } } }, responses: { 200: { description: "OK" } } }
                 },
-                "/notifications/read": { patch: { tags: ["Notifications"], summary: "Mark Read", responses: { 200: { description: "Updated" } } } },
-                "/notifications/delete": { delete: { tags: ["Notifications"], summary: "Delete Notification", responses: { 200: { description: "Deleted" } } } },
+                "/notifications/read": { patch: { tags: ["Notifications"], summary: "Mark Read", requestBody: { content: { "application/json": { schema: { type: "object", required: ["ids"] } } } }, responses: { 200: { description: "OK" } } } },
+                "/notifications/delete": { delete: { tags: ["Notifications"], summary: "Delete", parameters: [{ name: "id", in: "query", required: true }], responses: { 200: { description: "OK" } } } },
 
                 // ==================== USERS (7 Endpoints) ====================
                 "/users": {
-                    get: { tags: ["Users"], summary: "List Users (Admin)", responses: { 200: { description: "OK" } } },
-                    post: { tags: ["Users"], summary: "Create User (Admin)", responses: { 200: { description: "Created" } } }
+                    get: { tags: ["Users"], summary: "List Users", responses: { 200: { description: "OK" } } },
+                    post: { tags: ["Users"], summary: "Create User", requestBody: { content: { "application/json": { schema: { type: "object", required: ["name", "email", "password"] } } } }, responses: { 200: { description: "OK" } } }
                 },
                 "/users/{id}": {
                     get: { tags: ["Users"], summary: "Get User", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "OK" } } },
-                    put: { tags: ["Users"], summary: "Update User", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Updated" } } },
-                    delete: { tags: ["Users"], summary: "Delete User", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Deleted" } } }
+                    put: { tags: ["Users"], summary: "Update User", parameters: [{ name: "id", in: "path", required: true }], requestBody: { content: { "application/json": { schema: { type: "object" } } } }, responses: { 200: { description: "OK" } } },
+                    delete: { tags: ["Users"], summary: "Delete User", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "OK" } } }
                 },
                 "/user/api-key": {
-                    get: { tags: ["Users"], summary: "Get API Key", responses: { 200: { description: "Key" } } },
-                    post: { tags: ["Users"], summary: "Generate New API Key", responses: { 200: { description: "New Key" } } }
+                    get: { tags: ["Users"], summary: "Get API Key", responses: { 200: { description: "OK" } } },
+                    post: { tags: ["Users"], summary: "Generate API Key", responses: { 200: { description: "OK" } } }
                 },
 
                 // ==================== SYSTEM (4 Endpoints) ====================
                 "/settings/system": {
-                    get: { tags: ["System"], summary: "Get System Settings", responses: { 200: { description: "OK" } } },
-                    put: { tags: ["System"], summary: "Update System Settings", responses: { 200: { description: "Updated" } } }
+                    get: { tags: ["System"], summary: "Get Config", responses: { 200: { description: "OK" } } },
+                    post: { tags: ["System"], summary: "Update Config", requestBody: { content: { "application/json": { schema: { type: "object" } } } }, responses: { 200: { description: "OK" } } }
                 },
-                "/status/update": { post: { tags: ["System"], summary: "Update Status", responses: { 200: { description: "Updated" } } } },
-                "/system/check-updates": { get: { tags: ["System"], summary: "Check for Updates", responses: { 200: { description: "Status" } } } }
+                "/docs": { get: { tags: ["System"], summary: "Get OpenAPI Spec", responses: { 200: { description: "OK" } } } },
+                "/status/update": { post: { tags: ["System"], summary: "Update Status", requestBody: { content: { "application/json": { schema: { type: "object", required: ["status"] } } } }, responses: { 200: { description: "OK" } } } },
+                "/system/check-updates": { get: { tags: ["System"], summary: "Check Updates", responses: { 200: { description: "OK" } } } }
             },
         },
     });
