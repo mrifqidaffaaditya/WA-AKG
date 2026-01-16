@@ -23,8 +23,8 @@ export default function ApiDocsPage() {
         { category: "Sessions", method: "POST", path: "/api/sessions", description: "Create new session", params: "Body: { name, sessionId }" },
         { category: "Sessions", method: "GET", path: "/api/sessions/[id]/qr", description: "Get QR code", params: "Path: id" },
         { category: "Sessions", method: "GET", path: "/api/sessions/[id]/bot-config", description: "Get bot config", params: "Path: id" },
-        { category: "Sessions", method: "PUT", path: "/api/sessions/[id]/bot-config", description: "Update bot config", params: "Path: id, Body: { ... }" },
-        { category: "Sessions", method: "PUT", path: "/api/sessions/[id]/settings", description: "Update settings", params: "Path: id, Body: { settings }" },
+        { category: "Sessions", method: "POST", path: "/api/sessions/[id]/bot-config", description: "Update bot config", params: "Path: id, Body: { enabled, botMode, ... }" },
+        { category: "Sessions", method: "PATCH", path: "/api/sessions/[id]/settings", description: "Update settings", params: "Path: id, Body: { config }" },
         { category: "Sessions", method: "DELETE", path: "/api/sessions/[id]/settings", description: "Delete session", params: "Path: id" },
 
         // Groups
@@ -97,14 +97,14 @@ export default function ApiDocsPage() {
 
         // Scheduler
         { category: "Scheduler", method: "GET", path: "/api/scheduler", description: "List scheduled", params: "Query: sessionId" },
-        { category: "Scheduler", method: "POST", path: "/api/scheduler", description: "Create scheduled", params: "Body: { sessionId, jid, message, triggerAt }" },
+        { category: "Scheduler", method: "POST", path: "/api/scheduler", description: "Create scheduled", params: "Body: { sessionId, jid, content, sendAt }" },
         { category: "Scheduler", method: "GET", path: "/api/scheduler/[id]", description: "Get scheduled", params: "Path: id" },
         { category: "Scheduler", method: "PUT", path: "/api/scheduler/[id]", description: "Update scheduled", params: "Path: id, Body: { ... }" },
         { category: "Scheduler", method: "DELETE", path: "/api/scheduler/[id]", description: "Delete scheduled", params: "Path: id" },
 
         // Webhooks
         { category: "Webhooks", method: "GET", path: "/api/webhooks", description: "List webhooks", params: "-" },
-        { category: "Webhooks", method: "POST", path: "/api/webhooks", description: "Create webhook", params: "Body: { name, url, secret, sessionId, events[] }" },
+        { category: "Webhooks", method: "POST", path: "/api/webhooks", description: "Create webhook", params: "Body: { name, url, events[], sessionId? }" },
         { category: "Webhooks", method: "GET", path: "/api/webhooks/[id]", description: "Get webhook", params: "Path: id" },
         { category: "Webhooks", method: "PUT", path: "/api/webhooks/[id]", description: "Update webhook", params: "Path: id, Body: { ... }" },
         { category: "Webhooks", method: "DELETE", path: "/api/webhooks/[id]", description: "Delete webhook", params: "Path: id" },
@@ -126,7 +126,7 @@ export default function ApiDocsPage() {
 
         // System
         { category: "System", method: "GET", path: "/api/settings/system", description: "Get system settings", params: "-" },
-        { category: "System", method: "PUT", path: "/api/settings/system", description: "Update system settings", params: "Body: { ... }" },
+        { category: "System", method: "POST", path: "/api/settings/system", description: "Update system settings", params: "Body: { appName, logoUrl, timezone }" },
         { category: "System", method: "POST", path: "/api/status/update", description: "Update status", params: "Body: { status }" },
         { category: "System", method: "GET", path: "/api/system/check-updates", description: "Check updates", params: "-" },
     ];
