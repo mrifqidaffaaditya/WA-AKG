@@ -159,29 +159,31 @@ Access the dashboard at: `http://localhost:3000/dashboard`
 
 ## 📚 API Reference
 
-Interact with your WhatsApp sessions programmatically.
+Interact with your WhatsApp sessions programmatically. All endpoints are documented in detail in [API Documentation](docs/API_DOCUMENTATION.md) and accessible via Swagger UI at `/docs`.
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| **Sessions** | | |
-| `GET` | `/api/sessions` | List all sessions |
-| `POST` | `/api/sessions` | Create a new session |
-| `DELETE` | `/api/sessions/[id]` | Delete a session |
-| `GET` | `/api/sessions/[id]/bot-config` | Get bot configuration |
-| `POST` | `/api/sessions/[id]/bot-config` | Update bot configuration |
-| **Chat** | | |
-| `GET` | `/api/chat/[sessionId]` | List contacts |
-| `GET` | `/api/chat/[sessionId]/[jid]` | Get chat history |
-| `POST` | `/api/chat/send` | Send text/media |
-| **Msg & Groups** | | |
-| `POST` | `/api/groups/create` | Create a group |
-| `POST` | `/api/messages/broadcast` | Send broadcast message |
-| `POST` | `/api/messages/sticker` | Send sticker (FormData) |
-| **Tools** | | |
-| `GET` | `/api/webhooks` | List webhooks |
-| `POST` | `/api/webhooks` | Create webhook |
-| `GET` | `/api/autoreplies` | List auto-replies |
-| `POST` | `/api/autoreplies` | Create auto-reply |
+### Authentication
+Include in headers: `X-API-Key: your_secret_key`
+
+| Method | Endpoint | Description | Params Type |
+| :--- | :--- | :--- | :--- |
+| **Sessions** | | | |
+| `GET` | `/api/sessions` | List all sessions | - |
+| `POST` | `/api/sessions` | Create a new session | Body |
+| `DELETE` | `/api/sessions/[id]` | Delete a session | Path |
+| `GET` | `/api/sessions/[id]/qr` | Get QR code | Path |
+| **Messaging** | | | |
+| `POST` | `/api/chat/send` | Send text/media | Body |
+| `POST` | `/api/messages/broadcast` | Send broadcast | Body |
+| `GET` | `/api/messages/[id]/media` | Download media | Path & Query |
+| **Groups** | | | |
+| `GET` | `/api/groups` | List groups | Query |
+| `POST` | `/api/groups/create` | Create a group | Body |
+| `PUT` | `/api/groups/[jid]/participants` | Manage members | Path & Body |
+| **Tools** | | | |
+| `GET` | `/api/webhooks` | List webhooks | - |
+| `POST` | `/api/webhooks` | Create webhook | Body |
+
+> **Full Reference**: Check [API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) for the complete list of all 64 endpoints with detailed parameters.
 
 ### Example: Send Message
 ```bash
