@@ -1,210 +1,201 @@
 import { createSwaggerSpec } from "next-swagger-doc";
 
 export const getApiDocs = () => {
-  const spec = createSwaggerSpec({
-    apiFolder: "src/app/api",
-    definition: {
-      openapi: "3.0.0",
-      info: {
-        title: "WA-AKG API Documentation",
-        version: "1.2.0",
-        description: `
-# WhatsApp AI Gateway - Complete API Reference
+    const spec = createSwaggerSpec({
+        apiFolder: "src/app/api",
+        definition: {
+            openapi: "3.0.0",
+            info: {
+                title: "WA-AKG API Documentation",
+                version: "1.2.0",
+                description: `
+# WhatsApp AI Gateway - API Reference
 
-A comprehensive WhatsApp automation gateway with **64+ API endpoints** for complete WhatsApp Web functionality.
-
-## Features
-- 🔐 Secure authentication with API keys and sessions
-- 💬 Complete messaging capabilities (text, media, polls, reactions)
-- 👥 Full group management
-- 🏷️ Labels and chat organization
-- 📊 Analytics and notifications
-- 🤖 Auto-reply and scheduling
-- 🔄 Webhook integrations
-
-## Base URL
-- Development: \`http://localhost:3000/api\`
-- Production: \`https://your-domain.com/api\`
+Complete documentation for all **64 API endpoints**.
 
 ## Authentication
-All endpoints require authentication via:
-1. **API Key** - Header: \`X-API-Key: your-api-key\`
-2. **Session Cookie** - Automatic when logged in via browser
+Use one of the following methods:
+1. **API Key**: Header \`X-API-Key: your-key\`
+2. **Session**: Cookie \`next-auth.session-token\` (Browser)
 
-Get your API key from Dashboard → Settings → API Key
-        `,
-        contact: {
-          name: "WA-AKG Support",
-          url: "https://github.com/mrifqidaffaaditya/WA-AKG",
-        },
-        license: {
-          name: "MIT",
-          url: "https://opensource.org/licenses/MIT",
-        },
-      },
-      servers: [
-        {
-          url: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api",
-          description: "API Server",
-        },
-      ],
-      components: {
-        securitySchemes: {
-          ApiKeyAuth: {
-            type: "apiKey",
-            in: "header",
-            name: "X-API-Key",
-            description: "API key for authentication. Get it from Dashboard → Settings",
-          },
-          SessionAuth: {
-            type: "apiKey",
-            in: "cookie",
-            name: "next-auth.session-token",
-            description: "Session cookie (automatic when logged in)",
-          },
-        },
-        schemas: {
-          Error: {
-            type: "object",
-            properties: {
-              error: {
-                type: "string",
-                description: "Error message",
-                example: "Unauthorized",
-              },
+## Common Types
+- **SessionId**: unique identifier for the WA session (e.g., "mysession")
+- **JID**: WhatsApp ID (e.g., "628123456789@s.whatsapp.net" or "123456789@g.us")
+                `,
             },
-          },
-          Success: {
-            type: "object",
-            properties: {
-              success: {
-                type: "boolean",
-                example: true,
-              },
-              message: {
-                type: "string",
-                example: "Operation completed successfully",
-              },
+            servers: [
+                {
+                    url: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api",
+                    description: "API Server",
+                },
+            ],
+            components: {
+                securitySchemes: {
+                    ApiKeyAuth: { type: "apiKey", in: "header", name: "X-API-Key" },
+                    SessionAuth: { type: "apiKey", in: "cookie", name: "next-auth.session-token" }
+                },
             },
-          },
-          Session: {
-            type: "object",
-            properties: {
-              id: { type: "string", example: "cm123456" },
-              sessionId: { type: "string", example: "my-session" },
-              name: { type: "string", example: "Marketing WhatsApp" },
-              status: {
-                type: "string",
-                enum: ["CONNECTED", "DISCONNECTED", "SCAN_QR"],
-                example: "CONNECTED",
-              },
-              qr: { type: "string", nullable: true },
-              userId: { type: "string" },
-              createdAt: { type: "string", format: "date-time" },
-              updatedAt: { type: "string", format: "date-time" },
-            },
-          },
-          Message: {
-            type: "object",
-            properties: {
-              id: { type: "string" },
-              sessionId: { type: "string" },
-              remoteJid: { type: "string", example: "628123456789@s.whatsapp.net" },
-              senderJid: { type: "string" },
-              fromMe: { type: "boolean" },
-              content: { type: "string" },
-              type: {
-                type: "string",
-                enum: ["TEXT", "IMAGE", "VIDEO", "AUDIO", "DOCUMENT", "STICKER", "LOCATION", "CONTACT"],
-              },
-              timestamp: { type: "string", format: "date-time" },
-            },
-          },
-          Label: {
-            type: "object",
-            properties: {
-              id: { type: "string" },
-              sessionId: { type: "string" },
-              name: { type: "string", example: "Important" },
-              color: { type: "integer", minimum: 0, maximum: 19, example: 0 },
-              colorHex: { type: "string", example: "#FF0000" },
-              createdAt: { type: "string", format: "date-time" },
-            },
-          },
-        },
-      },
-      security: [
-        {
-          ApiKeyAuth: [],
-        },
-        {
-          SessionAuth: [],
-        },
-      ],
-      tags: [
-        {
-          name: "Authentication",
-          description: "API authentication and session management",
-        },
-        {
-          name: "Sessions",
-          description: "WhatsApp session management",
-        },
-        {
-          name: "Messaging",
-          description: "Send and manage messages",
-        },
-        {
-          name: "Chat",
-          description: "Chat management and operations",
-        },
-        {
-          name: "Groups",
-          description: "WhatsApp group management",
-        },
-        {
-          name: "Contacts",
-          description: "Contact management",
-        },
-        {
-          name: "Labels",
-          description: "Labels and tags for organizing chats",
-        },
-        {
-          name: "Profile",
-          description: "WhatsApp profile management",
-        },
-        {
-          name: "Auto Reply",
-          description: "Automated message responses",
-        },
-        {
-          name: "Scheduler",
-          description: "Schedule messages",
-        },
-        {
-          name: "Webhooks",
-          description: "Webhook configuration",
-        },
-        {
-          name: "Notifications",
-          description: "System notifications",
-        },
-        {
-          name: "Users",
-          description: "User management (Admin only)",
-        },
-        {
-          name: "System",
-          description: "System settings and updates",
-        },
-      ],
-      paths: {
-        // This will be auto-generated by next-swagger-doc
-        // But we can add custom path definitions here if needed
-      },
-    },
-  });
+            security: [{ ApiKeyAuth: [] }, { SessionAuth: [] }],
+            paths: {
+                // ==================== SESSIONS (5) ====================
+                "/sessions": {
+                    get: { tags: ["Sessions"], summary: "List all sessions", responses: { 200: { description: "OK" } } },
+                    post: { tags: ["Sessions"], summary: "Create session", requestBody: { content: { "application/json": { schema: { properties: { sessionId: { type: "string" } } } } } }, responses: { 200: { description: "Created" } } }
+                },
+                "/sessions/{id}": {
+                    delete: { tags: ["Sessions"], summary: "Delete session", parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }], responses: { 200: { description: "Deleted" } } }
+                },
+                "/sessions/{id}/qr": {
+                    get: { tags: ["Sessions"], summary: "Get QR Code", parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }], responses: { 200: { description: "QR Image" } } }
+                },
+                "/sessions/{id}/bot-config": {
+                    get: { tags: ["Sessions"], summary: "Get bot config", parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }], responses: { 200: { description: "Config data" } } },
+                    put: { tags: ["Sessions"], summary: "Update bot config", parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }], requestBody: { content: { "application/json": { schema: { type: "object" } } } }, responses: { 200: { description: "Updated" } } }
+                },
+                "/sessions/{id}/settings": {
+                    put: { tags: ["Sessions"], summary: "Update session settings", parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }], requestBody: { content: { "application/json": { schema: { type: "object" } } } }, responses: { 200: { description: "Updated" } } }
+                },
 
-  return spec;
+                // ==================== MESSAGING (11) ====================
+                "/chat/send": {
+                    post: { tags: ["Messaging"], summary: "Send Text Message", requestBody: { content: { "application/json": { schema: { properties: { sessionId: { type: "string" }, jid: { type: "string" }, message: { type: "object" } } } } } }, responses: { 200: { description: "Sent" } } }
+                },
+                "/messages/poll": { post: { tags: ["Messaging"], summary: "Send Poll", responses: { 200: { description: "Sent" } } } },
+                "/messages/list": { post: { tags: ["Messaging"], summary: "Send List Message", responses: { 200: { description: "Sent" } } } },
+                "/messages/location": { post: { tags: ["Messaging"], summary: "Send Location", responses: { 200: { description: "Sent" } } } },
+                "/messages/contact": { post: { tags: ["Messaging"], summary: "Send Contact", responses: { 200: { description: "Sent" } } } },
+                "/messages/react": { post: { tags: ["Messaging"], summary: "Send Reaction", responses: { 200: { description: "Sent" } } } },
+                "/messages/forward": { post: { tags: ["Messaging"], summary: "Forward Message", responses: { 200: { description: "Sent" } } } },
+                "/messages/sticker": { post: { tags: ["Messaging"], summary: "Send Sticker", responses: { 200: { description: "Sent" } } } },
+                "/messages/broadcast": { post: { tags: ["Messaging"], summary: "Send Broadcast", responses: { 200: { description: "Sent" } } } },
+                "/messages/spam": { post: { tags: ["Messaging"], summary: "Report Spam", responses: { 200: { description: "Reported" } } } },
+                "/messages/delete": { delete: { tags: ["Messaging"], summary: "Delete Message", responses: { 200: { description: "Deleted" } } } },
+                "/messages/{id}/media": {
+                    get: { tags: ["Messaging"], summary: "Download Media", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "File stream" } } }
+                },
+
+                // ==================== GROUPS (10) ====================
+                "/groups": { get: { tags: ["Groups"], summary: "List Groups", responses: { 200: { description: "OK" } } } },
+                "/groups/create": { post: { tags: ["Groups"], summary: "Create Group", responses: { 200: { description: "Created" } } } },
+                "/groups/invite/accept": { post: { tags: ["Groups"], summary: "Accept Invite", responses: { 200: { description: "Accepted" } } } },
+                "/groups/{jid}/picture": {
+                    put: { tags: ["Groups"], summary: "Update Picture", parameters: [{ name: "jid", in: "path", required: true }], responses: { 200: { description: "Updated" } } },
+                    delete: { tags: ["Groups"], summary: "Remove Picture", parameters: [{ name: "jid", in: "path", required: true }], responses: { 200: { description: "Removed" } } }
+                },
+                "/groups/{jid}/subject": { put: { tags: ["Groups"], summary: "Update Subject", parameters: [{ name: "jid", in: "path", required: true }], responses: { 200: { description: "Updated" } } } },
+                "/groups/{jid}/description": { put: { tags: ["Groups"], summary: "Update Description", parameters: [{ name: "jid", in: "path", required: true }], responses: { 200: { description: "Updated" } } } },
+                "/groups/{jid}/invite": { get: { tags: ["Groups"], summary: "Get Invite Code", parameters: [{ name: "jid", in: "path", required: true }], responses: { 200: { description: "Code" } } } },
+                "/groups/{jid}/invite/revoke": { put: { tags: ["Groups"], summary: "Revoke Invite Code", parameters: [{ name: "jid", in: "path", required: true }], responses: { 200: { description: "Revoked" } } } },
+                "/groups/{jid}/members": { put: { tags: ["Groups"], summary: "Manage Members (Add/Remove/Promote)", parameters: [{ name: "jid", in: "path", required: true }], responses: { 200: { description: "Updated" } } } },
+                "/groups/{jid}/settings": { put: { tags: ["Groups"], summary: "Update Group Settings", parameters: [{ name: "jid", in: "path", required: true }], responses: { 200: { description: "Updated" } } } },
+                "/groups/{jid}/ephemeral": { put: { tags: ["Groups"], summary: "Toggle Disappearing Messages", parameters: [{ name: "jid", in: "path", required: true }], responses: { 200: { description: "Updated" } } } },
+                "/groups/{jid}/leave": { post: { tags: ["Groups"], summary: "Leave Group", parameters: [{ name: "jid", in: "path", required: true }], responses: { 200: { description: "Left" } } } },
+
+                // ==================== CHAT MANAGEMENT (11) ====================
+                "/chat/{sessionId}": { get: { tags: ["Chat"], summary: "Get Chat List", parameters: [{ name: "sessionId", in: "path", required: true }], responses: { 200: { description: "OK" } } } },
+                "/chat/{sessionId}/{jid}": { get: { tags: ["Chat"], summary: "Get Specific Chat History", parameters: [{ name: "sessionId", in: "path", required: true }, { name: "jid", in: "path", required: true }], responses: { 200: { description: "OK" } } } },
+                "/chat/check": { post: { tags: ["Chat"], summary: "Check Numbers", responses: { 200: { description: "Checked" } } } },
+                "/chat/read": { put: { tags: ["Chat"], summary: "Mark as Read", responses: { 200: { description: "Updated" } } } },
+                "/chat/archive": { put: { tags: ["Chat"], summary: "Archive/Unarchive", responses: { 200: { description: "Updated" } } } },
+                "/chat/presence": { post: { tags: ["Chat"], summary: "Send Presence", responses: { 200: { description: "Updated" } } } },
+                "/chat/profile-picture": { post: { tags: ["Chat"], summary: "Get Profile Picture", responses: { 200: { description: "URL" } } } },
+                "/chat/mute": { put: { tags: ["Chat"], summary: "Mute/Unmute", responses: { 200: { description: "Updated" } } } },
+                "/chat/pin": { put: { tags: ["Chat"], summary: "Pin/Unpin", responses: { 200: { description: "Updated" } } } },
+                "/chats/by-label/{labelId}": { get: { tags: ["Chat"], summary: "Filter Chats by Label", parameters: [{ name: "labelId", in: "path", required: true }], responses: { 200: { description: "OK" } } } },
+
+                // ==================== CONTACTS (3) ====================
+                "/contacts": { get: { tags: ["Contacts"], summary: "List Contacts", responses: { 200: { description: "OK" } } } },
+                "/contacts/block": { post: { tags: ["Contacts"], summary: "Block Contact", responses: { 200: { description: "Blocked" } } } },
+                "/contacts/unblock": { post: { tags: ["Contacts"], summary: "Unblock Contact", responses: { 200: { description: "Unblocked" } } } },
+
+                // ==================== LABELS (4) ====================
+                "/labels": {
+                    get: { tags: ["Labels"], summary: "List Labels", responses: { 200: { description: "OK" } } },
+                    post: { tags: ["Labels"], summary: "Create Label", responses: { 200: { description: "Created" } } }
+                },
+                "/labels/{id}": {
+                    put: { tags: ["Labels"], summary: "Update Label", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Updated" } } },
+                    delete: { tags: ["Labels"], summary: "Delete Label", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Deleted" } } }
+                },
+                "/labels/chat-labels": {
+                    get: { tags: ["Labels"], summary: "Get Chat Labels", parameters: [{ name: "jid", in: "query", required: true }], responses: { 200: { description: "OK" } } },
+                    put: { tags: ["Labels"], summary: "Update Chat Labels", parameters: [{ name: "jid", in: "query", required: true }], responses: { 200: { description: "Updated" } } }
+                },
+
+                // ==================== PROFILE (4) ====================
+                "/profile": { get: { tags: ["Profile"], summary: "Get Own Profile", responses: { 200: { description: "OK" } } } },
+                "/profile/name": { put: { tags: ["Profile"], summary: "Update Push Name", responses: { 200: { description: "Updated" } } } },
+                "/profile/status": { put: { tags: ["Profile"], summary: "Update About/Status", responses: { 200: { description: "Updated" } } } },
+                "/profile/picture": {
+                    put: { tags: ["Profile"], summary: "Update Profile Picture", responses: { 200: { description: "Updated" } } },
+                    delete: { tags: ["Profile"], summary: "Remove Profile Picture", responses: { 200: { description: "Removed" } } }
+                },
+
+                // ==================== AUTO REPLY (2) ====================
+                "/autoreplies": {
+                    get: { tags: ["Auto Reply"], summary: "List Auto Replies", responses: { 200: { description: "OK" } } },
+                    post: { tags: ["Auto Reply"], summary: "Create Auto Reply", responses: { 200: { description: "Created" } } }
+                },
+                "/autoreplies/{id}": {
+                    get: { tags: ["Auto Reply"], summary: "Get Auto Reply", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "OK" } } },
+                    put: { tags: ["Auto Reply"], summary: "Update Auto Reply", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Updated" } } },
+                    delete: { tags: ["Auto Reply"], summary: "Delete Auto Reply", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Deleted" } } }
+                },
+
+                // ==================== SCHEDULER (2) ====================
+                "/scheduler": {
+                    get: { tags: ["Scheduler"], summary: "List Scheduled", responses: { 200: { description: "OK" } } },
+                    post: { tags: ["Scheduler"], summary: "Create Schedule", responses: { 200: { description: "Created" } } }
+                },
+                "/scheduler/{id}": {
+                    get: { tags: ["Scheduler"], summary: "Get Scheduled Message", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "OK" } } },
+                    put: { tags: ["Scheduler"], summary: "Update Schedule", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Updated" } } },
+                    delete: { tags: ["Scheduler"], summary: "Delete Schedule", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Deleted" } } }
+                },
+
+                // ==================== WEBHOOKS (2) ====================
+                "/webhooks": {
+                    get: { tags: ["Webhooks"], summary: "List Webhooks", responses: { 200: { description: "OK" } } },
+                    post: { tags: ["Webhooks"], summary: "Create Webhook", responses: { 200: { description: "Created" } } }
+                },
+                "/webhooks/{id}": {
+                    get: { tags: ["Webhooks"], summary: "Get Webhook", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "OK" } } },
+                    put: { tags: ["Webhooks"], summary: "Update Webhook", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Updated" } } },
+                    delete: { tags: ["Webhooks"], summary: "Delete Webhook", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Deleted" } } }
+                },
+
+                // ==================== NOTIFICATIONS (3) ====================
+                "/notifications": {
+                    get: { tags: ["Notifications"], summary: "List Notifications", responses: { 200: { description: "OK" } } },
+                    post: { tags: ["Notifications"], summary: "Create Notification", responses: { 200: { description: "Created" } } }
+                },
+                "/notifications/read": { patch: { tags: ["Notifications"], summary: "Mark Read", responses: { 200: { description: "Updated" } } } },
+                "/notifications/delete": { delete: { tags: ["Notifications"], summary: "Delete Notification", responses: { 200: { description: "Deleted" } } } },
+
+                // ==================== USERS (4) ====================
+                "/users": {
+                    get: { tags: ["Users"], summary: "List Users (Admin)", responses: { 200: { description: "OK" } } },
+                    post: { tags: ["Users"], summary: "Create User (Admin)", responses: { 200: { description: "Created" } } }
+                },
+                "/users/{id}": {
+                    get: { tags: ["Users"], summary: "Get User", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "OK" } } },
+                    put: { tags: ["Users"], summary: "Update User", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Updated" } } },
+                    delete: { tags: ["Users"], summary: "Delete User", parameters: [{ name: "id", in: "path", required: true }], responses: { 200: { description: "Deleted" } } }
+                },
+                "/user/api-key": {
+                    get: { tags: ["Users"], summary: "Get API Key", responses: { 200: { description: "Key" } } },
+                    post: { tags: ["Users"], summary: "Generate New API Key", responses: { 200: { description: "New Key" } } }
+                },
+
+                // ==================== SYSTEM (4) ====================
+                "/settings/system": {
+                    get: { tags: ["System"], summary: "Get System Settings", responses: { 200: { description: "OK" } } },
+                    put: { tags: ["System"], summary: "Update System Settings", responses: { 200: { description: "Updated" } } }
+                },
+                "/status/update": { post: { tags: ["System"], summary: "Update Status", responses: { 200: { description: "Updated" } } } },
+                "/system/check-updates": { get: { tags: ["System"], summary: "Check for Updates", responses: { 200: { description: "Status" } } } }
+            },
+        },
+    });
+    return spec;
 };
