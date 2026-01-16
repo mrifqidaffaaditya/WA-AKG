@@ -3,13 +3,7 @@ import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 
 // PUT: Mute or unmute a chat
-export async function PUT(
-    request: NextRequest,
-    { params }: { params: Promise<{ jid: string }> }
-) {
-    const { jid } = await params;
-    const decodedJid = decodeURIComponent(jid);
-
+export async function PUT(request: NextRequest) {
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
@@ -17,13 +11,15 @@ export async function PUT(
         }
 
         const body = await request.json();
-        const { sessionId, mute, duration } = body;
+        const { sessionId, jid, mute, duration } = body;
 
-        if (!sessionId || mute === undefined) {
+        if (!sessionId || !jid || mute === undefined) {
             return NextResponse.json({ 
-                error: "sessionId and mute (boolean) are required" 
+                error: "sessionId, jid, and mute (boolean) are required" 
             }, { status: 400 });
         }
+        
+        const decodedJid = decodeURIComponent(jid);
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);

@@ -3,11 +3,14 @@ import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 
 // GET: Get labels for a chat
-export async function GET(
-    request: NextRequest,
-    { params }: { params: Promise<{ jid: string }> }
-) {
-    const { jid } = await params;
+export async function GET(request: NextRequest) {
+    const { searchParams } = new URL(request.url);
+    const jid = searchParams.get("jid");
+    
+    if (!jid) {
+        return NextResponse.json({ error: "jid is required" }, { status: 400 });
+    }
+    
     const decodedJid = decodeURIComponent(jid);
 
     try {
@@ -50,11 +53,14 @@ export async function GET(
 }
 
 // PUT: Add or remove labels from chat
-export async function PUT(
-    request: NextRequest,
-    { params }: { params: Promise<{ jid: string }> }
-) {
-    const { jid } = await params;
+export async function PUT(request: NextRequest) {
+    const { searchParams } = new URL(request.url);
+    const jid = searchParams.get("jid");
+    
+    if (!jid) {
+        return NextResponse.json({ error: "jid is required" }, { status: 400 });
+    }
+    
     const decodedJid = decodeURIComponent(jid);
 
     try {
