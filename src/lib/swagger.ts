@@ -19,6 +19,12 @@ All endpoints require authentication via:
 2. **Session Cookie**: \`next-auth.session-token\`
                 `,
             },
+            servers: [
+                {
+                    url: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api",
+                    description: "API Server",
+                },
+            ],
             components: {
                 securitySchemes: {
                     ApiKeyAuth: {
