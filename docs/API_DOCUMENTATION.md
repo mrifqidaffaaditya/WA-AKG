@@ -1009,6 +1009,72 @@ curl -X POST https://your-domain.com/api/autoreplies \
 
 ---
 
+### GET /api/autoreplies/{id}
+**Description**: Get a specific auto-reply rule by ID.
+
+**Path Parameters**:
+- `id` (string, required): Rule ID
+
+**Request Example**:
+```bash
+curl -X GET https://your-domain.com/api/autoreplies/rule123 \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "id": "rule123",
+  "sessionId": "sales-01",
+  "keyword": "price",
+  "response": "Our prices start at $10",
+  "matchType": "CONTAINS",
+  "createdAt": "2024-01-15T10:00:00Z"
+}
+```
+
+---
+
+### PUT /api/autoreplies/{id}
+**Description**: Update an existing auto-reply rule.
+
+**Path Parameters**:
+- `id` (string, required): Rule ID
+
+**Request Body**:
+- `keyword` (string, optional): Updated keyword
+- `response` (string, optional): Updated response
+- `matchType` (string, optional): Updated match type
+
+**Request Example**:
+```bash
+curl -X PUT https://your-domain.com/api/autoreplies/rule123 \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "keyword": "pricing",
+    "response": "Our premium prices start at $50",
+    "matchType": "EXACT"
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "rule": {
+    "id": "rule123",
+    "sessionId": "sales-01",
+    "keyword": "pricing",
+    "response": "Our premium prices start at $50",
+    "matchType": "EXACT",
+    "updatedAt": "2024-01-17T03:00:00Z"
+  }
+}
+```
+
+---
+
 ### DELETE /api/autoreplies/{id}
 **Description**: Delete an auto-reply rule.
 
@@ -1101,6 +1167,92 @@ curl -X POST https://your-domain.com/api/scheduler \
 
 ---
 
+### GET /api/scheduler/{id}
+**Description**: Get a specific scheduled message by ID.
+
+**Path Parameters**:
+- `id` (string, required): Scheduled message ID
+
+**Request Example**:
+```bash
+curl -X GET https://your-domain.com/api/scheduler/msg123 \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "id": "msg123",
+  "sessionId": "sales-01",
+  "jid": "628123456789@s.whatsapp.net",
+  "content": "Reminder: Meeting at 3 PM",
+  "sendAt": "2024-01-18T15:00:00Z",
+  "status": "PENDING",
+  "createdAt": "2024-01-17T10:00:00Z"
+}
+```
+
+---
+
+### PUT /api/scheduler/{id}
+**Description**: Update a scheduled message.
+
+**Path Parameters**:
+- `id` (string, required): Scheduled message ID
+
+**Request Body**:
+- `content` (string, optional): Updated message content
+- `sendAt` (datetime, optional): Updated send time
+- `jid` (string, optional): Updated recipient
+
+**Request Example**:
+```bash
+curl -X PUT https://your-domain.com/api/scheduler/msg123 \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "Updated: Meeting postponed to 4 PM",
+    "sendAt": "2024-01-18T16:00:00"
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "scheduled": {
+    "id": "msg123",
+    "content": "Updated: Meeting postponed to 4 PM",
+    "sendAt": "2024-01-18T16:00:00Z",
+    "updatedAt": "2024-01-17T12:00:00Z"
+  }
+}
+```
+
+---
+
+### DELETE /api/scheduler/{id}
+**Description**: Delete a scheduled message.
+
+**Path Parameters**:
+- `id` (string, required): Scheduled message ID
+
+**Request Example**:
+```bash
+curl -X DELETE https://your-domain.com/api/scheduler/msg123 \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Scheduled message deleted"
+}
+```
+
+---
+
 ## 🔗 Webhooks
 
 ### GET /api/webhooks
@@ -1175,6 +1327,320 @@ curl -X POST https://your-domain.com/api/webhooks \
 
 ---
 
+### GET /api/webhooks/{id}
+**Description**: Get a specific webhook by ID.
+
+**Path Parameters**:
+- `id` (string, required): Webhook ID
+
+**Request Example**:
+```bash
+curl -X GET https://your-domain.com/api/webhooks/webhook123 \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "id": "webhook123",
+  "name": "CRM Integration",
+  "url": "https://crm.example.com/webhook",
+  "events": ["message.upsert", "message.delete"],
+  "isActive": true,
+  "createdAt": "2024-01-15T10:00:00Z"
+}
+```
+
+---
+
+### PUT /api/webhooks/{id}
+**Description**: Update webhook configuration.
+
+**Path Parameters**:
+- `id` (string, required): Webhook ID
+
+**Request Body**:
+- `name` (string, optional): Updated name
+- `url` (string, optional): Updated URL
+- `events` (array, optional): Updated event list
+- `isActive` (boolean, optional): Enable/disable webhook
+
+**Request Example**:
+```bash
+curl -X PUT https://your-domain.com/api/webhooks/webhook123 \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated CRM Integration",
+    "isActive": false
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "webhook": {
+    "id": "webhook123",
+    "name": "Updated CRM Integration",
+    "isActive": false,
+    "updatedAt": "2024-01-17T03:00:00Z"
+  }
+}
+```
+
+---
+
+### DELETE /api/webhooks/{id}
+**Description**: Delete a webhook.
+
+**Path Parameters**:
+- `id` (string, required): Webhook ID
+
+**Request Example**:
+```bash
+curl -X DELETE https://your-domain.com/api/webhooks/webhook123 \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Webhook deleted"
+}
+```
+
+---
+
+### PUT /api/labels/{id}
+**Description**: Update a label.
+
+**Path Parameters**:
+- `id` (string, required): Label ID
+
+**Request Body**:
+- `name` (string, optional): Updated label name
+- `color` (integer, optional): Updated color (0-19)
+
+**Request Example**:
+```bash
+curl -X PUT https://your-domain.com/api/labels/label123 \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Super Important",
+    "color": 7
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "label": {
+    "id": "label123",
+    "name": "Super Important",
+    "color": 7,
+    "colorHex": "#FF1493",
+    "updatedAt": "2024-01-17T03:00:00Z"
+  }
+}
+```
+
+---
+
+### DELETE /api/labels/{id}
+**Description**: Delete a label.
+
+**Path Parameters**:
+- `id` (string, required): Label ID
+
+**Request Example**:
+```bash
+curl -X DELETE https://your-domain.com/api/labels/label123 \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Label deleted"
+}
+```
+
+---
+
+### GET /api/labels/chat-labels
+**Description**: Get labels assigned to a specific chat.
+
+**Query Parameters**:
+- `jid` (string, required): Chat JID
+- `sessionId` (string, required): Session ID
+
+**Request Example**:
+```bash
+curl -X GET "https://your-domain.com/api/labels/chat-labels?jid=628123456789@s.whatsapp.net&sessionId=sales-01" \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "labels": [
+    {
+      "id": "label123",
+      "name": "Important",
+      "color": 0,
+      "colorHex": "#FF0000"
+    }
+  ]
+}
+```
+
+---
+
+### PUT /api/labels/chat-labels
+**Description**: Add or remove labels from a chat.
+
+**Query Parameters**:
+- `jid` (string, required): Chat JID
+
+**Request Body**:
+- `sessionId` (string, required)
+- `labelIds` (array, required): Array of label IDs
+- `action` (string, required): "add" or "remove"
+
+**Request Example**:
+```bash
+curl -X PUT "https://your-domain.com/api/labels/chat-labels?jid=628123456789@s.whatsapp.net" \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionId": "sales-01",
+    "labelIds": ["label123", "label456"],
+    "action": "add"
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Labels added to chat"
+}
+```
+
+---
+
+### GET /api/users/{id}
+**Description**: Get a specific user by ID (SUPERADMIN only).
+
+**Path Parameters**:
+- `id` (string, required): User ID
+
+**Request Example**:
+```bash
+curl -X GET https://your-domain.com/api/users/user123 \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "id": "user123",
+  "name": "Sales Team",
+  "email": "sales@example.com",
+  "role": "OWNER",
+  "createdAt": "2024-01-05T00:00:00Z",
+  "_count": {
+    "sessions": 2
+  }
+}
+```
+
+---
+
+### PUT /api/users/{id}
+**Description**: Update user information (SUPERADMIN only).
+
+**Path Parameters**:
+- `id` (string, required): User ID
+
+**Request Body**:
+- `name` (string, optional)
+- `email` (string, optional)
+- `password` (string, optional)
+- `role` (string, optional)
+
+**Request Example**:
+```bash
+curl -X PUT https://your-domain.com/api/users/user123 \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated Sales Team",
+    "role": "STAFF"
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "user": {
+    "id": "user123",
+    "name": "Updated Sales Team",
+    "role": "STAFF",
+    "updatedAt": "2024-01-17T03:00:00Z"
+  }
+}
+```
+
+---
+
+### DELETE /api/users/{id}
+**Description**: Delete a user (SUPERADMIN only).
+
+**Path Parameters**:
+- `id` (string, required): User ID
+
+**Request Example**:
+```bash
+curl -X DELETE https://your-domain.com/api/users/user123 \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "User deleted"
+}
+```
+
+---
+
+### DELETE /api/user/api-key
+**Description**: Revoke current API key.
+
+**Request Example**:
+```bash
+curl -X DELETE https://your-domain.com/api/user/api-key \
+  -H "X-API-Key: your-current-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "API key revoked"
+}
+```
+
+---
+
 ## ⚙️ System
 
 ### GET /api/settings/system
@@ -1234,6 +1700,427 @@ curl -X POST https://your-domain.com/api/settings/system \
 
 ---
 
+### PUT /api/chat/read
+**Description**: Mark messages or entire chat as read.
+
+**Path Parameters**: None
+**Query Parameters**: None
+**Request Body**:
+- `sessionId` (string, required): Session identifier
+- `jid` (string, required): WhatsApp JID
+- `messageIds` (array of strings, optional): Specific message IDs to mark as read
+
+**Request Examples**:
+
+```bash
+# Mark entire chat as read
+curl -X PUT https://your-domain.com/api/chat/read \\\n  -H "X-API-Key: your-api-key" \\\n  -H "Content-Type: application/json" \\\n  -d '{
+    "sessionId": "sales-01",
+    "jid": "628123456789@s.whatsapp.net"
+  }'
+
+# Mark specific messages as read
+curl -X PUT https://your-domain.com/api/chat/read \\\n  -H "X-API-Key: your-api-key" \\\n  -H "Content-Type: application/json" \\\n  -d '{
+    "sessionId": "sales-01",
+    "jid": "628123456789@s.whatsapp.net",
+    "messageIds": ["3EB0ABCD1234567890", "3EB0DEFG0987654321"]
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Messages marked as read"
+}
+```
+
+---
+
+### POST /api/messages/contact
+**Description**: Send contact card(s) to a chat.
+
+**Request Body**:
+- `sessionId` (string, required): Session identifier
+- `jid` (string, required): Recipient JID
+- `contacts` (array, required): Array of contact objects with `displayName` and `vcard`
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/messages/contact \\\n  -H "X-API-Key: your-api-key" \\\n  -H "Content-Type: application/json" \\\n  -d '{
+    "sessionId": "sales-01",
+    "jid": "628123456789@s.whatsapp.net",
+    "contacts": [
+      {
+        "displayName": "John Doe",
+        "vcard": "BEGIN:VCARD\nVERSION:3.0\nFN:John Doe\nTEL:+628123456789\nEND:VCARD"
+      }
+    ]
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true
+}
+```
+
+---
+
+### POST /api/messages/react
+**Description**: React to a message with an emoji. Send empty string to remove reaction.
+
+**Request Body**:
+- `sessionId` (string, required)
+- `jid` (string, required)
+- `messageId` (string, required): Message ID to react to
+- `emoji` (string, required): Emoji character or empty string
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/messages/react \\\n  -H "X-API-Key: your-api-key" \\\n  -H "Content-Type: application/json" \\\n  -d '{
+    "sessionId": "sales-01",
+    "jid": "628123456789@s.whatsapp.net",
+    "messageId": "3EB0ABCD1234567890",
+    "emoji": "👍"
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Reaction sent"
+}
+```
+
+---
+
+### POST /api/messages/forward
+**Description**: Forward a message to one or multiple recipients.
+
+**Request Body**:
+- `sessionId` (string, required)
+- `fromJid` (string, required): Source chat JID
+- `messageId` (string, required): Message ID to forward
+- `toJids` (array of strings, required): List of recipient JIDs
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/messages/forward \\\n  -H "X-API-Key: your-api-key" \\\n  -H "Content-Type: application/json" \\\n  -d '{
+    "sessionId": "sales-01",
+    "fromJid": "628123456789@s.whatsapp.net",
+    "messageId": "3EB0ABCD1234567890",
+    "toJids": ["628987654321@s.whatsapp.net", "120363123456789@g.us"]
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Message forwarded to 2 recipient(s)"
+}
+```
+
+---
+
+### PUT /api/groups/{jid}/members
+**Description**: Add, remove, promote, or demote group members.
+
+**Path Parameters**:
+- `jid` (string, required): URL-encoded group JID
+
+**Request Body**:
+- `sessionId` (string, required)
+- `action` (string, required): One of `add`, `remove`, `promote`, `demote`
+- `participants` (array of strings, required): List of participant JIDs
+
+**Request Example**:
+```bash
+curl -X PUT https://your-domain.com/api/groups/120363123456789%40g.us/members \\\n  -H "X-API-Key: your-api-key" \\\n  -H "Content-Type: application/json" \\\n  -d '{
+    "sessionId": "sales-01",
+    "action": "add",
+    "participants": ["628123456789@s.whatsapp.net", "628987654321@s.whatsapp.net"]
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Successfully added participants",
+  "result": [
+    {"status": "200", "jid": "628123456789@s.whatsapp.net"},
+    {"status": "200", "jid": "628987654321@s.whatsapp.net"}
+  ]
+}
+```
+
+**Error Responses**:
+- **403**: Bot must be admin
+
+---
+
+### PUT /api/groups/{jid}/invite
+**Description**: Revoke current invite code and generate a new one.
+
+**Path Parameters**:
+- `jid` (string, required): URL-encoded group JID
+
+**Request Body**:
+- `sessionId` (string, required)
+
+**Request Example**:
+```bash
+curl -X PUT https://your-domain.com/api/groups/120363123456789%40g.us/invite \\\n  -H "X-API-Key: your-api-key" \\\n  -H "Content-Type: application/json" \\\n  -d '{
+    "sessionId": "sales-01"
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Invite code revoked successfully",
+  "newInviteCode": "AbCdEfGhIjKlMnOp",
+  "inviteUrl": "https://chat.whatsapp.com/AbCdEfGhIjKlMnOp"
+}
+```
+
+---
+
+## 🏷️ Labels
+
+### GET /api/labels
+**Description**: List all labels for a session with chat counts.
+
+**Query Parameters**:
+- `sessionId` (string, required): Session identifier
+
+**Request Example**:
+```bash
+curl -X GET "https://your-domain.com/api/labels?sessionId=sales-01" \\\n  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "labels": [
+    {
+      "id": "label123",
+      "sessionId": "sales-01",
+      "name": "Important",
+      "color": 0,
+      "colorHex": "#FF0000",
+      "createdAt": "2024-01-15T10:00:00Z",
+      "_count": {
+        "chatLabels": 5
+      }
+    },
+    {
+      "id": "label456",
+      "sessionId": "sales-01",
+      "name": "Follow-up",
+      "color": 3,
+      "colorHex": "#00FF00",
+      "createdAt": "2024-01-14T12:00:00Z",
+      "_count": {
+        "chatLabels": 12
+      }
+    }
+  ]
+}
+```
+
+---
+
+### POST /api/labels
+**Description**: Create a new label with color.
+
+**Request Body**:
+- `sessionId` (string, required)
+- `name` (string, required): Label name
+- `color` (integer, optional): Color index 0-19 (default: 0)
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/labels \\\n  -H "X-API-Key: your-api-key" \\\n  -H "Content-Type: application/json" \\\n  -d '{
+    "sessionId": "sales-01",
+    "name": "VIP Customers",
+    "color": 5
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "label": {
+    "id": "label789",
+    "sessionId": "sales-01",
+    "name": "VIP Customers",
+    "color": 5,
+    "colorHex": "#0000FF",
+    "createdAt": "2024-01-17T02:00:00Z"
+  }
+}
+```
+
+**Validation**:
+- Color must be between 0-19
+- 20 predefined colors available
+
+---
+
+## 📇 Contacts
+
+### GET /api/contacts
+**Description**: Get paginated contact list with search functionality.
+
+**Query Parameters**:
+- `sessionId` (string, required): Session identifier
+- `page` (integer, optional): Page number (default: 1)
+- `limit` (integer, optional): Items per page (default: 10)
+- `search` (string, optional): Search by name, notify, jid
+
+**Request Example**:
+```bash
+curl -X GET "https://your-domain.com/api/contacts?sessionId=sales-01&page=1&limit=20&search=john" \\\n  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "data": [
+    {
+      "id": "contact123",
+      "jid": "628123456789@s.whatsapp.net",
+      "name": "John Doe",
+      "notify": "John",
+      "verifiedName": null,
+      "profilePic": "https://...",
+      "remoteJidAlt": "628123456789"
+    }
+  ],
+  "meta": {
+    "total": 150,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 8
+  }
+}
+```
+
+---
+
+## 👤 Profile
+
+### GET /api/profile
+**Description**: Get bot's own WhatsApp profile and status.
+
+**Query Parameters**:
+- `sessionId` (string, required)
+
+**Request Example**:
+```bash
+curl -X GET "https://your-domain.com/api/profile?sessionId=sales-01" \\\n  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "jid": "628111222333@s.whatsapp.net",
+  "status": {
+    "status": "Hey there! I'm using WhatsApp",
+    "setAt": "2024-01-10T08:00:00Z"
+  }
+}
+```
+
+---
+
+## 👥 Users
+
+### GET /api/users
+**Description**: List all users (SUPERADMIN only).
+
+**Authorization**: Requires SUPERADMIN role
+
+**Request Example**:
+```bash
+curl -X GET https://your-domain.com/api/users \\\n  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+[
+  {
+    "id": "user123",
+    "name": "Admin User",
+    "email": "admin@example.com",
+    "role": "SUPERADMIN",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "_count": {
+      "sessions": 3
+    }
+  },
+  {
+    "id": "user456",
+    "name": "Sales Team",
+    "email": "sales@example.com",
+    "role": "OWNER",
+    "createdAt": "2024-01-05T00:00:00Z",
+    "_count": {
+      "sessions": 2
+    }
+  }
+]
+```
+
+---
+
+### POST /api/users
+**Description**: Create a new user (SUPERADMIN only).
+
+**Authorization**: Requires SUPERADMIN role
+
+**Request Body**:
+- `name` (string, required): Min 2 characters
+- `email` (string, required): Valid email format
+- `password` (string, required): Min 6 characters
+- `role` (string, optional): `SUPERADMIN`, `OWNER`, or `STAFF` (default: `OWNER`)
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/users \\\n  -H "X-API-Key: your-api-key" \\\n  -H "Content-Type: application/json" \\\n  -d '{
+    "name": "Marketing Team",
+    "email": "marketing@example.com",
+    "password": "SecurePass123",
+    "role": "OWNER"
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "id": "user789",
+  "name": "Marketing Team",
+  "email": "marketing@example.com",
+  "role": "OWNER",
+  "createdAt": "2024-01-17T02:30:00Z"
+}
+```
+
+**Error Responses**:
+- **400**: Email already exists
+- **403**: Unauthorized (not SUPERADMIN)
+
+---
+
 ## 📊 Complete Endpoint Reference
 
 | Category | Method | Endpoint | Description |
@@ -1248,17 +2135,31 @@ curl -X POST https://your-domain.com/api/settings/system \
 | **Messaging** | POST | `/api/chat/send` | Send message |
 | | POST | `/api/messages/poll` | Send poll |
 | | POST | `/api/messages/location` | Send location |
+| | POST | `/api/messages/contact` | Send contact card |
+| | POST | `/api/messages/react` | React to message |
+| | POST | `/api/messages/forward` | Forward message |
 | | POST | `/api/messages/broadcast` | Broadcast message |
 | | DELETE | `/api/messages/delete` | Delete message |
 | **Chat** | GET | `/api/chat/{sessionId}` | List chats |
 | | GET | `/api/chat/{sessionId}/{jid}` | Get chat history |
 | | POST | `/api/chat/check` | Check numbers |
+| | PUT | `/api/chat/read` | Mark as read |
 | | PUT | `/api/chat/archive` | Archive chat |
+| | PUT | `/api/chat/mute` | Mute chat |
+| | PUT | `/api/chat/pin` | Pin chat |
+| | POST | `/api/chat/presence` | Send presence |
+| | POST | `/api/chat/profile-picture` | Get profile picture |
 | **Groups** | GET | `/api/groups` | List groups |
 | | POST | `/api/groups/create` | Create group |
 | | PUT | `/api/groups/{jid}/subject` | Update group name |
+| | PUT | `/api/groups/{jid}/members` | Manage members |
 | | GET | `/api/groups/{jid}/invite` | Get invite code |
+| | PUT | `/api/groups/{jid}/invite` | Revoke invite code |
 | | POST | `/api/groups/{jid}/leave` | Leave group |
+| **Labels** | GET | `/api/labels` | List labels |
+| | POST | `/api/labels` | Create label |
+| **Contacts** | GET | `/api/contacts` | List contacts (paginated) |
+| **Profile** | GET | `/api/profile` | Get own profile |
 | **Auto Reply** | GET | `/api/autoreplies` | List rules |
 | | POST | `/api/autoreplies` | Create rule |
 | | DELETE | `/api/autoreplies/{id}` | Delete rule |
@@ -1266,5 +2167,125 @@ curl -X POST https://your-domain.com/api/settings/system \
 | | POST | `/api/scheduler` | Create schedule |
 | **Webhooks** | GET | `/api/webhooks` | List webhooks |
 | | POST | `/api/webhooks` | Create webhook |
+| **Users** | GET | `/api/users` | List users (SUPERADMIN) |
+| | POST | `/api/users` | Create user (SUPERADMIN) |
 | **System** | GET | `/api/settings/system` | Get config |
 | | POST | `/api/settings/system` | Update config |
+
+---
+
+## 🔑 Parameter Quick Reference
+
+### Common Request Parameters
+
+#### sessionId
+- **Type**: string
+- **Location**: Query parameter or request body
+- **Description**: Unique identifier for the WhatsApp session
+- **Example**: `"sales-01"`, `"support-bot-1"`
+
+#### jid (WhatsApp ID)
+- **Type**: string
+- **Format**: 
+  - Personal: `{countryCode}{number}@s.whatsapp.net`
+  - Group: `{groupId}@g.us`
+- **Example**: `"628123456789@s.whatsapp.net"`, `"120363123456789@g.us"`
+- **Note**: Must be URL-encoded when used in path parameters
+
+### Validation Limits
+
+- **Phone Check**: Maximum 50 numbers per request
+- **Poll Options**: 2-12 options required
+- **Message History**: Maximum 100 messages returned
+- **Group Subject**: Maximum 100 characters
+- **Label Colors**: 0-19 index values
+- **Message Deletion**: Only messages < 7 minutes old
+- **Broadcast Delay**: Random 10-20 seconds between messages
+- **Latitude**: -90 to 90
+- **Longitude**: -180 to 180
+
+---
+
+## 🛡️ Error Responses
+
+### Common HTTP Status Codes
+
+| Code | Description | Example Response |
+|------|-------------|------------------|
+| 200 | Success | `{"success": true, "message": "OK"}` |
+| 400 | Bad Request | `{"error": "sessionId is required"}` |
+| 401 | Unauthorized | `{"error": "Unauthorized"}` |
+| 403 | Forbidden | `{"error": "Forbidden - Cannot access this session"}` |
+| 404 | Not Found | `{"error": "Session not found"}` |
+| 503 | Service Unavailable | `{"error": "Session not ready"}` |
+
+### Specific Error Cases
+
+#### Bot Permission Errors
+```json
+{
+  "error": "Bot must be admin to update group subject"
+}
+```
+
+#### Validation Errors
+```json
+{
+  "error": "Poll must have between 2 and 12 options"
+}
+```
+
+#### Time Limit Errors
+```json
+{
+  "error": "Cannot delete message older than 7 minutes"
+}
+```
+
+---
+
+## 📖 Best Practices
+
+1. **Always URL-encode JIDs** in path parameters
+2. **Check session status** before sending messages
+3. **Respect rate limits** to avoid bans
+4. **Use webhooks** for real-time event notifications
+5. **Implement retry logic** for failed requests
+6. **Store message IDs** for reactions and deletions
+7. **Validate phone numbers** before sending bulk messages
+8. **Use scheduled messages** for time-sensitive campaigns
+9. **Monitor webhook deliveries** for debugging
+10. **Keep API keys secure** and rotate regularly
+
+---
+
+## 🚀 Quick Start Examples
+
+### Complete Message Flow
+```bash
+# 1. Create session
+curl -X POST https://your-domain.com/api/sessions \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Bot 1"}'
+
+# 2. Get QR code
+curl -X GET https://your-domain.com/api/sessions/bot-1/qr \
+  -H "X-API-Key: your-api-key"
+
+# 3. Send message (after scanning QR)
+curl -X POST https://your-domain.com/api/chat/send \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionId": "bot-1",
+    "jid": "628123456789@s.whatsapp.net",
+    "message": {"text": "Hello!"}
+  }'
+```
+
+---
+
+**Documentation Version**: 1.2.0  
+**Last Updated**: 2024-01-17  
+**Total Endpoints**: 64+
