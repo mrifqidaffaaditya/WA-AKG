@@ -1,96 +1,285 @@
 # All API Routes - Analysis Status
 
-✓ src/app/api/auth/[...nextauth]/route.ts
-✓ src/app/api/autoreplies/[id]/route.ts
-✓ src/app/api/autoreplies/route.ts
-src/app/api/chat/archive/route.ts
-✓ src/app/api/chat/check/route.ts
-✓ src/app/api/chat/mute/route.ts
-✓ src/app/api/chat/pin/route.ts
-✓ src/app/api/chat/presence/route.ts
-✓ src/app/api/chat/profile-picture/route.ts
-✓ src/app/api/chat/read/route.ts
-src/app/api/chats/by-label/[labelId]/route.ts
-✓ src/app/api/chat/send/route.ts
-✓ src/app/api/chat/[sessionId]/[jid]/route.ts
-✓ src/app/api/chat/[sessionId]/route.ts
-src/app/api/contacts/block/route.ts
-✓ src/app/api/contacts/route.ts
-src/app/api/contacts/unblock/route.ts
-src/app/api/docs/route.ts
-✓ src/app/api/groups/create/route.ts
-src/app/api/groups/invite/accept/route.ts
-✓ src/app/api/groups/[jid]/description/route.ts
-✓ src/app/api/groups/[jid]/ephemeral/route.ts
-✓ src/app/api/groups/[jid]/invite/route.ts
-✓ src/app/api/groups/[jid]/leave/route.ts
-✓ src/app/api/groups/[jid]/members/route.ts
-✓ src/app/api/groups/[jid]/picture/route.ts
-✓ src/app/api/groups/[jid]/settings/route.ts
-✓ src/app/api/groups/[jid]/subject/route.ts
-✓ src/app/api/groups/route.ts
-src/app/api/labels/chat-labels/route.ts
-src/app/api/labels/[id]/route.ts
-✓ src/app/api/labels/route.ts
-✓ src/app/api/messages/broadcast/route.ts
-✓ src/app/api/messages/contact/route.ts
-✓ src/app/api/messages/delete/route.ts
-✓ src/app/api/messages/forward/route.ts
-src/app/api/messages/[id]/media/route.ts
-src/app/api/messages/list/route.ts
-✓ src/app/api/messages/location/route.ts
-✓ src/app/api/messages/poll/route.ts
-✓ src/app/api/messages/react/route.ts
-src/app/api/messages/spam/route.ts
-src/app/api/messages/sticker/route.ts
-src/app/api/notifications/delete/route.ts
-src/app/api/notifications/read/route.ts
-src/app/api/notifications/route.ts
-src/app/api/profile/name/route.ts
-src/app/api/profile/picture/route.ts
-✓ src/app/api/profile/route.ts
-src/app/api/profile/status/route.ts
-src/app/api/scheduler/[id]/route.ts
-✓ src/app/api/scheduler/route.ts
-✓ src/app/api/sessions/[id]/bot-config/route.ts
-✓ src/app/api/sessions/[id]/qr/route.ts
-✓ src/app/api/sessions/[id]/settings/route.ts
-✓ src/app/api/sessions/route.ts
-src/app/api/settings/system/route.ts
-src/app/api/status/update/route.ts
-src/app/api/system/check-updates/route.ts
-src/app/api/user/api-key/route.ts
-src/app/api/users/[id]/route.ts
-✓ src/app/api/users/route.ts
-src/app/api/webhooks/[id]/route.ts
-✓ src/app/api/webhooks/route.ts
+[x] src/app/api/auth/[...nextauth]/route.ts
+   - Methods: GET, POST
+   - Endpoints: /api/auth/session, /api/auth/csrf, /api/auth/signin, /api/auth/signout
+   - Description: NextAuth.js authentication endpoints for web backend session.
+[x] src/app/api/autoreplies/[id]/route.ts
+   - Methods: DELETE
+   - Endpoints: DELETE /api/autoreplies/{id}
+   - Description: Delete auto-reply rule. (Docs mention GET/PUT but not in code)
+[x] src/app/api/autoreplies/route.ts
+   - Methods: GET, POST
+   - Endpoints: GET /api/autoreplies, POST /api/autoreplies
+   - Description: List and create auto-reply rules.
+[x] src/app/api/chat/archive/route.ts
+   - Methods: PUT
+   - Endpoints: PUT /api/chat/archive
+   - Description: Archive or unarchive a chat.
+[x] src/app/api/chat/check/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/chat/check
+   - Description: Check if numbers exist on WhatsApp.
+[x] src/app/api/chat/mute/route.ts
+   - Methods: PUT
+   - Endpoints: PUT /api/chat/mute
+   - Description: Mute or unmute a chat.
+[x] src/app/api/chat/pin/route.ts
+   - Methods: PUT
+   - Endpoints: PUT /api/chat/pin
+   - Description: Pin or unpin a chat.
+[x] src/app/api/chat/presence/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/chat/presence
+   - Description: Send presence status (typing, recording, etc).
+[x] src/app/api/chat/profile-picture/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/chat/profile-picture
+   - Description: Get profile picture URL for a contact or group.
+[x] src/app/api/chat/read/route.ts
+   - Methods: PUT
+   - Endpoints: PUT /api/chat/read
+   - Description: Mark messages or entire chat as read.
+[x] src/app/api/chats/by-label/[labelId]/route.ts
+   - Methods: GET
+   - Endpoints: GET /api/chats/by-label/{labelId}
+   - Description: Get all chats associated with a specific label.
+[x] src/app/api/chat/send/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/chat/send
+   - Description: Send text, media, or sticker messages. Handles sticker generation from URL.
+[x] src/app/api/chat/[sessionId]/[jid]/route.ts
+   - Methods: GET
+   - Endpoints: GET /api/chat/{sessionId}/{jid}
+   - Description: Get message history for a chat. Enriches group status with participant info.
+[x] src/app/api/chat/[sessionId]/route.ts
+   - Methods: GET
+   - Endpoints: GET /api/chat/{sessionId}
+   - Description: Get chat list (contacts with last message). Notes: Pagination not implemented in code.
+[x] src/app/api/contacts/block/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/contacts/block
+   - Description: Block a contact.
+[x] src/app/api/contacts/route.ts
+   - Methods: GET
+   - Endpoints: GET /api/contacts
+   - Description: Get paginated contact list with search functionality.
+[x] src/app/api/contacts/unblock/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/contacts/unblock
+   - Description: Unblock a contact.
+[x] src/app/api/docs/route.ts
+   - Methods: GET
+   - Endpoints: GET /api/docs
+   - Description: Serves the Open API (Swagger) JSON specification.
+[x] src/app/api/groups/create/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/groups/create
+   - Description: Create a new group.
+[x] src/app/api/groups/invite/accept/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/groups/invite/accept
+   - Description: Accept a group invite via code.
+[x] src/app/api/groups/[jid]/description/route.ts
+   - Methods: PUT
+   - Endpoints: PUT /api/groups/{jid}/description
+   - Description: Update group description.
+[x] src/app/api/groups/[jid]/ephemeral/route.ts
+   - Methods: PUT
+   - Endpoints: PUT /api/groups/{jid}/ephemeral
+   - Description: Toggle disappearing messages (ephemeral).
+[x] src/app/api/groups/[jid]/invite/route.ts
+   - Methods: GET, PUT
+   - Endpoints: GET/PUT /api/groups/{jid}/invite
+   - Description: Get (GET) or Revoke (PUT) group invite code.
+[x] src/app/api/groups/[jid]/leave/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/groups/{jid}/leave
+   - Description: Leave a group.
+[x] src/app/api/groups/[jid]/members/route.ts
+   - Methods: PUT
+   - Endpoints: PUT /api/groups/{jid}/members
+   - Description: Manage group participants (add, remove, promote, demote).
+[x] src/app/api/groups/[jid]/picture/route.ts
+   - Methods: PUT, DELETE
+   - Endpoints: PUT/DELETE /api/groups/{jid}/picture
+   - Description: Update or remove group profile picture.
+[x] src/app/api/groups/[jid]/settings/route.ts
+   - Methods: PUT
+   - Endpoints: PUT /api/groups/{jid}/settings
+   - Description: Update group settings (announcement, locked, etc.).
+[x] src/app/api/groups/[jid]/subject/route.ts
+   - Methods: PUT
+   - Endpoints: PUT /api/groups/{jid}/subject
+   - Description: Update group subject/name. Requires bot to be admin.
 
+[x] src/app/api/groups/route.ts
+   - Methods: GET
+   - Endpoints: GET /api/groups
+   - Description: List all groups.
+[x] src/app/api/labels/chat-labels/route.ts
+   - Methods: GET, PUT
+   - Endpoints: GET /api/labels/chat-labels?jid=...&sessionId=..., PUT /api/labels/chat-labels?jid=...
+   - Description: Manage labels for a specific chat.
 
-## Summary
-- **Total Route Files**: 64
-- **Total HTTP Endpoints**: 86
-  - Auth (NextAuth): 2 (GET, POST)
-  - Sessions: 7
-  - Groups: 13  
-  - Profile: 5
-  - Messaging: 12
-  - Chat: 10
-  - Contacts: 3
-  - Labels: 6
-  - Auto Reply: 5
-  - Scheduler: 5
-  - Webhooks: 5
-  - Notifications: 4
-  - Users: 7
-  - System: 4
+[x] src/app/api/labels/[id]/route.ts
+   - Methods: PUT, DELETE
+   - Endpoints: PUT /api/labels/{id}, DELETE /api/labels/{id}
+   - Description: Update or delete a specific label.
 
-## Method Breakdown
-- **GET**: 25 endpoints
-- **POST**: 29 endpoints
-- **PUT**: 17 endpoints
-- **DELETE**: 7 endpoints
-- **PATCH**: 2 endpoints
+[x] src/app/api/labels/route.ts
+   - Methods: GET, POST
+   - Endpoints: GET /api/labels?sessionId=..., POST /api/labels
+   - Description: List all labels for a session or create a new label.
+
+[x] src/app/api/messages/broadcast/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/messages/broadcast
+   - Description: Send a message to multiple recipients in the background with anti-ban delays.
+
+[x] src/app/api/messages/contact/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/messages/contact
+   - Description: Send one or more contact vCards.
+
+[x] src/app/api/messages/delete/route.ts
+   - Methods: DELETE
+   - Endpoints: DELETE /api/messages/delete
+   - Description: Delete a message for everyone (works for messages < 7 minutes old).
+
+[x] src/app/api/messages/forward/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/messages/forward
+   - Description: Forward a message from one chat to one or multiple recipients.
+
+[x] src/app/api/messages/[id]/media/route.ts
+   - Methods: GET
+   - Endpoints: GET /api/messages/{id}/media?sessionId=...
+   - Description: Download media (image, video, audio, or document) from a message.
+
+[x] src/app/api/messages/list/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/messages/list
+   - Description: Send a formatted numbered list message.
+
+[x] src/app/api/messages/location/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/messages/location
+   - Description: Send a location message with latitude, longitude, and optional name/address.
+
+[x] src/app/api/messages/poll/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/messages/poll
+   - Description: Send a poll message with multiple options.
+
+[x] src/app/api/messages/react/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/messages/react
+   - Description: Send an emoji reaction to a message (empty string to remove).
+
+[x] src/app/api/messages/spam/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/messages/spam
+   - Description: Send a message multiple times in a row (bombing).
+
+[x] src/app/api/messages/sticker/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/messages/sticker (form-data)
+   - Description: Convert an image to a sticker and send it.
+
+[x] src/app/api/notifications/delete/route.ts
+   - Methods: DELETE
+   - Endpoints: DELETE /api/notifications/delete?id=...
+   - Description: Delete a specific notification by ID.
+
+[x] src/app/api/notifications/read/route.ts
+   - Methods: PATCH
+   - Endpoints: PATCH /api/notifications/read
+   - Description: Mark specific or all notifications as read.
+
+[x] src/app/api/notifications/route.ts
+   - Methods: GET, POST
+   - Endpoints: GET /api/notifications, POST /api/notifications
+   - Description: List notifications for user (GET) or create/broadcast notifications (POST, Superadmin only).
+
+[x] src/app/api/profile/name/route.ts
+   - Methods: PUT
+   - Endpoints: PUT /api/profile/name
+   - Description: Update the WhatsApp account's display name.
+
+[x] src/app/api/profile/picture/route.ts
+   - Methods: PUT, DELETE
+   - Endpoints: PUT /api/profile/picture (form-data), DELETE /api/profile/picture?sessionId=...
+   - Description: Update or remove the WhatsApp account's profile picture.
+
+[x] src/app/api/profile/route.ts
+   - Methods: GET
+   - Endpoints: GET /api/profile?sessionId=...
+   - Description: Fetch own profile information and status.
+
+[x] src/app/api/profile/status/route.ts
+   - Methods: PUT
+   - Endpoints: PUT /api/profile/status
+   - Description: Update the WhatsApp account's status/about message.
+
+[x] src/app/api/scheduler/[id]/route.ts
+   - Methods: DELETE
+   - Endpoints: DELETE /api/scheduler/{id}
+   - Description: Delete a scheduled message by ID.
+
+[x] src/app/api/scheduler/route.ts
+   - Methods: GET, POST
+   - Endpoints: GET /api/scheduler?sessionId=..., POST /api/scheduler
+   - Description: List and create scheduled messages.
+[x] src/app/api/sessions/[id]/bot-config/route.ts
+   - Methods: GET, POST
+   - Endpoints: GET /api/sessions/{id}/bot-config, POST /api/sessions/{id}/bot-config
+   - Description: Get or update bot configuration for a specific session.
+[x] src/app/api/sessions/[id]/qr/route.ts
+   - Methods: GET
+   - Endpoints: GET /api/sessions/{id}/qr
+   - Description: Retrieve the QR code for a session.
+[x] src/app/api/sessions/[id]/settings/route.ts
+   - Methods: PATCH, DELETE
+   - Endpoints: PATCH /api/sessions/{id}/settings, DELETE /api/sessions/{id}/settings
+   - Description: Update or delete session settings.
+[x] src/app/api/sessions/route.ts
+   - Methods: GET, POST
+   - Endpoints: GET /api/sessions, POST /api/sessions
+   - Description: List accessible sessions and create new sessions.
+[x] src/app/api/settings/system/route.ts
+   - Methods: GET, POST
+   - Endpoints: GET /api/settings/system, POST /api/settings/system
+   - Description: Get or update global system settings.
+[x] src/app/api/status/update/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/status/update
+   - Description: Post a text or media status update to WhatsApp.
+[x] src/app/api/system/check-updates/route.ts
+   - Methods: POST
+   - Endpoints: POST /api/system/check-updates
+   - Description: Check for system updates via GitHub and notify users.
+[x] src/app/api/user/api-key/route.ts
+   - Methods: GET, POST, DELETE
+   - Endpoints: GET /api/user/api-key, POST /api/user/api-key, DELETE /api/user/api-key
+   - Description: Manage the current user's API key.
+[x] src/app/api/users/[id]/route.ts
+   - Methods: PATCH, DELETE
+   - Endpoints: PATCH /api/users/{id}, DELETE /api/users/{id}
+   - Description: Update or delete user information. Requires SUPERADMIN role.
+[x] src/app/api/users/route.ts
+   - Methods: GET, POST
+   - Endpoints: GET /api/users, POST /api/users
+   - Description: List all users or create a new user. Requires SUPERADMIN role.
+[x] src/app/api/webhooks/[id]/route.ts
+   - Methods: PATCH, DELETE
+   - Endpoints: PATCH /api/webhooks/{id}, DELETE /api/webhooks/{id}
+   - Description: Update or delete a webhook configuration.
+[x] src/app/api/webhooks/route.ts
+   - Methods: GET, POST
+   - Endpoints: GET /api/webhooks, POST /api/webhooks
+   - Description: List all webhooks for the current user or create a new one.
 
 ## Analysis Progress
-- ✓ Analyzed: 64 route files  
-- ✓ Documented: 86 endpoints (100%)
+- Analyzed: 86 route files  
+- Documented: 86 endpoints (100%)

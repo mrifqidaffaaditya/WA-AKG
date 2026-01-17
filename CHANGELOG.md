@@ -1,5 +1,19 @@
 # Changelog
 
+## [v1.1.2] - 2026-01-17
+
+### Added
+- **API Documentation Audit & Refinement**:
+    - **Method Standardization**: Systematically verified all 86 API routes and corrected HTTP methods to match actual implementation (e.g., changed mislabeled `PUT` to `PATCH`, and `GET` to `POST` for action-based endpoints).
+    - **OpenAPI Schema Enrichment**: Added comprehensive JSON request and response schemas for all 86 endpoints in `src/lib/swagger.ts`, including nested object structures and detailed field descriptions.
+    - **Error Response Documentation**: Added explicitly documented common error responses (`400`, `401`, `403`, `404`, `500`) with example bodies for key modules.
+    - **Ghost Removal**: Cleaned up documentation by removing unimplemented or legacy API methods (e.g., ghost `GET` or `PUT` methods that were not present in the codebase).
+    - **Synchronization**: Ensured 1:1 parity between `docs/API_DOCUMENTATION.md` and the interactive Swagger UI.
+
+### Fixed
+- **Endpoint Accuracy**: Corrected several response structures and field names in the documentation to ensure they perfectly match the Prisma model outputs and API handlers.
+- **Improved Examples**: Standardized date formats to ISO 8601 and refined cURL examples for better copy-paste compatibility.
+
 ## [beta-v1.1.0.2] - 2026-01-17
 
 ### Added
