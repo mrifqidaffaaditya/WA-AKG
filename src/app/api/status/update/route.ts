@@ -58,16 +58,24 @@ export async function POST(request: NextRequest) {
                     }
                 }
             };
-        } else if (type === 'IMAGE' && mediaUrl) {
+        } else if (type === 'IMAGE') {
+            if (!mediaUrl) return NextResponse.json({ error: "Media URL required for image status" }, { status: 400 });
             message = {
                 image: { url: mediaUrl },
                 caption: content
             };
-        } else if (type === 'VIDEO' && mediaUrl) {
+        } else if (type === 'VIDEO') {
+            if (!mediaUrl) return NextResponse.json({ error: "Media URL required for video status" }, { status: 400 });
             message = {
                 video: { url: mediaUrl },
                 caption: content
             };
+        } else {
+             return NextResponse.json({ error: "Invalid status type" }, { status: 400 });
+        }
+
+        if (Object.keys(message).length === 0) {
+             return NextResponse.json({ error: "Failed to construct message" }, { status: 500 });
         }
 
         await instance.socket.sendMessage(statusJid, message, options);
@@ -85,8 +93,16 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ success: true });
 
-    } catch (e) {
-        console.error("Post status error", e);
-        return NextResponse.json({ error: "Failed to post status" }, { status: 500 });
+    } catch (e: any) {
+        console.error("Post status error details:", {
+            message: e.message,
+            stack: e.stack,
+            name: e.name,
+            cause: e.cause
+        });
+        return NextResponse.json({ 
+            error: "Failed to post status", 
+            details: e.message 
+        }, { status: 500 });
     }
 }
