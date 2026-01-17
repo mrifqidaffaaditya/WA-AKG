@@ -7,7 +7,7 @@ export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ sessionId: string }> }
 ) {
-    console.warn('[DEPRECATED] POST /api/chat/[sessionId]/send is deprecated. Use POST /api/messages/[sessionId]/send instead.');
+    console.warn('[DEPRECATED] POST /api/chat/[sessionId]/send is deprecated. Use POST /api/messages/[sessionId]/[jid]/send instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

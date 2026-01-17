@@ -5,7 +5,7 @@ import Sticker from "wa-sticker-formatter";
 
 export async function POST(
     request: NextRequest,
-    { params }: { params: Promise<{ sessionId: string }> }
+    { params }: { params: Promise<{ sessionId: string, jid: string }> }
 ) {
     try {
         const user = await getAuthenticatedUser(request);
@@ -13,12 +13,14 @@ export async function POST(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { sessionId } = await params;
+        const { sessionId, jid: rawJid } = await params;
+        const jid = decodeURIComponent(rawJid);
+        
         const body = await request.json();
-        const { jid, message, mentions } = body;
+        const { message, mentions } = body;
 
-        if (!jid || !message) {
-            return NextResponse.json({ error: "jid and message are required" }, { status: 400 });
+        if (!message) {
+            return NextResponse.json({ error: "message is required" }, { status: 400 });
         }
 
         // Check if user can access this session

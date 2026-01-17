@@ -474,7 +474,7 @@ All endpoints require authentication via:
                     post: { 
                         tags: ["Messaging (Deprecated)"], 
                         summary: "[DEPRECATED] Send message (text/media/sticker)", 
-                        description: "⚠️ **DEPRECATED**: Use POST /messages/{sessionId}/send instead. This endpoint will be removed in a future version.\\n\\nUniversal endpoint for sending text, images, videos, documents, and stickers",
+                        description: "⚠️ **DEPRECATED**: Use POST /messages/{sessionId}/{jid}/send instead. This endpoint will be removed in a future version.\\n\\nUniversal endpoint for sending text, images, videos, documents, and stickers",
                         deprecated: true,
                         requestBody: { 
                             required: true,
@@ -567,7 +567,7 @@ All endpoints require authentication via:
                     post: { 
                         tags: ["Messaging (Deprecated)"], 
                         summary: "[DEPRECATED] Send message", 
-                        description: "⚠️ **DEPRECATED**: Use POST /messages/{sessionId}/send instead.",
+                        description: "⚠️ **DEPRECATED**: Use POST /messages/{sessionId}/{jid}/send instead.",
                         deprecated: true,
                         parameters: [
                             { 
@@ -598,7 +598,7 @@ All endpoints require authentication via:
                     }
                 },
 
-                "/messages/{sessionId}/send": {
+                "/messages/{sessionId}/{jid}/send": {
                     post: { 
                         tags: ["Messaging"], 
                         summary: "Send message (text/media/sticker)", 
@@ -611,6 +611,14 @@ All endpoints require authentication via:
                                 schema: { type: "string" },
                                 description: "Session identifier",
                                 example: "sales-01"
+                            },
+                            { 
+                                name: "jid", 
+                                in: "path", 
+                                required: true, 
+                                schema: { type: "string" },
+                                description: "Recipient JID",
+                                example: "628123456789@s.whatsapp.net"
                             }
                         ],
                         requestBody: { 
@@ -619,9 +627,8 @@ All endpoints require authentication via:
                                 "application/json": { 
                                     schema: { 
                                         type: "object", 
-                                        required: ["jid", "message"], 
+                                        required: ["message"], 
                                         properties: { 
-                                            jid: { type: "string", example: "628123456789@s.whatsapp.net", description: "Recipient JID" }, 
                                             message: { 
                                                 type: "object",
                                                 description: "Message content (text, image, sticker, etc.)",

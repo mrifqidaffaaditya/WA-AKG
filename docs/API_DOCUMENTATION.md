@@ -355,16 +355,16 @@ curl -X DELETE https://your-domain.com/api/sessions/sales-01/settings \
 
 ## 💬 Messaging
 
-### POST /api/messages/{sessionId}/send
+### POST /api/messages/{sessionId}/{jid}/send
 **Description**: Send text, media, or sticker messages.
 
 **Path Parameters**:
-- `sessionId` (string, required): Session identifier (e.g., "sales-01")
+- `sessionId` (string, required): Session identifier
+- `jid` (string, required): Recipient JID (URL-encoded)
 
 **Request Body (Text Message)**:
 ```json
 {
-  "jid": "628123456789@s.whatsapp.net",
   "message": {
     "text": "Hello! Welcome to our store."
   },
@@ -422,14 +422,14 @@ curl -X POST https://your-domain.com/api/messages/sales-01/send \
 ---
 
 ### POST /api/chat/{sessionId}/send (DEPRECATED)
-> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/messages/{sessionId}/send` instead. This endpoint will be removed in a future version.
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/messages/{sessionId}/{jid}/send` instead. This endpoint will be removed in a future version.
 
 **Description**: Legacy endpoint for sending messages.
 
 ---
 
 ### POST /api/chat/send (DEPRECATED)
-> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/messages/{sessionId}/send` instead. This endpoint will be removed in a future version.
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/messages/{sessionId}/{jid}/send` instead. This endpoint will be removed in a future version.
 
 **Description**: Send text, media, or sticker messages.
 

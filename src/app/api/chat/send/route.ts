@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
         const { sessionId, jid, message, mentions } = body;
 
         // Log deprecation warning
-        console.warn('[DEPRECATED] POST /api/chat/send is deprecated. Use POST /api/chat/{sessionId}/send instead.');
+        console.warn('[DEPRECATED] POST /api/chat/send is deprecated. Use POST /api/messages/[sessionId]/[jid]/send instead.');
 
         if (!sessionId || !jid || !message) {
             return NextResponse.json({ error: "sessionId, jid, and message are required" }, { status: 400 });
