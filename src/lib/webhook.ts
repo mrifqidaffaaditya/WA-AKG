@@ -204,10 +204,8 @@ export async function downloadAndSaveMedia(message: WAMessage, sessionId: string
         
         await writeFile(filePath, buffer);
         
-        // Return URL path (assuming served from /media)
-        // In a real app you might want full URL, but relative is safer for now.
-        // User requested URL.
-        const fileUrl = `/media/${filename}`;
+        // Return URL path using API route for reliable serving
+        const fileUrl = `/api/media/${filename}`;
         console.log(`MediaDownload: Success. URL: ${fileUrl}`);
         return fileUrl;
 

@@ -197,6 +197,8 @@ curl -X POST http://localhost:3000/api/sessions/session-name/bot-config \
 
 ### 15. Post WhatsApp Status
 
+> **⚠️ WARNING:** This endpoint has known stability issues and may not work reliably. Avoid using in production.
+
 ```bash
 curl -X POST http://localhost:3000/api/status/update \
   -H "X-API-Key: your-api-key" \

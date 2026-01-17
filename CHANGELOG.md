@@ -1,5 +1,21 @@
 # Changelog
 
+## [Unreleased] - 2026-01-17
+### Known Issues
+- **Status Update Feature (`POST /api/status/update`)**: 
+    - ⚠️ **This endpoint has known reliability issues and should not be used in production.**
+    - Text statuses with custom background colors may not display correctly.
+    - Media statuses (images/videos) may fail to upload to WhatsApp servers.
+    - The feature is experimental and under active development.
+
+### Documentation
+- Added prominent WARNING notices to all documentation about status update feature issues:
+    - `docs/API_DOCUMENTATION.md`
+    - `docs/API-QUICK-REFERENCE.md`
+    - `README.md`
+- Created API route `/api/media/[filename]` for reliable media file serving (fixes 404 errors).
+- Updated `src/lib/webhook.ts` to use new media API route.
+
 ## [v1.1.3-beta.2] - 2026-01-17
 ### Added
 - **Session Management Dashboard**: New dashboard page (`/dashboard/sessions/[id]`) for comprehensive session control.

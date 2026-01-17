@@ -2319,6 +2319,17 @@ curl -X POST https://your-domain.com/api/system/check-updates \
 ---
 
 ### POST /api/status/update
+
+> [!WARNING]
+> **EXPERIMENTAL FEATURE - KNOWN ISSUES**
+> 
+> This endpoint is currently experiencing reliability issues and may not function as expected:
+> - Text statuses with background colors may not display correctly
+> - Media statuses (images/videos) may fail to upload
+> - The feature is under active development and fixes are in progress
+> 
+> **We recommend avoiding this endpoint in production** until these issues are resolved.
+
 **Description**: Post a status update (story) to WhatsApp. Supports text, image, and video statuses.
 
 **Request Body**:

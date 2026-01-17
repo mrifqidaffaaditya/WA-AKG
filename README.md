@@ -146,6 +146,20 @@ curl -X POST http://localhost:3000/api/chat/send \
 
 ---
 
+## ⚠️ Known Issues
+
+> [!WARNING]
+> **Status Update Feature (POST `/api/status/update`)**
+> 
+> The WhatsApp status/story update feature is currently **experiencing known issues** and should be avoided in production:
+> - Text statuses with custom background colors may not display correctly
+> - Media statuses (images/videos) may fail to upload to WhatsApp servers
+> - The feature is under active development
+> 
+> We recommend waiting for the next release before using this endpoint in critical workflows.
+
+---
+
 ## 🛡️ Security
 - **API Key Auth**: Secured endpoints using `X-API-Key`.
 - **RBAC**: Multi-role support (`SUPERADMIN`, `OWNER`, `STAFF`).
