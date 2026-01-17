@@ -52,7 +52,10 @@ export async function POST(request: NextRequest) {
                 extendedTextMessage: {
                     text: content,
                     backgroundArgb: backgroundColor || 0xff000000,
-                    font: font || 0
+                    font: font || 0,
+                    contextInfo: {
+                        mentionedJid: mentions && Array.isArray(mentions) ? mentions : []
+                    }
                 }
             };
         } else if (type === 'IMAGE' && mediaUrl) {

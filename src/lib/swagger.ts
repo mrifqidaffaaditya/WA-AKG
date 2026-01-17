@@ -130,6 +130,15 @@ All endpoints require authentication via:
                                 example: { error: "Session not ready" }
                             }
                         }
+                    },
+                    ServerError: {
+                        description: "Internal Server Error",
+                        content: {
+                            "application/json": {
+                                schema: { $ref: "#/components/schemas/Error" },
+                                example: { error: "Internal Server Error" }
+                            }
+                        }
                     }
                 }
             },

@@ -62,6 +62,11 @@ export async function POST(request: NextRequest) {
         }
 
         // Send Message
+        // Ensure mentions are passed in options and also in message content if it's a text message
+        if (msgPayload.text && mentions && Array.isArray(mentions)) {
+             msgPayload.mentions = mentions;
+        }
+
         await socket.sendMessage(jid, msgPayload, { mentions: mentions || [] } as any);
 
         return NextResponse.json({ success: true });
