@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
+    console.warn('[DEPRECATED] GET /api/webhooks is deprecated. Use GET /api/webhooks/{sessionId} instead.');
     const user = await getAuthenticatedUser(request);
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -21,6 +22,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+    console.warn('[DEPRECATED] POST /api/webhooks is deprecated. Use POST /api/webhooks/{sessionId} instead.');
     const user = await getAuthenticatedUser(request);
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

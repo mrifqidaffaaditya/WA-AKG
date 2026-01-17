@@ -3,11 +3,16 @@ import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 
+/**
+ * @deprecated This endpoint is deprecated. Use GET /api/messages/{sessionId}/{messageId}/media instead.
+ * This endpoint will be removed in a future version.
+ */
 // GET: Download media from message
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    console.warn('[DEPRECATED] GET /api/messages/{id}/media is deprecated. Use GET /api/messages/{sessionId}/{messageId}/media instead.');
     const { id: messageId } = await params;
 
     try {

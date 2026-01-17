@@ -12,7 +12,12 @@ const getMimeType = (url: string) => {
     return undefined; // Let Baileys guess
 };
 
+/**
+ * @deprecated This endpoint is deprecated. Use POST /api/status/{sessionId}/update instead.
+ * This endpoint will be removed in a future version.
+ */
 export async function POST(request: NextRequest) {
+    console.warn('[DEPRECATED] POST /api/status/update is deprecated. Use POST /api/status/{sessionId}/update instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

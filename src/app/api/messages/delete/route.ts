@@ -2,8 +2,13 @@ import { NextResponse, NextRequest } from "next/server";
 import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 
+/**
+ * @deprecated This endpoint is deprecated. Use DELETE /api/messages/{sessionId}/{jid}/{messageId} instead.
+ * This endpoint will be removed in a future version.
+ */
 // DELETE: Delete message for everyone
 export async function DELETE(request: NextRequest) {
+    console.warn('[DEPRECATED] DELETE /api/messages/delete is deprecated. Use DELETE /api/messages/{sessionId}/{jid}/{messageId} instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

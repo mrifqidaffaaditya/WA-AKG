@@ -2,11 +2,16 @@ import { NextResponse, NextRequest } from "next/server";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 
+/**
+ * @deprecated This endpoint is deprecated. Use GET /api/chats/{sessionId}/by-label/{labelId} instead.
+ * This endpoint will be removed in a future version.
+ */
 // GET: Get all chats with a specific label
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ labelId: string }> }
 ) {
+    console.warn('[DEPRECATED] GET /api/chats/by-label/{labelId} is deprecated. Use GET /api/chats/{sessionId}/by-label/{labelId} instead.');
     const { labelId } = await params;
 
     try {

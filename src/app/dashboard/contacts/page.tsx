@@ -73,13 +73,12 @@ export default function ContactListPage() {
         setLoading(true);
         try {
             const params = new URLSearchParams({
-                sessionId: sessionId,
                 page: page.toString(),
                 limit: limit,
                 search: search
             });
 
-            const res = await fetch(`/api/contacts?${params}`);
+            const res = await fetch(`/api/contacts/${sessionId}?${params}`);
             const data = await res.json();
 
             if (res.ok) {

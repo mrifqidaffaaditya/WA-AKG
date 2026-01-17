@@ -2,8 +2,13 @@ import { NextResponse, NextRequest } from "next/server";
 import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 
+/**
+ * @deprecated This endpoint is deprecated. Use PUT /api/chat/{sessionId}/{jid}/mute instead.
+ * This endpoint will be removed in a future version.
+ */
 // PUT: Mute or unmute a chat
 export async function PUT(request: NextRequest) {
+    console.warn('[DEPRECATED] PUT /api/chat/mute is deprecated. Use PUT /api/chat/{sessionId}/{jid}/mute instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

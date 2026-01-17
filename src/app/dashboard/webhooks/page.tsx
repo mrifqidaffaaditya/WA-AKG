@@ -67,8 +67,8 @@ export default function WebhooksPage() {
     const fetchWebhooks = async () => {
         setLoading(true);
         try {
-            // Ideally backend filters, but we filter here for now
-            const res = await fetch("/api/webhooks");
+            // Fetch webhooks using the new session-scoped endpoint
+            const res = await fetch(`/api/webhooks/${sessionId}`);
             if (res.ok) {
                 const data = await res.json();
 
@@ -128,7 +128,7 @@ export default function WebhooksPage() {
         }
 
         try {
-            const res = await fetch("/api/webhooks", {
+            const res = await fetch(`/api/webhooks/${sessionId}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -136,7 +136,7 @@ export default function WebhooksPage() {
                     url: newUrl,
                     secret: newSecret || null,
                     events: newEvents,
-                    sessionId: sessionId // Attach active session ID
+                    // sessionId is now handled by the path parameter
                 })
             });
 
@@ -158,8 +158,12 @@ export default function WebhooksPage() {
 
     const toggleWebhookActive = async (id: string, isActive: boolean) => {
         try {
-            await fetch(`/api/webhooks/${id}`, {
-                method: "PATCH",
+            // Find webhook to get its session ID
+            const webhook = webhooks.find(w => w.id === id);
+            const targetSessionId = webhook?.sessionId || sessionId; // Fallback to current session if missing (legacy)
+
+            await fetch(`/api/webhooks/${targetSessionId}/${id}`, {
+                method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ isActive })
             });
@@ -177,9 +181,12 @@ export default function WebhooksPage() {
             ? webhook.events.filter(e => e !== eventId)
             : [...webhook.events, eventId];
 
+        // Find webhook to get its session ID
+        const targetSessionId = webhook.sessionId || sessionId;
+
         try {
-            await fetch(`/api/webhooks/${webhookId}`, {
-                method: "PATCH",
+            await fetch(`/api/webhooks/${targetSessionId}/${webhookId}`, {
+                method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ events: newEvents })
             });
@@ -199,7 +206,9 @@ export default function WebhooksPage() {
         if (!deleteId) return;
 
         try {
-            await fetch(`/api/webhooks/${deleteId}`, { method: "DELETE" });
+            const webhook = webhooks.find(w => w.id === deleteId);
+            const targetSessionId = webhook?.sessionId || sessionId;
+            await fetch(`/api/webhooks/${targetSessionId}/${deleteId}`, { method: "DELETE" });
             setWebhooks(webhooks.filter(w => w.id !== deleteId));
             toast.success("Webhook deleted");
         } catch (error) {

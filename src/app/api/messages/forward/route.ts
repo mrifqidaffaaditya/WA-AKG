@@ -3,8 +3,13 @@ import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 import { proto } from "@whiskeysockets/baileys";
 
+/**
+ * @deprecated This endpoint is deprecated. Use POST /api/messages/{sessionId}/forward instead.
+ * This endpoint will be removed in a future version.
+ */
 // POST: Forward message to other chats
 export async function POST(request: NextRequest) {
+    console.warn('[DEPRECATED] POST /api/messages/forward is deprecated. Use POST /api/messages/{sessionId}/forward instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

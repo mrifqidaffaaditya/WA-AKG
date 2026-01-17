@@ -2,8 +2,13 @@ import { NextResponse, NextRequest } from "next/server";
 import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 
+/**
+ * @deprecated This endpoint is deprecated. Use GET /api/profile/{sessionId} instead.
+ * This endpoint will be removed in a future version.
+ */
 // GET: Fetch own profile
 export async function GET(request: NextRequest) {
+    console.warn('[DEPRECATED] GET /api/profile is deprecated. Use GET /api/profile/{sessionId} instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

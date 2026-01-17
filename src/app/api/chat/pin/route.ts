@@ -2,8 +2,13 @@ import { NextResponse, NextRequest } from "next/server";
 import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 
+/**
+ * @deprecated This endpoint is deprecated. Use PUT /api/chat/{sessionId}/{jid}/pin instead.
+ * This endpoint will be removed in a future version.
+ */
 // PUT: Pin or unpin a chat
 export async function PUT(request: NextRequest) {
+    console.warn('[DEPRECATED] PUT /api/chat/pin is deprecated. Use PUT /api/chat/{sessionId}/{jid}/pin instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

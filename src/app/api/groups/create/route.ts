@@ -3,7 +3,12 @@ import { waManager } from "@/modules/whatsapp/manager";
 import { createGroupSchema } from "@/lib/validations";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 
+/**
+ * @deprecated This endpoint is deprecated. Use POST /api/groups/{sessionId}/create instead.
+ * This endpoint will be removed in a future version.
+ */
 export async function POST(request: NextRequest) {
+    console.warn('[DEPRECATED] POST /api/groups/create is deprecated. Use POST /api/groups/{sessionId}/create instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

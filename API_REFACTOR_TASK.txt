@@ -1,0 +1,596 @@
+# API Route Standardization - Complete Task List
+# Total Routes: 86 endpoints
+# Generated: 2026-01-17
+
+================================================================================
+LEGEND:
+  [ ] = Not Started
+  [/] = In Progress  
+  [x] = Completed
+  [!] = Blocked/Needs Decision
+  
+PRIORITY:
+  P0 = Critical (High usage, major inconsistency)
+  P1 = High (Common usage)
+  P2 = Medium (Moderate usage)
+  P3 = Low (Rare usage)
+
+CURRENT STATE:
+  (B) = Parameter in Body
+  (P) = Parameter in Path
+  (Q) = Parameter in Query
+================================================================================
+
+## SESSIONS MODULE (9 routes)
+Status: ✅ GOOD - Already RESTful and consistent
+
+[ ] src/app/api/auth/[...nextauth]/route.ts
+    Current: NextAuth standard endpoints
+    Action: NO CHANGE NEEDED (P3)
+    
+[x] src/app/api/sessions/route.ts
+    Current: GET /api/sessions, POST /api/sessions
+    Status: GOOD - No sessionId needed for listing
+    Action: NO CHANGE NEEDED
+    
+[x] src/app/api/sessions/[id]/route.ts
+    Current: GET /api/sessions/{id} (P)
+    Status: GOOD - RESTful
+    Action: NO CHANGE NEEDED
+    
+[x] src/app/api/sessions/[id]/[action]/route.ts
+    Current: POST /api/sessions/{id}/{action} (P)
+    Status: GOOD - RESTful
+    Action: NO CHANGE NEEDED
+    
+[x] src/app/api/sessions/[id]/qr/route.ts
+    Current: GET /api/sessions/{id}/qr (P)
+    Status: GOOD - RESTful
+    Action: NO CHANGE NEEDED
+    
+[x] src/app/api/sessions/[id]/bot-config/route.ts
+    Current: GET/POST /api/sessions/{id}/bot-config (P)
+    Status: GOOD - RESTful
+    Action: NO CHANGE NEEDED
+    
+[x] src/app/api/sessions/[id]/settings/route.ts
+    Current: PATCH/DELETE /api/sessions/{id}/settings (P)
+    Status: GOOD - RESTful
+    Action: NO CHANGE NEEDED
+
+================================================================================
+## CHAT MODULE (12 routes)
+Status: ❌ NEEDS REFACTOR - High priority, inconsistent
+
+[x] src/app/api/chat/send/route.ts (P0)
+    Current: POST /api/chat/send
+            sessionId(B), jid(B), message(B)
+    Proposed: POST /api/chat/{sessionId}/send
+            jid(B), message(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated
+    Breaking: YES
+    
+[x] src/app/api/chat/read/route.ts (P0)
+    Current: PUT /api/chat/read
+            sessionId(B), jid(B), messageIds(B)
+    Proposed: PUT /api/chat/{sessionId}/{jid}/read
+            messageIds(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+    
+[x] src/app/api/chat/archive/route.ts (P1)
+    Current: PUT /api/chat/archive
+            sessionId(B), jid(B), archive(B)
+    Proposed: PUT /api/chat/{sessionId}/{jid}/archive
+            archive(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+    
+[x] src/app/api/chat/mute/route.ts (P1)
+    Current: PUT /api/chat/mute
+            sessionId(B), jid(B), mute(B), duration(B)
+    Proposed: PUT /api/chat/{sessionId}/{jid}/mute
+            mute(B), duration(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+    
+[x] src/app/api/chat/pin/route.ts (P1)
+    Current: PUT /api/chat/pin
+            sessionId(B), jid(B), pin(B)
+    Proposed: PUT /api/chat/{sessionId}/{jid}/pin
+            pin(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+    
+[x] src/app/api/chat/presence/route.ts (P1)
+    Current: POST /api/chat/presence
+            sessionId(B), jid(B), presence(B)
+    Proposed: POST /api/chat/{sessionId}/{jid}/presence
+            presence(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+    
+[x] src/app/api/chat/profile-picture/route.ts (P1)
+    Current: POST /api/chat/profile-picture
+            sessionId(B), jid(B)
+    Proposed: POST /api/chat/{sessionId}/{jid}/profile-picture
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+    
+[x] src/app/api/chat/check/route.ts (P2)
+    Current: POST /api/chat/check
+            sessionId(B), numbers(B)
+    Proposed: POST /api/chat/{sessionId}/check
+            numbers(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+    Breaking: YES
+    
+[x] src/app/api/chat/[sessionId]/route.ts
+    Current: GET /api/chat/{sessionId} (P)
+    Status: GOOD - RESTful
+    Action: NO CHANGE NEEDED
+    
+[x] src/app/api/chat/[sessionId]/[jid]/route.ts
+    Current: GET /api/chat/{sessionId}/{jid} (P)
+    Status: GOOD - RESTful
+    Action: NO CHANGE NEEDED
+
+[x] src/app/api/chats/by-label/[labelId]/route.ts (P2)
+    Current: GET /api/chats/by-label/{labelId} (P)
+            sessionId missing!
+    Proposed: GET /api/chats/{sessionId}/by-label/{labelId} (P)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+================================================================================
+## MESSAGES MODULE (11 routes)
+Status: ❌ NEEDS REFACTOR - High priority
+
+[x] src/app/api/messages/broadcast/route.ts (P0)
+    Current: POST /api/messages/broadcast
+            sessionId(B), recipients(B), message(B)
+    Proposed: POST /api/messages/{sessionId}/broadcast
+            recipients(B), message(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/messages/contact/route.ts (P1)
+    Current: POST /api/messages/contact
+            sessionId(B), jid(B), contacts(B)
+    Proposed: POST /api/messages/{sessionId}/{jid}/contact
+            contacts(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/messages/delete/route.ts (P1)
+    Current: DELETE /api/messages/delete
+            sessionId(B), jid(B), messageId(B)
+    Proposed: DELETE /api/messages/{sessionId}/{jid}/{messageId}
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/messages/forward/route.ts (P1)
+    Current: POST /api/messages/forward
+            sessionId(B), fromJid(B), messageId(B), toJids(B)
+    Proposed: POST /api/messages/{sessionId}/forward
+            fromJid(B), messageId(B), toJids(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/messages/[id]/media/route.ts (P1)
+    Current: GET /api/messages/{id}/media (P)
+            sessionId(Q)
+    Proposed: GET /api/messages/{sessionId}/{messageId}/media (P)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/messages/list/route.ts (P2)
+    Current: POST /api/messages/list
+            sessionId(B), jid(B), items(B)
+    Proposed: POST /api/messages/{sessionId}/{jid}/list
+            items(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/messages/location/route.ts (P1)
+    Current: POST /api/messages/location
+            sessionId(B), jid(B), latitude(B), longitude(B)
+    Proposed: POST /api/messages/{sessionId}/{jid}/location
+            latitude(B), longitude(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/messages/poll/route.ts (P1)
+    Current: POST /api/messages/poll
+            sessionId(B), jid(B), name(B), options(B)
+    Proposed: POST /api/messages/{sessionId}/{jid}/poll
+            name(B), options(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/messages/react/route.ts (P0)
+    Current: POST /api/messages/react
+            sessionId(B), jid(B), messageId(B), emoji(B)
+    Proposed: POST /api/messages/{sessionId}/{jid}/{messageId}/react
+            emoji(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/messages/spam/route.ts (P2)
+    Current: POST /api/messages/spam
+            sessionId(B), jid(B), message(B), count(B)
+    Proposed: POST /api/messages/{sessionId}/{jid}/spam
+            message(B), count(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/messages/sticker/route.ts (P1)
+    Current: POST /api/messages/sticker
+            sessionId(B), jid(B), file(FormData)
+    Proposed: POST /api/messages/{sessionId}/{jid}/sticker
+            file(FormData)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+================================================================================
+## GROUPS MODULE (11 routes)
+Status: ❌ NEEDS REFACTOR - Medium priority
+
+[x] src/app/api/groups/route.ts (P1)
+    Current: GET /api/groups
+            sessionId(B) <- WRONG! GET should not have body
+    Proposed: GET /api/groups/{sessionId} (P)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/groups/create/route.ts (P1)
+    Current: POST /api/groups/create
+            sessionId(B), subject(B), participants(B)
+    Proposed: POST /api/groups/{sessionId}/create
+            subject(B), participants(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/groups/invite/accept/route.ts (P2)
+    Current: POST /api/groups/invite/accept
+            sessionId(B), code(B)
+    Proposed: POST /api/groups/{sessionId}/invite/accept
+            code(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/groups/[jid]/route.ts (P1)
+    Current: GET /api/groups/{jid} (P)
+            sessionId(B)
+    Proposed: GET /api/groups/{sessionId}/{jid} (P)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/groups/[jid]/description/route.ts (P1)
+    Current: PUT /api/groups/{jid}/description (P)
+            sessionId(B), description(B)
+    Proposed: PUT /api/groups/{sessionId}/{jid}/description (P)
+            description(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/groups/[jid]/ephemeral/route.ts (P2)
+    Current: PUT /api/groups/{jid}/ephemeral (P)
+            sessionId(B), duration(B)
+    Proposed: PUT /api/groups/{sessionId}/{jid}/ephemeral (P)
+            duration(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/groups/[jid]/invite/route.ts (P1)
+    Current: GET/PUT /api/groups/{jid}/invite (P)
+            sessionId(B)
+    Proposed: GET/PUT /api/groups/{sessionId}/{jid}/invite (P)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/groups/[jid]/leave/route.ts (P2)
+    Current: POST /api/groups/{jid}/leave (P)
+            sessionId(B)
+    Proposed: POST /api/groups/{sessionId}/{jid}/leave (P)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/groups/[jid]/members/route.ts (P1)
+    Current: PUT /api/groups/{jid}/members (P)
+            sessionId(B), participants(B), action(B)
+    Proposed: PUT /api/groups/{sessionId}/{jid}/members (P)
+            participants(B), action(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/groups/[jid]/picture/route.ts (P2)
+    Current: PUT/DELETE /api/groups/{jid}/picture (P)
+            sessionId(B), file(FormData)
+    Proposed: PUT/DELETE /api/groups/{sessionId}/{jid}/picture (P)
+            file(FormData)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/groups/[jid]/settings/route.ts (P1)
+    Current: PUT /api/groups/{jid}/settings (P)
+            sessionId(B), setting(B), value(B)
+    Proposed: PUT /api/groups/{sessionId}/{jid}/settings (P)
+            setting(B), value(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+[x] src/app/api/groups/[jid]/subject/route.ts (P1)
+    Current: PUT /api/groups/{jid}/subject (P)
+            sessionId(B), subject(B)
+    Proposed: PUT /api/groups/{sessionId}/{jid}/subject (P)
+            subject(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, docs updated
+    Breaking: YES
+
+================================================================================
+## CONTACTS MODULE (3 routes)
+Status: ⚠️ MINOR ISSUES
+
+[x] src/app/api/contacts/route.ts (P2)
+    Current: GET /api/contacts
+            sessionId(Q), search(Q), limit(Q)
+    Status: ✅ COMPLETED - Refactored to /api/contacts/{sessionId}
+    Action: DONE
+    Breaking: YES
+
+[x] src/app/api/contacts/block/route.ts (P2)
+    Current: POST /api/contacts/block
+            sessionId(B), jid(B)
+    Proposed: POST /api/contacts/{sessionId}/{jid}/block
+    Status: ✅ COMPLETED
+    Breaking: YES
+
+[x] src/app/api/contacts/unblock/route.ts (P2)
+    Current: POST /api/contacts/unblock
+            sessionId(B), jid(B)
+    Proposed: POST /api/contacts/{sessionId}/{jid}/unblock
+    Status: ✅ COMPLETED
+    Breaking: YES
+
+================================================================================
+## LABELS MODULE (4 routes)
+Status: ❌ NEEDS REFACTOR - Most inconsistent
+
+[x] src/app/api/labels/route.ts (P2)
+    Current: GET /api/labels
+            sessionId(Q)
+    Proposed: GET /api/labels/{sessionId} (P)
+    Status: ✅ COMPLETED
+    Breaking: YES
+
+[x] src/app/api/labels/[id]/route.ts (P2)
+    Current: PUT/DELETE /api/labels/{id} (P)
+            sessionId(B)
+    Proposed: PUT/DELETE /api/labels/{sessionId}/{labelId} (P)
+    Status: ✅ COMPLETED
+    Breaking: YES
+
+[x] src/app/api/labels/chat-labels/route.ts (P2)
+    Current: GET /api/labels/chat-labels
+            sessionId(Q), jid(Q)
+    Proposed: GET /api/labels/{sessionId}/chat/{jid}/labels (P)
+    Status: ✅ COMPLETED
+    Breaking: YES
+
+[x] src/app/api/labels/chat-labels/route.ts PUT (P2)
+    Current: PUT /api/labels/chat-labels
+            sessionId(B), jid(Q), labelIds(B), action(B)
+    Proposed: PUT /api/labels/{sessionId}/chat/{jid}/labels (P)
+    Status: ✅ COMPLETED
+            labelIds(B), action(B)
+    Breaking: YES
+
+================================================================================
+## PROFILE MODULE (5 routes)
+Status: ❌ NEEDS REFACTOR
+
+[x] src/app/api/profile/route.ts (P1)
+    Current: GET /api/profile
+            sessionId(Q)
+    Proposed: GET /api/profile/{sessionId} (P)
+    Status: ✅ COMPLETED - New route created, old route deprecated
+    Breaking: YES
+
+[x] src/app/api/profile/name/route.ts (P1)
+    Current: PUT /api/profile/name
+            sessionId(B), name(B)
+    Proposed: PUT /api/profile/{sessionId}/name (P)
+            name(B)
+    Status: ✅ COMPLETED
+    Breaking: YES
+
+[x] src/app/api/profile/picture/route.ts (P1)
+    Current: PUT/DELETE /api/profile/picture
+            sessionId(B/Q), file(FormData)
+    Proposed: PUT/DELETE /api/profile/{sessionId}/picture (P)
+    Status: ✅ COMPLETED
+    file(FormData)
+    Breaking: YES
+
+[x] src/app/api/profile/status/route.ts (P1)
+    Current: PUT /api/profile/status
+            sessionId(B), status(B)
+    Proposed: PUT /api/profile/{sessionId}/status (P)
+            status(B)
+    Status: ✅ COMPLETED
+    Breaking: YES
+
+================================================================================
+## STATUS MODULE (1 route)
+Status: ❌ NEEDS REFACTOR
+
+[x] src/app/api/status/update/route.ts (P1)
+    Current: POST /api/status/update
+            sessionId(B), content(B), mediaUrl(B)
+    Proposed: POST /api/status/{sessionId}/update (P)
+            content(B), mediaUrl(B)
+    Status: ✅ COMPLETED
+    Breaking: YES
+
+================================================================================
+## SCHEDULER MODULE (2 routes)
+Status: ❌ NEEDS REFACTOR
+
+[x] src/app/api/scheduler/route.ts GET (P1)
+    Current: GET /api/scheduler
+            sessionId(Q)
+    Proposed: GET /api/scheduler/{sessionId} (P)
+    Status: ✅ COMPLETED
+    Breaking: YES
+
+[x] src/app/api/scheduler/route.ts POST (P1)
+    Current: POST /api/scheduler
+            sessionId(B), jid(B), content(B), sendAt(B)
+    Proposed: POST /api/scheduler/{sessionId} (P)
+            jid(B), content(B), sendAt(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated, swagger updated
+    Breaking: YES
+
+
+[x] src/app/api/scheduler/[id]/route.ts (P2)
+    Current: DELETE /api/scheduler/{id} (P)
+            sessionId needed but missing?
+    Proposed: DELETE /api/scheduler/{sessionId}/{scheduleId} (P)
+    Status: ✅ COMPLETED - New route created, old route deprecated
+    Breaking: YES
+
+
+================================================================================
+## AUTO REPLIES MODULE (2 routes)
+Status: ⚠️ MINOR ISSUES
+
+[x] src/app/api/autoreplies/route.ts GET (P2)
+    Current: GET /api/autoreplies
+            sessionId(Q or B?)
+    Proposed: GET /api/autoreplies/{sessionId} (P)
+    Status: ✅ COMPLETED - New route created, old route deprecated, swagger updated
+    Breaking: YES
+
+[x] src/app/api/autoreplies/route.ts POST (P2)
+    Current: POST /api/autoreplies
+            sessionId(B), keyword(B), response(B)
+    Proposed: POST /api/autoreplies/{sessionId} (P)
+            keyword(B), response(B)
+    Status: ✅ COMPLETED - New route created, old route deprecated
+    Breaking: YES
+
+[x] src/app/api/autoreplies/[id]/route.ts (P2)
+    Current: DELETE /api/autoreplies/{id} (P)
+    Status: ✅ COMPLETED - New route created, old route deprecated
+    Proposed: DELETE /api/autoreplies/{sessionId}/{replyId} (P)
+    Breaking: YES
+
+================================================================================
+## WEBHOOKS MODULE (2 routes)
+Status: ⚠️ ACCEPTABLE
+
+[ ] src/app/api/webhooks/route.ts (P2)
+    Current: GET/POST /api/webhooks
+            sessionId filtering handled by user access
+    Status: ACCEPTABLE - User-scoped resource
+    Action: OPTIONAL REFACTOR
+    Breaking: NO
+
+[ ] src/app/api/webhooks/[id]/route.ts (P2)
+    Current: PATCH/DELETE /api/webhooks/{id} (P)
+    Status: ACCEPTABLE - User-scoped resource
+    Action: NO CHANGE NEEDED
+    Breaking: NO
+
+================================================================================
+## NOTIFICATIONS MODULE (3 routes)
+Status: ✅ GOOD - User-scoped, no session context
+
+[x] src/app/api/notifications/route.ts
+    Current: GET/POST /api/notifications
+    Status: GOOD - User-scoped
+    Action: NO CHANGE NEEDED
+
+[x] src/app/api/notifications/read/route.ts
+    Current: PATCH /api/notifications/read
+    Status: GOOD - User-scoped
+    Action: NO CHANGE NEEDED
+
+[x] src/app/api/notifications/delete/route.ts
+    Current: DELETE /api/notifications/delete
+    Status: GOOD - User-scoped
+    Action: NO CHANGE NEEDED
+
+================================================================================
+## USERS MODULE (2 routes)
+Status: ✅ GOOD - Admin-scoped, RESTful
+
+[x] src/app/api/users/route.ts
+    Current: GET/POST /api/users
+    Status: GOOD - Admin resource
+    Action: NO CHANGE NEEDED
+
+[x] src/app/api/users/[id]/route.ts
+    Current: PATCH/DELETE /api/users/{id} (P)
+    Status: GOOD - RESTful
+    Action: NO CHANGE NEEDED
+
+================================================================================
+## SYSTEM MODULE (3 routes)
+Status: ✅ GOOD - System-scoped
+
+[x] src/app/api/settings/system/route.ts
+    Current: GET/POST /api/settings/system
+    Status: GOOD - System settings
+    Action: NO CHANGE NEEDED
+
+[x] src/app/api/system/check-updates/route.ts
+    Current: POST /api/system/check-updates
+    Status: GOOD - System action
+    Action: NO CHANGE NEEDED
+
+[x] src/app/api/docs/route.ts
+    Current: GET /api/docs
+    Status: GOOD - Documentation
+    Action: NO CHANGE NEEDED
+
+[x] src/app/api/media/[filename]/route.ts
+    Current: GET /api/media/{filename} (P)
+    Status: GOOD - Static resource
+    Action: NO CHANGE NEEDED
+
+================================================================================
+## SUMMARY
+================================================================================
+
+Total Routes Analyzed: 86
+
+Status Breakdown:
+  ✅ No Change Needed (RESTful):     23 routes (27%)
+  ❌ Needs Refactor (Breaking):      58 routes (67%)
+  ⚠️ Optional/Minor Changes:         5 routes (6%)
+
+Priority Breakdown:
+  P0 (Critical):                     8 routes
+  P1 (High):                         30 routes
+  P2 (Medium):                       20 routes
+  P3 (Low):                          1 route
+  N/A (No change):                   27 routes
+
+Breaking Changes Impact:
+  High Impact (P0-P1):               38 routes
+  Medium Impact (P2):                20 routes
+  Low Impact (P3):                   0 routes
+
+
+================================================================================
+## NEXT ACTIONS
+================================================================================
+
+[x] Update API documentation with current patterns termasuk swagger dan api-docs nya
+[ ] Create TypeScript types for consistency
+[ ] Set up deprecation logging system
+[ ] Announce migration plan in CHANGELOG
+[ ] Update client examples and SDKs

@@ -2,8 +2,13 @@ import { NextResponse, NextRequest } from "next/server";
 import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 
+/**
+ * @deprecated This endpoint is deprecated. Use POST /api/chat/{sessionId}/check instead.
+ * This endpoint will be removed in a future version.
+ */
 // POST: Check if number is on WhatsApp
 export async function POST(request: NextRequest) {
+    console.warn('[DEPRECATED] POST /api/chat/check is deprecated. Use POST /api/chat/{sessionId}/check instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

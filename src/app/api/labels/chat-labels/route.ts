@@ -2,8 +2,13 @@ import { NextResponse, NextRequest } from "next/server";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 
+/**
+ * @deprecated This endpoint is deprecated. Use GET /api/labels/{sessionId}/chat/{jid}/labels instead.
+ * This endpoint will be removed in a future version.
+ */
 // GET: Get labels for a chat
 export async function GET(request: NextRequest) {
+    console.warn('[DEPRECATED] GET /api/labels/chat-labels is deprecated. Use GET /api/labels/{sessionId}/chat/{jid}/labels instead.');
     const { searchParams } = new URL(request.url);
     const jid = searchParams.get("jid");
     
@@ -52,8 +57,13 @@ export async function GET(request: NextRequest) {
     }
 }
 
+/**
+ * @deprecated This endpoint is deprecated. Use PUT /api/labels/{sessionId}/chat/{jid}/labels instead.
+ * This endpoint will be removed in a future version.
+ */
 // PUT: Add or remove labels from chat
 export async function PUT(request: NextRequest) {
+    console.warn('[DEPRECATED] PUT /api/labels/chat-labels is deprecated. Use PUT /api/labels/{sessionId}/chat/{jid}/labels instead.');
     const { searchParams } = new URL(request.url);
     const jid = searchParams.get("jid");
     

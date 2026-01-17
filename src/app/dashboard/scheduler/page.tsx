@@ -60,7 +60,7 @@ export default function SchedulerPage() {
     const fetchMessages = async (sessionId: string) => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/scheduler?sessionId=${sessionId}`);
+            const res = await fetch(`/api/scheduler/${sessionId}`);
             if (res.ok) {
                 const data = await res.json();
                 setMessages(data);
@@ -84,11 +84,10 @@ export default function SchedulerPage() {
         }
 
         try {
-            const res = await fetch("/api/scheduler", {
+            const res = await fetch(`/api/scheduler/${selectedSessionId}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    sessionId: selectedSessionId,
                     jid,
                     content: newContent,
                     sendAt: newSendAt // Input type datetime-local sends ISO string format
@@ -113,7 +112,7 @@ export default function SchedulerPage() {
     const confirmDelete = async () => {
         if (!deleteId) return;
         try {
-            const res = await fetch(`/api/scheduler/${deleteId}`, { method: "DELETE" });
+            const res = await fetch(`/api/scheduler/${selectedSessionId}/${deleteId}`, { method: "DELETE" });
             if (res.ok) {
                 toast.success("Schedule cancelled");
                 setMessages(messages.filter(m => m.id !== deleteId));

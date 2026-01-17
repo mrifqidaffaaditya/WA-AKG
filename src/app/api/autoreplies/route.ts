@@ -2,8 +2,14 @@ import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser, canAccessSession, isAdmin } from "@/lib/api-auth";
 
+/**
+ * @deprecated These endpoints are deprecated. Use GET/POST /api/autoreplies/{sessionId} instead.
+ * These endpoints will be removed in a future version.
+ */
+
 // GET: List Auto Replies
 export async function GET(request: NextRequest) {
+    console.warn('[DEPRECATED] GET /api/autoreplies is deprecated. Use GET /api/autoreplies/{sessionId} instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

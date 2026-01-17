@@ -2,8 +2,13 @@ import { NextResponse, NextRequest } from "next/server";
 import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 
+/**
+ * @deprecated This endpoint is deprecated. Use POST /api/chat/{sessionId}/{jid}/presence instead.
+ * This endpoint will be removed in a future version.
+ */
 // POST: Send presence (typing, recording, online)
 export async function POST(request: NextRequest) {
+    console.warn('[DEPRECATED] POST /api/chat/presence is deprecated. Use POST /api/chat/{sessionId}/{jid}/presence instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

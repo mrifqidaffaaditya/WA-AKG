@@ -2,7 +2,12 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 import { getAuthenticatedUser, isAdmin } from "@/lib/api-auth";
 
+/**
+ * @deprecated This endpoint is deprecated. Use GET /api/groups/{sessionId} instead.
+ * This endpoint will be removed in a future version.
+ */
 export async function GET(request: NextRequest) {
+    console.warn('[DEPRECATED] GET /api/groups is deprecated. Use GET /api/groups/{sessionId} instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

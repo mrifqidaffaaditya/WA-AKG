@@ -3,8 +3,12 @@ import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 
 // POST: Send formatted text message with options (List/Button alternative)
-// Note: Baileys has limited support for interactive buttons/lists, so we send formatted text
+/**
+ * @deprecated This endpoint is deprecated. Use POST /api/messages/{sessionId}/{jid}/list instead.
+ * This endpoint will be removed in a future version.
+ */
 export async function POST(request: NextRequest) {
+    console.warn('[DEPRECATED] POST /api/messages/list is deprecated. Use POST /api/messages/{sessionId}/{jid}/list instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

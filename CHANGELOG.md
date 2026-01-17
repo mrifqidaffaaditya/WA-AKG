@@ -1,6 +1,28 @@
 # Changelog
 
+## [v1.2.0.beta-1] - 2026-01-18
+
+### Changed
+- **API Standardization**: Refactored multiple API modules to use RESTful path parameters instead of query/body parameters.
+    - **Contacts**: `/api/contacts/{sessionId}`
+    - **Labels**: `/api/labels/{sessionId}`
+    - **Profile**: `/api/profile/{sessionId}`
+    - **Scheduler**: `/api/scheduler/{sessionId}`
+    - **Auto Replies**: `/api/autoreplies/{sessionId}`
+    - **Groups**: `/api/groups/{sessionId}`
+    - **Webhooks**: `/api/webhooks/{sessionId}`
+- **Frontend Refactoring**: Updated Dashboard pages (Contacts, Scheduler, Auto Reply, Groups, Webhooks, API Docs) to consume the new RESTful API endpoints.
+
+### Removed
+- **Legacy Routes**: Removed deprecated `[id]` based routes for Scheduler, Auto Replies, and Labels to resolve Next.js dynamic route conflicts.
+
 ## [Unreleased] - 2026-01-17
+### Fixed
+- **Session Restart/Stop Logout Bug**: Fixed critical issue where restarting or stopping a session would incorrectly delete authentication credentials, causing complete logout instead of preserving credentials for auto-login.
+    - Now only explicit logout (`DisconnectReason.loggedOut`) deletes credentials
+    - Stop and Restart actions now preserve credentials for seamless auto-reconnect
+    - Modified `src/modules/whatsapp/instance.ts` to differentiate between logout, stop, and disconnect scenarios
+
 ### Known Issues
 - **Status Update Feature (`POST /api/status/update`)**: 
     - ⚠️ **This endpoint has known reliability issues and should not be used in production.**

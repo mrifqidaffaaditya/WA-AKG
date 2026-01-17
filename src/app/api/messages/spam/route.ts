@@ -2,7 +2,12 @@ import { NextResponse, NextRequest } from "next/server";
 import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 
+/**
+ * @deprecated This endpoint is deprecated. Use POST /api/messages/{sessionId}/{jid}/spam instead.
+ * This endpoint will be removed in a future version.
+ */
 export async function POST(request: NextRequest) {
+    console.warn('[DEPRECATED] POST /api/messages/spam is deprecated. Use POST /api/messages/{sessionId}/{jid}/spam instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

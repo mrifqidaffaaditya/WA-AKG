@@ -32,7 +32,7 @@ export default function GroupsPage() {
     const fetchGroups = async (sessId: string) => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/groups?sessionId=${sessId}`);
+            const res = await fetch(`/api/groups/${sessId}`);
             if (res.ok) {
                 const data = await res.json();
                 setGroups(data);
@@ -57,7 +57,7 @@ export default function GroupsPage() {
     const handleCreateGroup = async () => {
         if (!sessionId || !newGroupName) return;
         try {
-            const res = await fetch("/api/groups", {
+            const res = await fetch(`/api/groups/${sessionId}/create`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ sessionId, subject: newGroupName })

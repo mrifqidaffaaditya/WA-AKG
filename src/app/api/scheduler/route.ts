@@ -3,8 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 import moment from "moment-timezone";
 
+/**
+ * @deprecated These endpoints are deprecated. Use GET/POST /api/scheduler/{sessionId} instead.
+ * These endpoints will be removed in a future version.
+ */
+
 // GET: List Scheduled Messages
 export async function GET(request: NextRequest) {
+    console.warn('[DEPRECATED] GET /api/scheduler is deprecated. Use GET /api/scheduler/{sessionId} instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

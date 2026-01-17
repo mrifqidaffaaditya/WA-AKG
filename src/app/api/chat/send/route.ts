@@ -3,6 +3,10 @@ import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 import Sticker from "wa-sticker-formatter";
 
+/**
+ * @deprecated This endpoint is deprecated. Use POST /api/chat/{sessionId}/send instead.
+ * This endpoint will be removed in a future version.
+ */
 export async function POST(request: NextRequest) {
     try {
         const user = await getAuthenticatedUser(request);
@@ -12,6 +16,9 @@ export async function POST(request: NextRequest) {
 
         const body = await request.json();
         const { sessionId, jid, message, mentions } = body;
+
+        // Log deprecation warning
+        console.warn('[DEPRECATED] POST /api/chat/send is deprecated. Use POST /api/chat/{sessionId}/send instead.');
 
         if (!sessionId || !jid || !message) {
             return NextResponse.json({ error: "sessionId, jid, and message are required" }, { status: 400 });

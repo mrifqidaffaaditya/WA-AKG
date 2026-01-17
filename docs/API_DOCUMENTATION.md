@@ -355,13 +355,15 @@ curl -X DELETE https://your-domain.com/api/sessions/sales-01/settings \
 
 ## 💬 Messaging
 
-### POST /api/chat/send
+### POST /api/chat/{sessionId}/send
 **Description**: Send text, media, or sticker messages.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session identifier (e.g., "sales-01")
 
 **Request Body (Text Message)**:
 ```json
 {
-  "sessionId": "sales-01",
   "jid": "628123456789@s.whatsapp.net",
   "message": {
     "text": "Hello! Welcome to our store."
@@ -373,7 +375,6 @@ curl -X DELETE https://your-domain.com/api/sessions/sales-01/settings \
 **Request Body (Image with Caption)**:
 ```json
 {
-  "sessionId": "sales-01",
   "jid": "628123456789@s.whatsapp.net",
   "message": {
     "image": {
@@ -387,7 +388,6 @@ curl -X DELETE https://your-domain.com/api/sessions/sales-01/settings \
 **Request Body (Sticker from URL)**:
 ```json
 {
-  "sessionId": "sales-01",
   "jid": "628123456789@s.whatsapp.net",
   "message": {
     "sticker": {
@@ -396,6 +396,45 @@ curl -X DELETE https://your-domain.com/api/sessions/sales-01/settings \
       "author": "WA-AKG"
     }
   }
+}
+```
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/chat/sales-01/send \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "jid": "628123456789@s.whatsapp.net",
+    "message": {
+      "text": "Hello!"
+    }
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true
+}
+```
+
+---
+
+### POST /api/chat/send (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/chat/{sessionId}/send` instead. This endpoint will be removed in a future version.
+
+**Description**: Send text, media, or sticker messages.
+
+**Request Body (Text Message)**:
+```json
+{
+  "sessionId": "sales-01",
+  "jid": "628123456789@s.whatsapp.net",
+  "message": {
+    "text": "Hello! Welcome to our store."
+  },
+  "mentions": ["628123456789@s.whatsapp.net"]
 }
 ```
 
@@ -422,15 +461,60 @@ curl -X POST https://your-domain.com/api/chat/send \
 
 ---
 
-### POST /api/messages/poll
+### POST /api/messages/{sessionId}/{jid}/poll
+**Description**: Send a poll message.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `jid` (string, required): Recipient JID (URL-encoded)
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| question | string | Yes | Poll question |
+| options | string[] | Yes | 2-12 options |
+| selectableCount | number | No | Default 1 |
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/messages/sales-01/120363123456789012%40g.us/poll \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "question": "What is your favorite product?",
+    "options": ["Product A", "Product B", "Product C"],
+    "selectableCount": 1
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true
+}
+```
+
+**Common Errors**:
+- `400`: Missing required fields or invalid options count.
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `500`: Failed to send poll.
+
+---
+
+### POST /api/messages/poll (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/messages/{sessionId}/{jid}/poll` instead. This endpoint will be removed in a future version.
+
 **Description**: Send a poll message.
 
 **Request Body**:
-- `sessionId` (string, required)
-- `jid` (string, required)
-- `question` (string, required): Poll question
-- `options` (array of strings, required): 2-12 options
-- `selectableCount` (number, optional): Default 1
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| sessionId | string | Yes | Session ID |
+| jid | string | Yes | Recipient JID |
+| question | string | Yes | Poll question |
+| options | string[] | Yes | 2-12 options |
+| selectableCount | number | No | Default 1 |
 
 **Request Example**:
 ```bash
@@ -463,16 +547,63 @@ curl -X POST https://your-domain.com/api/messages/poll \
 
 ---
 
-### POST /api/messages/location
+### POST /api/messages/{sessionId}/{jid}/location
+**Description**: Send a location message.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `jid` (string, required): Recipient JID (URL-encoded)
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| latitude | number | Yes | Latitude (-90 to 90) |
+| longitude | number | Yes | Longitude (-180 to 180) |
+| name | string | No | Location name |
+| address | string | No | Location address |
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/messages/sales-01/628123456789%40s.whatsapp.net/location \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "latitude": -6.2088,
+    "longitude": 106.8456,
+    "name": "Central Park",
+    "address": "Jakarta, Indonesia"
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true
+}
+```
+
+**Common Errors**:
+- `400`: Missing required fields or coordinates out of range.
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `500`: Failed to send location.
+
+---
+
+### POST /api/messages/location (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/messages/{sessionId}/{jid}/location` instead. This endpoint will be removed in a future version.
+
 **Description**: Send a location message.
 
 **Request Body**:
-- `sessionId` (string, required)
-- `jid` (string, required)
-- `latitude` (number, required): -90 to 90
-- `longitude` (number, required): -180 to 180
-- `name` (string, optional): Location name
-- `address` (string, optional): Location address
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| sessionId | string | Yes | Session ID |
+| jid | string | Yes | Recipient JID |
+| latitude | number | Yes | Latitude (-90 to 90) |
+| longitude | number | Yes | Longitude (-180 to 180) |
+| name | string | No | Location name |
+| address | string | No | Location address |
 
 **Request Example**:
 ```bash
@@ -506,14 +637,57 @@ curl -X POST https://your-domain.com/api/messages/location \
 
 ---
 
-### POST /api/messages/broadcast
+### POST /api/messages/{sessionId}/broadcast
+**Description**: Send a message to multiple recipients.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session identifier
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| recipients | string[] | Yes | List of recipient JIDs |
+| message | string | Yes | Message text to broadcast |
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/messages/sales-01/broadcast \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "recipients": ["628123456789@s.whatsapp.net", "628987654321@s.whatsapp.net"],
+    "message": "🎉 Flash Sale! 50% off today only!"
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Broadcast started in background"
+}
+```
+
+**Common Errors**:
+- `400`: Invalid request body.
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `503`: Session not ready.
+- `500`: Failed to start broadcast.
+
+---
+
+### POST /api/messages/broadcast (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/messages/{sessionId}/broadcast` instead. This endpoint will be removed in a future version.
+
 **Description**: Send a message to multiple recipients.
 
 **Request Body**:
-- `sessionId` (string, required): Session ID
-- `recipients` (array of strings, required): List of recipient JIDs
-- `message` (string, required): Message text to broadcast
-- `delay` (number, optional): Delay in ms (default: 2000, but code uses random 10-20s)
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| sessionId | string | Yes | Session ID |
+| recipients | string[] | Yes | List of recipient JIDs |
+| message | string | Yes | Message text to broadcast |
 
 **Request Example**:
 ```bash
@@ -544,7 +718,32 @@ curl -X POST https://your-domain.com/api/messages/broadcast \
 
 ---
 
-### GET /api/messages/{id}/media
+### GET /api/messages/{sessionId}/{messageId}/media
+**Description**: Download media (image, video, audio, or document) from a message by its ID.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session identifier.
+- `messageId` (string, required): The unique ID of the message.
+
+**Request Example**:
+```bash
+curl -X GET "https://your-domain.com/api/messages/sales-01/3EB0ABCD1234567890/media" \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response**:
+Returns the binary media file with appropriate `Content-Type` and `Content-Disposition` headers.
+
+**Common Errors**:
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `404`: Message not found or has no media.
+
+---
+
+### GET /api/messages/{id}/media (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `GET /api/messages/{sessionId}/{messageId}/media` instead. This endpoint will be removed in a future version.
+
 **Description**: Download media (image, video, audio, or document) from a message by its ID.
 
 **Path Parameters**:
@@ -571,17 +770,46 @@ Returns the binary media file with appropriate `Content-Type` and `Content-Dispo
 
 ---
 
-### DELETE /api/messages/delete
+### DELETE /api/messages/{sessionId}/{jid}/{messageId}
+**Description**: Delete a message for everyone.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session identifier
+- `jid` (string, required): Recipient JID (URL-encoded)
+- `messageId` (string, required): Message ID
+
+**Request Example**:
+```bash
+curl -X DELETE https://your-domain.com/api/messages/sales-01/628123456789%40s.whatsapp.net/3EB0ABCD1234567890 \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Message deleted for everyone"
+}
+```
+
+**Common Errors**:
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `500`: Failed to delete message.
+
+---
+
+### DELETE /api/messages/delete (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `DELETE /api/messages/{sessionId}/{jid}/{messageId}` instead. This endpoint will be removed in a future version.
+
 **Description**: Delete a message for everyone.
 
 **Request Body**:
-```json
-{
-  "sessionId": "sales-01",
-  "jid": "628123456789@s.whatsapp.net",
-  "messageId": "3EB0ABCD1234567890"
-}
-```
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| sessionId | string | Yes | Session identifier |
+| jid | string | Yes | Recipient JID |
+| messageId | string | Yes | Message ID |
 
 **Request Example**:
 ```bash
@@ -684,7 +912,38 @@ curl -X GET "https://your-domain.com/api/chat/sales-01/628123456789%40s.whatsapp
 
 ---
 
-### POST /api/chat/check
+### POST /api/chat/{sessionId}/check
+**Description**: Check if phone numbers are registered on WhatsApp (max 50 numbers per request).
+
+**Path Parameters**:
+- `sessionId` (string, required): Session identifier
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| numbers | string[] | Yes | Array of phone numbers (max 50) |
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/chat/sales-01/check \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "numbers": ["628123456789", "628987654321"]
+  }'
+```
+
+**Common Errors**:
+- `400`: Missing numbers or exceeds limit (max 50).
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `500`: Failed to check numbers.
+
+---
+
+### POST /api/chat/check (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/chat/{sessionId}/check` instead. This endpoint will be removed in a future version.
+
 **Description**: Check if phone numbers are registered on WhatsApp (max 50 numbers per request).
 
 **Request Body**:
@@ -726,7 +985,49 @@ curl -X POST https://your-domain.com/api/chat/check \
 
 ---
 
-### PUT /api/chat/archive
+### PUT /api/chat/{sessionId}/{jid}/archive
+**Description**: Archive or unarchive a chat.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session identifier (e.g., "sales-01")
+- `jid` (string, required): WhatsApp JID (URL-encoded, e.g., "628123456789@s.whatsapp.net")
+
+**Request Body**:
+```json
+{
+  "archive": true
+}
+```
+
+**Request Example**:
+```bash
+curl -X PUT https://your-domain.com/api/chat/sales-01/628123456789%40s.whatsapp.net/archive \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "archive": true
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true
+}
+```
+
+**Common Errors**:
+- `400`: Missing required fields.
+- `401`: Unauthorized.
+- `403`: Forbidden (cannot access session).
+- `503`: Session not ready.
+- `500`: Failed to archive/unarchive chat.
+
+---
+
+### PUT /api/chat/archive (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `PUT /api/chat/{sessionId}/{jid}/archive` instead. This endpoint will be removed in a future version.
+
 **Description**: Archive or unarchive a chat.
 
 **Request Body**:
@@ -825,7 +1126,48 @@ curl -X PUT https://your-domain.com/api/chat/pin \
 
 ---
 
-### POST /api/chat/presence
+### POST /api/chat/{sessionId}/{jid}/presence
+**Description**: Send presence status (typing, recording, online, etc.) to a chat.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session identifier
+- `jid` (string, required): Chat JID (URL-encoded)
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| presence | string | Yes | composing, recording, paused, available, unavailable |
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/chat/sales-01/628123456789%40s.whatsapp.net/presence \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "presence": "composing"
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Presence 'composing' sent to 628123456789@s.whatsapp.net"
+}
+```
+
+**Common Errors**:
+- `400`: Missing required fields or invalid presence value.
+- `401`: Unauthorized.
+- `403`: Forbidden (cannot access session).
+- `503`: Session not ready.
+- `500`: Failed to send presence.
+
+---
+
+### POST /api/chat/presence (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/chat/{sessionId}/{jid}/presence` instead. This endpoint will be removed in a future version.
+
 **Description**: Send presence status (typing, recording, online, etc.) to a chat.
 
 **Request Body**:
@@ -857,7 +1199,40 @@ curl -X POST https://your-domain.com/api/chat/presence \
 
 ---
 
-### POST /api/chat/profile-picture
+### POST /api/chat/{sessionId}/{jid}/profile-picture
+**Description**: Get profile picture URL for a contact or group.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session identifier
+- `jid` (string, required): Contact or group JID (URL-encoded)
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/chat/sales-01/628123456789%40s.whatsapp.net/profile-picture \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "jid": "628123456789@s.whatsapp.net",
+  "profilePicUrl": "https://pps.whatsapp.net/..."
+}
+```
+
+**Common Errors**:
+- `401`: Unauthorized.
+- `403`: Forbidden (cannot access session).
+- `503`: Session not ready.
+- `500`: Failed to fetch profile picture.
+
+---
+
+### POST /api/chat/profile-picture (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/chat/{sessionId}/{jid}/profile-picture` instead. This endpoint will be removed in a future version.
+
 **Description**: Get profile picture URL for a contact or group.
 
 **Request Body**:
@@ -890,7 +1265,41 @@ curl -X POST https://your-domain.com/api/chat/profile-picture \
 
 ## 👥 Groups
 
-### GET /api/groups
+### GET /api/groups/{sessionId}
+**Description**: List all groups for a session.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Example**:
+```bash
+curl -X GET "https://your-domain.com/api/groups/sales-01" \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+[
+  {
+    "jid": "120363123456789012@g.us",
+    "subject": "Sales Team",
+    "participants": 15,
+    "createdAt": 1704067200
+  }
+]
+```
+
+**Common Errors**:
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `404`: Session not found.
+- `500`: Failed to fetch groups.
+
+---
+
+### GET /api/groups (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `GET /api/groups/{sessionId}` instead. This endpoint will be removed in a future version.
+
 **Description**: List all groups for a session.
 
 **Query Parameters**:
@@ -922,8 +1331,40 @@ curl -X GET "https://your-domain.com/api/groups?sessionId=sales-01" \
 
 ---
 
-### GET /api/groups/{jid}
+### GET /api/groups/{sessionId}/{jid}
 **Description**: Get detailed information about a group (metadata, participants, picture).
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `jid` (string): Group JID (e.g. `123456@g.us`) - URL-encoded
+
+**Request Example**:
+```bash
+curl -X GET "https://your-domain.com/api/groups/sales-01/120363123456789012%40g.us" \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "id": "120363123456789012@g.us",
+  "subject": "Sales Team",
+  ...
+}
+```
+
+**Common Errors**:
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `404`: Group not found.
+- `500`: Failed to fetch details.
+
+---
+
+### GET /api/groups/{jid} (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `GET /api/groups/{sessionId}/{jid}` instead. This endpoint will be removed in a future version.
+
+**Description**: Get detailed information about a group.
 
 **Path Parameters**:
 - `jid` (string): Group JID (e.g. `123456@g.us`)
@@ -969,20 +1410,63 @@ curl -X GET "https://your-domain.com/api/groups/120363123456789012%40g.us?sessio
 
 ---
 
-### POST /api/groups/create
+### POST /api/groups/{sessionId}/create
+**Description**: Create a new group.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| subject | string | Yes | Group name (max 100 chars) |
+| participants | string[] | Yes | Array of participant JIDs |
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/groups/sales-01/create \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "subject": "VIP Customers",
+    "participants": ["628123456789@s.whatsapp.net", "628987654321@s.whatsapp.net"]
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "group": {
+    "id": "120363155555555555@g.us",
+    "subject": "VIP Customers",
+    "description": null,
+    "creation": 1704200000,
+    "owner": "62812000000000@s.whatsapp.net",
+    "participants": [...]
+  }
+}
+```
+
+**Common Errors**:
+- `400`: Invalid input (e.g., subject too long, no participants).
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `500`: Failed to create group.
+
+---
+
+### POST /api/groups/create (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/groups/{sessionId}/create` instead. This endpoint will be removed in a future version.
+
 **Description**: Create a new group.
 
 **Request Body**:
-```json
-{
-  "sessionId": "sales-01",
-  "subject": "VIP Customers",
-  "participants": [
-    "628123456789@s.whatsapp.net",
-    "628987654321@s.whatsapp.net"
-  ]
-}
-```
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| sessionId | string | Yes | Session ID |
+| subject | string | Yes | Group name |
+| participants | string[] | Yes | Array of participant JIDs |
 
 **Request Example**:
 ```bash
@@ -1009,16 +1493,60 @@ curl -X POST https://your-domain.com/api/groups/create \
 
 ---
 
-### PUT /api/groups/{jid}/members
+### PUT /api/groups/{sessionId}/{jid}/members
+**Description**: Add, remove, promote, or demote group participants.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `jid` (string): Group JID (URL-encoded)
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| action | string | Yes | `add`, `remove`, `promote`, `demote` |
+| participants | string[] | Yes | List of participant JIDs |
+
+**Request Example**:
+```bash
+curl -X PUT "https://your-domain.com/api/groups/sales-01/120363555666777888%40g.us/members" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "action": "add",
+    "participants": ["628123456789@s.whatsapp.net"]
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Successfully added participants",
+  "result": [...]
+}
+```
+
+**Common Errors**:
+- `400`: Invalid action or participants.
+- `403`: Bot not admin.
+- `500`: Failed to update members.
+
+---
+
+### PUT /api/groups/{jid}/members (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `PUT /api/groups/{sessionId}/{jid}/members` instead. This endpoint will be removed in a future version.
+
 **Description**: Add, remove, promote, or demote group participants.
 
 **Path Parameters**:
 - `jid` (string): Group JID (URL-encoded)
 
 **Request Body**:
-- `sessionId` (string, required): Session ID
-- `action` (string, required): One of `add`, `remove`, `promote`, `demote`
-- `participants` (array, required): List of phone numbers (JIDs)
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| sessionId | string | Yes | Session ID |
+| action | string | Yes | Action type |
+| participants | string[] | Yes | List of JIDs |
 
 **Request Example**:
 ```bash
@@ -1043,15 +1571,58 @@ curl -X PUT "https://your-domain.com/api/groups/120363555666777888%40g.us/member
 
 ---
 
-### PUT /api/groups/{jid}/subject
+### PUT /api/groups/{sessionId}/{jid}/subject
+**Description**: Update group name/subject.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `jid` (string): Group JID (URL-encoded)
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| subject | string | Yes | New group subject (max 100 characters) |
+
+**Request Example**:
+```bash
+curl -X PUT "https://your-domain.com/api/groups/sales-01/120363555666777888%40g.us/subject" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "subject": "VIP Customers - Premium"
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Group subject updated successfully",
+  "subject": "VIP Customers - Premium"
+}
+```
+
+**Common Errors**:
+- `400`: Missing `subject`, or subject > 100 chars.
+- `401`: Unauthorized.
+- `403`: Bot not admin or forbidden.
+- `503`: Session not ready.
+
+---
+
+### PUT /api/groups/{jid}/subject (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `PUT /api/groups/{sessionId}/{jid}/subject` instead. This endpoint will be removed in a future version.
+
 **Description**: Update group name/subject.
 
 **Path Parameters**:
 - `jid` (string): Group JID (URL-encoded)
 
 **Request Body**:
-- `sessionId` (string, required): Session ID
-- `subject` (string, required): New group subject (max 100 characters)
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| sessionId | string | Yes | Session ID |
+| subject | string | Yes | New group subject |
 
 **Request Example**:
 ```bash
@@ -1082,47 +1653,41 @@ curl -X PUT "https://your-domain.com/api/groups/120363555666777888%40g.us/subjec
 
 ---
 
-### GET /api/groups/{jid}/invite
+### GET /api/groups/{sessionId}/{jid}/invite
 **Description**: Get group invite code.
 
 **Path Parameters**:
-- `jid` (string): Group JID (URL-encoded)
-
-**Query Parameters**:
 - `sessionId` (string, required): Session ID
+- `jid` (string): Group JID (URL-encoded)
 
 **Request Example**:
 ```bash
-curl -X GET "https://your-domain.com/api/groups/120363555666777888%40g.us/invite?sessionId=sales-01" \
+curl -X GET "https://your-domain.com/api/groups/sales-01/120363555666777888%40g.us/invite" \
   -H "X-API-Key: your-api-key"
 ```
 
 **Response (200 OK)**:
 ```json
 {
-  "code": "AbCdEfGhIjKlMnOp"
+  "success": true,
+  "inviteCode": "AbCdEfGhIjKlMnOp",
+  "inviteUrl": "https://chat.whatsapp.com/AbCdEfGhIjKlMnOp"
 }
 ```
 
 ---
 
-### PUT /api/groups/{jid}/invite
+### PUT /api/groups/{sessionId}/{jid}/invite
 **Description**: Revoke and refresh group invite code.
 
 **Path Parameters**:
-- `jid` (string): Group JID (URL-encoded)
-
-**Request Body**:
 - `sessionId` (string, required): Session ID
+- `jid` (string): Group JID (URL-encoded)
 
 **Request Example**:
 ```bash
-curl -X PUT "https://your-domain.com/api/groups/120363555666777888%40g.us/invite" \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: your-api-key" \
-  -d '{
-    "sessionId": "sales-01"
-  }'
+curl -X PUT "https://your-domain.com/api/groups/sales-01/120363555666777888%40g.us/invite" \
+  -H "X-API-Key: your-api-key"
 ```
 
 **Response (200 OK)**:
@@ -1137,14 +1702,62 @@ curl -X PUT "https://your-domain.com/api/groups/120363555666777888%40g.us/invite
 
 ---
 
+### GET /api/groups/{jid}/invite (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `GET /api/groups/{sessionId}/{jid}/invite` instead.
+
+**Description**: Get group invite code.
+
+**Query Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Example**:
+```bash
+curl -X GET "https://your-domain.com/api/groups/120363555666777888%40g.us/invite?sessionId=sales-01" \
+  -H "X-API-Key: your-api-key"
+```
+
 ---
 
-### POST /api/groups/invite/accept
-**Description**: Accept a group invite code.
+### PUT /api/groups/{jid}/invite (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `PUT /api/groups/{sessionId}/{jid}/invite` instead.
+
+**Description**: Revoke group invite code.
 
 **Request Body**:
 - `sessionId` (string, required): Session ID
-- `inviteCode` (string, required): The invite code
+
+**Request Example**:
+```bash
+curl -X PUT "https://your-domain.com/api/groups/120363555666777888%40g.us/invite" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{"sessionId": "sales-01"}'
+```
+
+---
+
+---
+
+### POST /api/groups/{sessionId}/invite/accept
+**Description**: Accept a group invite code.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| inviteCode | string | Yes | The invite code |
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/groups/sales-01/invite/accept \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "inviteCode": "A1b2C3d4E5f6G7h8I9j0K"
+  }'
+```
 
 **Response (200 OK)**:
 ```json
@@ -1155,27 +1768,49 @@ curl -X PUT "https://your-domain.com/api/groups/120363555666777888%40g.us/invite
 }
 ```
 
+**Common Errors**:
+- `400`: Invalid or expired invite code.
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `500`: Failed to accept invite.
+
 ---
 
-### POST /api/groups/{jid}/leave
-**Description**: Leave a group.
+### POST /api/groups/invite/accept (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/groups/{sessionId}/invite/accept` instead. This endpoint will be removed in a future version.
 
-**Path Parameters**:
-- `jid` (string): Group JID (URL-encoded)
+**Description**: Accept a group invite code.
 
 **Request Body**:
-```json
-{
-  "sessionId": "sales-01"
-}
-```
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| sessionId | string | Yes | Session ID |
+| inviteCode | string | Yes | The invite code |
 
 **Request Example**:
 ```bash
-curl -X POST "https://your-domain.com/api/groups/120363555666777888%40g.us/leave" \
+curl -X POST https://your-domain.com/api/groups/invite/accept \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your-api-key" \
-  -d '{"sessionId": "sales-01"}'
+  -d '{
+    "sessionId": "sales-01",
+    "inviteCode": "A1b2C3d4E5f6G7h8I9j0K"
+  }'
+```
+
+---
+
+### POST /api/groups/{sessionId}/{jid}/leave
+**Description**: Leave a group.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `jid` (string): Group JID (URL-encoded)
+
+**Request Example**:
+```bash
+curl -X POST "https://your-domain.com/api/groups/sales-01/120363555666777888%40g.us/leave" \
+  -H "X-API-Key: your-api-key"
 ```
 
 **Response (200 OK)**:
@@ -1186,19 +1821,89 @@ curl -X POST "https://your-domain.com/api/groups/120363555666777888%40g.us/leave
 }
 ```
 
----
+**Common Errors**:
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `500`: Failed to leave.
 
 ---
 
-### PUT /api/groups/{jid}/description
+### POST /api/groups/{jid}/leave (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/groups/{sessionId}/{jid}/leave` instead. This endpoint will be removed in a future version.
+
+**Description**: Leave a group.
+
+**Path Parameters**:
+- `jid` (string): Group JID (URL-encoded)
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| sessionId | string | Yes | Session ID |
+
+**Request Example**:
+```bash
+curl -X POST "https://your-domain.com/api/groups/120363555666777888%40g.us/leave" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{"sessionId": "sales-01"}'
+```
+
+---
+
+---
+
+### PUT /api/groups/{sessionId}/{jid}/description
+**Description**: Update group description.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `jid` (string): Group JID (URL-encoded)
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| description | string | No | New description (max 512 chars) |
+
+**Request Example**:
+```bash
+curl -X PUT "https://your-domain.com/api/groups/sales-01/120363555666777888%40g.us/description" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "description": "Welcome to our VIP group!"
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Group description updated successfully",
+  "description": "Welcome to our VIP group!"
+}
+```
+
+**Common Errors**:
+- `400`: Invalid input.
+- `403`: Bot not admin.
+- `500`: Failed to update.
+
+---
+
+### PUT /api/groups/{jid}/description (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `PUT /api/groups/{sessionId}/{jid}/description` instead. This endpoint will be removed in a future version.
+
 **Description**: Update group description.
 
 **Path Parameters**:
 - `jid` (string): Group JID (URL-encoded)
 
 **Request Body**:
-- `sessionId` (string, required): Session ID
-- `description` (string, optional): New description (max 512 chars)
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| sessionId | string | Yes | Session ID |
+| description | string | No | New description |
 
 **Request Example**:
 ```bash
@@ -1224,9 +1929,61 @@ curl -X PUT "https://your-domain.com/api/groups/120363555666777888%40g.us/descri
 
 ---
 
+### PUT /api/groups/{sessionId}/{jid}/picture
+**Description**: Update group profile picture.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `jid` (string): Group JID (URL-encoded)
+
+**Request Body (multipart/form-data)**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| file | file | Yes | Image file (JPG/PNG) |
+
+**Request Example**:
+```bash
+curl -X PUT "https://your-domain.com/api/groups/sales-01/120363555666777888%40g.us/picture" \
+  -H "X-API-Key: your-api-key" \
+  -F "file=@image.jpg"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Group picture updated successfully"
+}
+```
+
 ---
 
-### PUT /api/groups/{jid}/picture
+### DELETE /api/groups/{sessionId}/{jid}/picture
+**Description**: Remove group profile picture.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `jid` (string): Group JID (URL-encoded)
+
+**Request Example**:
+```bash
+curl -X DELETE "https://your-domain.com/api/groups/sales-01/120363555666777888%40g.us/picture" \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Group picture removed successfully"
+}
+```
+
+---
+
+### PUT /api/groups/{jid}/picture (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `PUT /api/groups/{sessionId}/{jid}/picture` instead. This endpoint will be removed in a future version.
+
 **Description**: Update group profile picture.
 
 **Path Parameters**:
@@ -1254,7 +2011,9 @@ curl -X PUT "https://your-domain.com/api/groups/120363555666777888%40g.us/pictur
 
 ---
 
-### DELETE /api/groups/{jid}/picture
+### DELETE /api/groups/{jid}/picture (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `DELETE /api/groups/{sessionId}/{jid}/picture` instead. This endpoint will be removed in a future version.
+
 **Description**: Remove group profile picture.
 
 **Path Parameters**:
@@ -1279,9 +2038,48 @@ curl -X DELETE "https://your-domain.com/api/groups/120363555666777888%40g.us/pic
 
 ---
 
+### PUT /api/groups/{sessionId}/{jid}/settings
+**Description**: Update group settings (who can send messages, edit info).
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `jid` (string): Group JID (URL-encoded)
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| setting | string | Yes | `announcement`, `not_announcement`, `locked`, `unlocked` |
+| value | boolean | No | Ignored (legacy) |
+
+**Request Example**:
+```bash
+curl -X PUT "https://your-domain.com/api/groups/sales-01/120363555666777888%40g.us/settings" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "setting": "announcement"
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Group setting 'announcement' updated successfully",
+  "setting": "announcement"
+}
+```
+
+**Common Errors**:
+- `400`: Invalid setting.
+- `403`: Bot not admin.
+- `500`: Failed to update.
+
 ---
 
-### PUT /api/groups/{jid}/settings
+### PUT /api/groups/{jid}/settings (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `PUT /api/groups/{sessionId}/{jid}/settings` instead. This endpoint will be removed in a future version.
+
 **Description**: Update group settings (who can send messages/edit info).
 
 **Path Parameters**:
@@ -1315,15 +2113,58 @@ curl -X PUT "https://your-domain.com/api/groups/120363555666777888%40g.us/settin
 
 ---
 
-### PUT /api/groups/{jid}/ephemeral
+### PUT /api/groups/{sessionId}/{jid}/ephemeral
+**Description**: Toggle disappearing messages.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `jid` (string): Group JID (URL-encoded)
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| expiration | number | Yes | 0 (off), 86400 (24h), 604800 (7d), 7776000 (90d) |
+
+**Request Example**:
+```bash
+curl -X PUT "https://your-domain.com/api/groups/sales-01/120363555666777888%40g.us/ephemeral" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "expiration": 604800
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Disappearing messages enabled",
+  "expiration": 604800,
+  "expirationLabel": "7 days"
+}
+```
+
+**Common Errors**:
+- `400`: Invalid expiration.
+- `403`: Bot not admin.
+- `500`: Failed to toggle.
+
+---
+
+### PUT /api/groups/{jid}/ephemeral (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `PUT /api/groups/{sessionId}/{jid}/ephemeral` instead. This endpoint will be removed in a future version.
+
 **Description**: Toggle disappearing messages.
 
 **Path Parameters**:
 - `jid` (string): Group JID (URL-encoded)
 
 **Request Body**:
-- `sessionId` (string, required): Session ID
-- `expiration` (number, required): 0 (off), 86400 (24h), 604800 (7d), 7776000 (90d)
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| sessionId | string | Yes | Session ID |
+| expiration | number | Yes | Expiration time |
 
 **Request Example**:
 ```bash
@@ -1350,7 +2191,57 @@ curl -X PUT "https://your-domain.com/api/groups/120363555666777888%40g.us/epheme
 
 ## 🤖 Auto Reply
 
-### GET /api/autoreplies
+### GET /api/autoreplies/{sessionId}
+**Description**: List all auto-reply rules for a session.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Example**:
+```bash
+curl -X GET https://your-domain.com/api/autoreplies/sales-01 \
+  -H "X-API-Key: your-api-key"
+```
+
+---
+
+### POST /api/autoreplies/{sessionId}
+**Description**: Create a new auto-reply rule.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Body**:
+- `keyword` (string, required): Trigger keyword
+- `response` (string, required): Reply message
+- `matchType` (string, optional): EXACT, CONTAINS, or STARTS_WITH
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/autoreplies/sales-01 \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{ "keyword": "hello", "response": "Hi there!", "matchType": "EXACT" }'
+```
+
+---
+
+### DELETE /api/autoreplies/{sessionId}/{replyId}
+**Description**: Delete an auto-reply rule.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `replyId` (string, required): Reply ID
+
+**Request Example**:
+```bash
+curl -X DELETE https://your-domain.com/api/autoreplies/sales-01/reply123 \
+  -H "X-API-Key: your-api-key"
+```
+
+---
+
+### GET /api/autoreplies (DEPRECATED)
 **Description**: List all auto-reply rules for a session.
 
 **Query Parameters**:
@@ -1520,7 +2411,58 @@ curl -X DELETE https://your-domain.com/api/autoreplies/reply125 \
 
 ## 📅 Scheduler
 
-### GET /api/scheduler
+### GET /api/scheduler/{sessionId}
+**Description**: List all scheduled messages for a session.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Example**:
+```bash
+curl -X GET https://your-domain.com/api/scheduler/sales-01 \
+  -H "X-API-Key: your-api-key"
+```
+
+---
+
+### POST /api/scheduler/{sessionId}
+**Description**: Create a new scheduled message.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Body**:
+- `jid` (string, required): Recipient JID
+- `content` (string, required): Message content
+- `sendAt` (string, required): Send time (ISO format)
+- `mediaUrl` (string, optional): Media URL
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/scheduler/sales-01 \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{ "jid": "628123456789@s.whatsapp.net", "content": "Reminder!", "sendAt": "2024-12-25T10:00:00" }'
+```
+
+---
+
+### DELETE /api/scheduler/{sessionId}/{scheduleId}
+**Description**: Delete a scheduled message.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `scheduleId` (string, required): Schedule ID
+
+**Request Example**:
+```bash
+curl -X DELETE https://your-domain.com/api/scheduler/sales-01/sched123 \
+  -H "X-API-Key: your-api-key"
+```
+
+---
+
+### GET /api/scheduler (DEPRECATED)
 **Description**: Get a list of all scheduled messages for a specific session.
 
 **Query Parameters**:
@@ -2318,7 +3260,44 @@ curl -X POST https://your-domain.com/api/system/check-updates \
 
 ---
 
-### POST /api/status/update
+### POST /api/status/{sessionId}/update
+
+> [!WARNING]
+> **EXPERIMENTAL FEATURE**
+> 
+> This endpoint may have reliability issues with text status background colors and media uploads.
+
+**Description**: Post a status update (story) to WhatsApp.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| content | string | Yes | Status text or caption |
+| type | string | No | TEXT, IMAGE, or VIDEO (default: TEXT) |
+| mediaUrl | string | No | Required for IMAGE/VIDEO |
+| backgroundColor | integer | No | ARGB color for text status |
+| font | integer | No | Font style |
+| mentions | string[] | No | JIDs to mention |
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/status/sales-01/update \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{ "content": "Hello World!", "type": "TEXT" }'
+```
+
+**Response (200 OK)**:
+```json
+{ "success": true, "id": "ABCD1234" }
+```
+
+---
+
+### POST /api/status/update (DEPRECATED)
 
 > [!WARNING]
 > **EXPERIMENTAL FEATURE - KNOWN ISSUES**
@@ -2371,30 +3350,70 @@ curl -X POST https://your-domain.com/api/status/update \
 
 ---
 
-### PUT /api/chat/read
+### PUT /api/chat/{sessionId}/{jid}/read
 **Description**: Mark messages or entire chat as read.
 
-**Path Parameters**: None
-**Query Parameters**: None
+**Path Parameters**:
+- `sessionId` (string, required): Session identifier (e.g., "sales-01")
+- `jid` (string, required): WhatsApp JID (URL-encoded, e.g., "628123456789@s.whatsapp.net")
+
 **Request Body**:
-- `sessionId` (string, required): Session identifier
-- `jid` (string, required): WhatsApp JID
-- `messageIds` (array of strings, optional): Specific message IDs to mark as read
+- `messageIds` (array of strings, optional): Specific message IDs to mark as read. If not provided, marks entire chat as read
 
 **Request Examples**:
 
 ```bash
 # Mark entire chat as read
-curl -X PUT https://your-domain.com/api/chat/read \\\n  -H "X-API-Key: your-api-key" \\\n  -H "Content-Type: application/json" \\\n  -d '{
-    "sessionId": "sales-01",
-    "jid": "628123456789@s.whatsapp.net"
-  }'
+curl -X PUT https://your-domain.com/api/chat/sales-01/628123456789%40s.whatsapp.net/read \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{}'
 
 # Mark specific messages as read
-curl -X PUT https://your-domain.com/api/chat/read \\\n  -H "X-API-Key: your-api-key" \\\n  -H "Content-Type: application/json" \\\n  -d '{
+curl -X PUT https://your-domain.com/api/chat/sales-01/628123456789%40s.whatsapp.net/read \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messageIds": ["3EB0ABCD1234567890", "3EB0DEFG0987654321"]
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Messages marked as read"
+}
+```
+
+**Common Errors**:
+- `401`: Unauthorized.
+- `403`: Forbidden (cannot access session).
+- `503`: Session not ready.
+- `500`: Failed to mark messages as read.
+
+---
+
+### PUT /api/chat/read (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `PUT /api/chat/{sessionId}/{jid}/read` instead. This endpoint will be removed in a future version.
+
+**Description**: Mark messages or entire chat as read.
+
+**Request Body**:
+- `sessionId` (string, required): Session identifier
+- `jid` (string, required): WhatsApp JID
+- `messageIds` (array of strings, optional): Specific message IDs to mark as read
+
+**Request Example**:
+
+```bash
+curl -X PUT https://your-domain.com/api/chat/read \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
     "sessionId": "sales-01",
     "jid": "628123456789@s.whatsapp.net",
-    "messageIds": ["3EB0ABCD1234567890", "3EB0DEFG0987654321"]
+    "messageIds": ["3EB0ABCD1234567890"]
   }'
 ```
 
@@ -2408,19 +3427,24 @@ curl -X PUT https://your-domain.com/api/chat/read \\\n  -H "X-API-Key: your-api-
 
 ---
 
-### POST /api/messages/contact
+### POST /api/messages/{sessionId}/{jid}/contact
 **Description**: Send contact card(s) to a chat.
 
-**Request Body**:
+**Path Parameters**:
 - `sessionId` (string, required): Session identifier
-- `jid` (string, required): Recipient JID
-- `contacts` (array, required): Array of contact objects with `displayName` and `vcard`
+- `jid` (string, required): Recipient JID (URL-encoded)
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| contacts | array | Yes | Array of contact objects with `displayName` and `vcard` |
 
 **Request Example**:
 ```bash
-curl -X POST https://your-domain.com/api/messages/contact \\\n  -H "X-API-Key: your-api-key" \\\n  -H "Content-Type: application/json" \\\n  -d '{
-    "sessionId": "sales-01",
-    "jid": "628123456789@s.whatsapp.net",
+curl -X POST https://your-domain.com/api/messages/sales-01/628123456789%40s.whatsapp.net/contact \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
     "contacts": [
       {
         "displayName": "John Doe",
@@ -2438,6 +3462,43 @@ curl -X POST https://your-domain.com/api/messages/contact \\\n  -H "X-API-Key: y
 ```
 
 **Common Errors**:
+- `400`: Missing required fields.
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `500`: Failed to send contact.
+
+---
+
+### POST /api/messages/contact (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/messages/{sessionId}/{jid}/contact` instead. This endpoint will be removed in a future version.
+
+**Description**: Send contact card(s) to a chat.
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| sessionId | string | Yes | Session identifier |
+| jid | string | Yes | Recipient JID |
+| contacts | array | Yes | Array of contact objects |
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/messages/contact \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionId": "sales-01",
+    "jid": "628123456789@s.whatsapp.net",
+    "contacts": [
+      {
+        "displayName": "John Doe",
+        "vcard": "BEGIN:VCARD\nVERSION:3.0\nFN:John Doe\nTEL:+628123456789\nEND:VCARD"
+      }
+    ]
+  }'
+```
+
+**Common Errors**:
 - `400`: Missing `sessionId`, `jid`, or `contacts`.
 - `401`: Unauthorized.
 - `403`: Forbidden (cannot access session).
@@ -2447,18 +3508,64 @@ curl -X POST https://your-domain.com/api/messages/contact \\\n  -H "X-API-Key: y
 
 ---
 
-### POST /api/messages/react
+### POST /api/messages/{sessionId}/{jid}/{messageId}/react
 **Description**: React to a message with an emoji. Send empty string to remove reaction.
 
-**Request Body**:
-- `sessionId` (string, required)
-- `jid` (string, required)
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `jid` (string, required): Recipient JID (URL-encoded)
 - `messageId` (string, required): Message ID to react to
-- `emoji` (string, required): Emoji character or empty string
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| emoji | string | Yes | Emoji character or empty string |
 
 **Request Example**:
 ```bash
-curl -X POST https://your-domain.com/api/messages/react \\\n  -H "X-API-Key: your-api-key" \\\n  -H "Content-Type: application/json" \\\n  -d '{
+curl -X POST https://your-domain.com/api/messages/sales-01/628123456789%40s.whatsapp.net/3EB0ABCD1234567890/react \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "emoji": "👍"
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Reaction sent"
+}
+```
+
+**Common Errors**:
+- `400`: Missing required fields.
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `500`: Failed to send reaction.
+
+---
+
+### POST /api/messages/react (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/messages/{sessionId}/{jid}/{messageId}/react` instead. This endpoint will be removed in a future version.
+
+**Description**: React to a message with an emoji.
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| sessionId | string | Yes | Session ID |
+| jid | string | Yes | Recipient JID |
+| messageId | string | Yes | Message ID |
+| emoji | string | Yes | Emoji character |
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/messages/react \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
     "sessionId": "sales-01",
     "jid": "628123456789@s.whatsapp.net",
     "messageId": "3EB0ABCD1234567890",
@@ -2483,15 +3590,60 @@ curl -X POST https://your-domain.com/api/messages/react \\\n  -H "X-API-Key: you
 
 ---
 
-### POST /api/messages/list
+### POST /api/messages/{sessionId}/{jid}/list
 **Description**: Send a formatted numbered list message. Baileys has limited support for interactive lists, so this sends a beautifully formatted text message.
 
-**Request Body**:
+**Path Parameters**:
 - `sessionId` (string, required): Session ID
-- `jid` (string, required): Recipient JID
-- `title` (string, required): List title/header
-- `options` (array of strings, required): List options
-- `footer` (string, optional): Footer text
+- `jid` (string, required): Recipient JID (URL-encoded)
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| title | string | Yes | List title/header |
+| options | array | Yes | List options |
+| footer | string | No | Footer text |
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/messages/sales-01/628123456789%40s.whatsapp.net/list \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "title": "Main Menu",
+    "options": ["Check Balance", "Order History", "Talk to CS"],
+    "footer": "Select an option by replying with the number"
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true
+}
+```
+
+**Common Errors**:
+- `400`: Missing required fields.
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `500`: Failed to send message.
+
+---
+
+### POST /api/messages/list (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/messages/{sessionId}/{jid}/list` instead. This endpoint will be removed in a future version.
+
+**Description**: Send a formatted numbered list message.
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| sessionId | string | Yes | Session ID |
+| jid | string | Yes | Recipient JID |
+| title | string | Yes | List title/header |
+| options | array | Yes | List options |
+| footer | string | No | Footer text |
 
 **Request Example**:
 ```bash
@@ -2523,15 +3675,61 @@ curl -X POST https://your-domain.com/api/messages/list \
 
 ---
 
-### POST /api/messages/spam
+### POST /api/messages/{sessionId}/{jid}/spam
 **Description**: Send a message multiple times in a row (message bombing). This operation runs in the background.
 
-**Request Body**:
+**Path Parameters**:
 - `sessionId` (string, required): Session ID
-- `jid` (string, required): Recipient JID
-- `message` (string, required): Message text to spam
-- `count` (number, optional): Number of messages to send (default: 10)
-- `delay` (number, optional): Delay between messages in ms (default: 500)
+- `jid` (string, required): Recipient JID (URL-encoded)
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| message | string | Yes | Message text to spam |
+| count | number | No | Number of messages to send (default: 10) |
+| delay | number | No | Delay between messages in ms (default: 500) |
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/messages/sales-01/628123456789%40s.whatsapp.net/spam \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "message": "🔥 Flash Sale Starting Now!",
+    "count": 5,
+    "delay": 1000
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Bombing 5 messages started"
+}
+```
+
+**Common Errors**:
+- `400`: Missing required fields.
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `500`: Failed to start spam.
+
+---
+
+### POST /api/messages/spam (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/messages/{sessionId}/{jid}/spam` instead. This endpoint will be removed in a future version.
+
+**Description**: Send a message multiple times in a row.
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| sessionId | string | Yes | Session ID |
+| jid | string | Yes | Recipient JID |
+| message | string | Yes | Message text |
+| count | number | No | Default 10 |
+| delay | number | No | Default 500ms |
 
 **Request Example**:
 ```bash
@@ -2564,13 +3762,51 @@ curl -X POST https://your-domain.com/api/messages/spam \
 
 ---
 
-### POST /api/messages/sticker
+### POST /api/messages/{sessionId}/{jid}/sticker
 **Description**: Convert an image (static or animated) to a WhatsApp sticker and send it.
 
-**Request (multipart/form-data)**:
+**Path Parameters**:
 - `sessionId` (string, required): Session ID
-- `jid` (string, required): Recipient JID
-- `file` (file, required): Image file to convert (PNG, JPG, WEBP, GIF)
+- `jid` (string, required): Recipient JID (URL-encoded)
+
+**Request (multipart/form-data)**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| file | file | Yes | Image file to convert (PNG, JPG, WEBP, GIF) |
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/messages/sales-01/628123456789%40s.whatsapp.net/sticker \
+  -H "X-API-Key: your-api-key" \
+  -F "file=@/path/to/your/image.png"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true
+}
+```
+
+**Common Errors**:
+- `400`: Missing required fields.
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `500`: Failed to create sticker.
+
+---
+
+### POST /api/messages/sticker (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/messages/{sessionId}/{jid}/sticker` instead. This endpoint will be removed in a future version.
+
+**Description**: Convert an image to a WhatsApp sticker and send it.
+
+**Request (multipart/form-data)**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| sessionId | string | Yes | Session ID |
+| jid | string | Yes | Recipient JID |
+| file | file | Yes | Image file |
 
 **Request Example**:
 ```bash
@@ -2597,19 +3833,25 @@ curl -X POST https://your-domain.com/api/messages/sticker \
 
 ---
 
-### POST /api/messages/forward
+### POST /api/messages/{sessionId}/forward
 **Description**: Forward a message to one or multiple recipients.
 
+**Path Parameters**:
+- `sessionId` (string, required): Session identifier
+
 **Request Body**:
-- `sessionId` (string, required)
-- `fromJid` (string, required): Source chat JID
-- `messageId` (string, required): Message ID to forward
-- `toJids` (array of strings, required): List of recipient JIDs
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| fromJid | string | Yes | Source chat JID |
+| messageId | string | Yes | Message ID to forward |
+| toJids | string[] | Yes | List of recipient JIDs |
 
 **Request Example**:
 ```bash
-curl -X POST https://your-domain.com/api/messages/forward \\\n  -H "X-API-Key: your-api-key" \\\n  -H "Content-Type: application/json" \\\n  -d '{
-    "sessionId": "sales-01",
+curl -X POST https://your-domain.com/api/messages/sales-01/forward \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
     "fromJid": "628123456789@s.whatsapp.net",
     "messageId": "3EB0ABCD1234567890",
     "toJids": ["628987654321@s.whatsapp.net", "120363123456789@g.us"]
@@ -2625,11 +3867,38 @@ curl -X POST https://your-domain.com/api/messages/forward \\\n  -H "X-API-Key: y
 ```
 
 **Common Errors**:
-- `400`: Missing `sessionId`, `fromJid`, `messageId`, or `toJids`.
+- `400`: Missing required fields.
 - `401`: Unauthorized.
-- `403`: Forbidden (cannot access session).
-- `503`: Session not ready.
+- `403`: Forbidden.
 - `500`: Failed to forward message.
+
+---
+
+### POST /api/messages/forward (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `POST /api/messages/{sessionId}/forward` instead. This endpoint will be removed in a future version.
+
+**Description**: Forward a message to one or multiple recipients.
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| sessionId | string | Yes | Session identifier |
+| fromJid | string | Yes | Source chat JID |
+| messageId | string | Yes | Message ID to forward |
+| toJids | string[] | Yes | List of recipient JIDs |
+
+**Request Example**:
+```bash
+curl -X POST https://your-domain.com/api/messages/forward \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionId": "sales-01",
+    "fromJid": "628123456789@s.whatsapp.net",
+    "messageId": "3EB0ABCD1234567890",
+    "toJids": ["628987654321@s.whatsapp.net", "120363123456789@g.us"]
+  }'
+```
 
 ---
 
@@ -2784,7 +4053,38 @@ curl -X POST https://your-domain.com/api/labels \\\n  -H "X-API-Key: your-api-ke
 
 ---
 
-### GET /api/chats/by-label/{labelId}
+### GET /api/chats/{sessionId}/by-label/{labelId}
+**Description**: Get all chats associated with a specific label.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session identifier
+- `labelId` (string, required): Label ID
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "label": {
+    "id": "label123",
+    "name": "Important",
+    "colorHex": "#FF0000"
+  },
+  "chats": ["628123456789@s.whatsapp.net"],
+  "count": 1
+}
+```
+
+**Common Errors**:
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `404`: Label not found.
+- `400`: Label does not belong to session.
+
+---
+
+### GET /api/chats/by-label/{labelId} (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `GET /api/chats/{sessionId}/by-label/{labelId}` instead. This endpoint will be removed in a future version.
+
 **Description**: Get all chats associated with a specific label.
 
 **Path Parameters**:
@@ -2808,18 +4108,61 @@ curl -X POST https://your-domain.com/api/labels \\\n  -H "X-API-Key: your-api-ke
 
 ## 📇 Contacts
 
-### GET /api/contacts
-**Description**: Get paginated contact list with search functionality.
+### GET /api/contacts/{sessionId}
+**Description**: List contacts from the session's address book with pagination and search.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
 
 **Query Parameters**:
-- `sessionId` (string, required): Session identifier
-- `page` (integer, optional): Page number (default: 1)
-- `limit` (integer, optional): Items per page (default: 10)
-- `search` (string, optional): Search by name, notify, jid
+- `page` (number, optional): Page number (default: 1)
+- `limit` (number, optional): Items per page (default: 10)
+- `search` (string, optional): Search by name, JID, or notify name
 
 **Request Example**:
 ```bash
-curl -X GET "https://your-domain.com/api/contacts?sessionId=sales-01&page=1&limit=20&search=john" \\\n  -H "X-API-Key: your-api-key"
+curl -X GET "https://your-domain.com/api/contacts/sales-01?page=1&limit=20&search=john" \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "data": [
+    {
+      "jid": "628123456789@s.whatsapp.net",
+      "name": "John Doe",
+      "notify": "John",
+      "verifiedName": "John Doe Business",
+      "profilePic": "https://url-to-pic.jpg"
+    }
+  ],
+  "meta": {
+    "total": 100,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 5
+  }
+}
+```
+
+---
+
+### GET /api/contacts (DEPRECATED)
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `GET /api/contacts/{sessionId}` instead. This endpoint will be removed in a future version.
+
+**Description**: List contacts from the session's address book.
+
+**Query Parameters**:
+- `sessionId` (string, required): Session ID
+- `page` (number, optional): Page number (default: 1)
+- `limit` (number, optional): Items per page (default: 10)
+- `search` (string, optional): Search by name/number
+
+**Request Example**:
+```bash
+curl -X GET "https://your-domain.com/api/contacts?sessionId=sales-01&page=1&limit=20&search=john" \
+  -H "X-API-Key: your-api-key"
 ```
 
 **Response (200 OK)**:
@@ -2885,7 +4228,110 @@ curl -X GET "https://your-domain.com/api/contacts?sessionId=sales-01&page=1&limi
 
 ## 👤 Profile
 
-### PUT /api/profile/name
+### GET /api/profile/{sessionId}
+**Description**: Get own profile information.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Example**:
+```bash
+curl -X GET https://your-domain.com/api/profile/sales-01 \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "jid": "628123456789@s.whatsapp.net",
+  "status": { "status": "Available" }
+}
+```
+
+---
+
+### PUT /api/profile/{sessionId}/name
+**Description**: Update the WhatsApp account's display name.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Body**:
+- `name` (string, required): New display name (max 25 characters)
+
+**Request Example**:
+```bash
+curl -X PUT https://your-domain.com/api/profile/sales-01/name \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{ "name": "My Business" }'
+```
+
+**Response (200 OK)**:
+```json
+{ "success": true, "message": "Profile name updated successfully", "name": "My Business" }
+```
+
+---
+
+### PUT /api/profile/{sessionId}/status
+**Description**: Update the WhatsApp account's about/status.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Body**:
+- `status` (string, required): New status text (max 139 characters)
+
+**Request Example**:
+```bash
+curl -X PUT https://your-domain.com/api/profile/sales-01/status \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{ "status": "Available 9AM-5PM" }'
+```
+
+**Response (200 OK)**:
+```json
+{ "success": true, "message": "Profile status updated successfully", "status": "Available 9AM-5PM" }
+```
+
+---
+
+### PUT /api/profile/{sessionId}/picture
+**Description**: Upload a new profile picture.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Body (multipart/form-data)**:
+- `file` (file, required): Image file
+
+**Request Example**:
+```bash
+curl -X PUT https://your-domain.com/api/profile/sales-01/picture \
+  -H "X-API-Key: your-api-key" \
+  -F "file=@profile.jpg"
+```
+
+---
+
+### DELETE /api/profile/{sessionId}/picture
+**Description**: Remove profile picture.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Example**:
+```bash
+curl -X DELETE https://your-domain.com/api/profile/sales-01/picture \
+  -H "X-API-Key: your-api-key"
+```
+
+---
+
+### PUT /api/profile/name (DEPRECATED)
 **Description**: Update the WhatsApp account's display name.
 
 **Request Body**:
@@ -3300,3 +4746,261 @@ curl -X POST https://your-domain.com/api/chat/send \
 **Documentation Version**: 1.2.0  
 **Last Updated**: 2024-01-17  
 **Total Endpoints**: 64+
+
+---
+
+## 📞 Contacts
+
+### GET /api/contacts/{sessionId}
+**Description**: Get list of contacts.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Query Parameters**:
+- `search` (string, optional): Search term
+- `page` (number, optional): Page number
+- `limit` (number, optional): Items per page
+
+**Request Example**:
+```bash
+curl -X GET "https://your-domain.com/api/contacts/sales-01?search=john" \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "data": [
+    {
+      "id": "628123456789@s.whatsapp.net",
+      "name": "John Doe",
+      "notify": "John",
+      "verify": "verified"
+    }
+  ],
+  "meta": {
+    "total": 1,
+    "page": 1,
+    "limit": 10
+  }
+}
+```
+
+---
+
+### POST /api/contacts/{sessionId}/{jid}/block
+**Description**: Block a contact.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `jid` (string, required): Contact JID (URL-encoded)
+
+**Request Example**:
+```bash
+curl -X POST "https://your-domain.com/api/contacts/sales-01/628123456789%40s.whatsapp.net/block" \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Contact blocked successfully"
+}
+```
+
+---
+
+### POST /api/contacts/{sessionId}/{jid}/unblock
+**Description**: Unblock a contact.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `jid` (string, required): Contact JID (URL-encoded)
+
+**Request Example**:
+```bash
+curl -X POST "https://your-domain.com/api/contacts/sales-01/628123456789%40s.whatsapp.net/unblock" \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Contact unblocked successfully"
+}
+```
+
+---
+
+## 🏷️ Labels
+
+### GET /api/labels/{sessionId}
+**Description**: Get all labels.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Example**:
+```bash
+curl -X GET "https://your-domain.com/api/labels/sales-01" \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+[
+  {
+    "id": "1",
+    "name": "New Customer",
+    "color": "#ff0000",
+    "count": 5
+  }
+]
+```
+
+---
+
+### PUT /api/labels/{sessionId}/{labelId}
+**Description**: Update a label (currently only name/color update logic varies by platform, primarily used for syncing).
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `labelId` (string, required): Label ID
+
+**Request Body**:
+- `name` (string): New name
+- `color` (number): Color ID
+
+---
+
+### DELETE /api/labels/{sessionId}/{labelId}
+**Description**: Delete a label.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `labelId` (string, required): Label ID
+
+---
+
+### GET /api/labels/{sessionId}/chat/{jid}/labels
+**Description**: Get labels assigned to a specific chat.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `jid` (string, required): Chat JID (URL-encoded)
+
+---
+
+### PUT /api/labels/{sessionId}/chat/{jid}/labels
+**Description**: Assign or remove labels from a chat.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `jid` (string, required): Chat JID (URL-encoded)
+
+**Request Body**:
+- `labelIds` (string[]): List of label IDs
+- `action` (string): "add" or "remove"
+
+---
+
+## 👤 Profile
+
+### GET /api/profile/{sessionId}
+**Description**: Get current bot profile info.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+---
+
+### PUT /api/profile/{sessionId}/name
+**Description**: Update display name.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Body**:
+- `name` (string, required): New display name
+
+---
+
+### PUT /api/profile/{sessionId}/status
+**Description**: Update about/status.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Body**:
+- `status` (string, required): New status text
+
+---
+
+### PUT /api/profile/{sessionId}/picture
+**Description**: Update profile picture.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Body (FormData)**:
+- `file` (file, required): Image file
+
+---
+
+### DELETE /api/profile/{sessionId}/picture
+**Description**: Remove profile picture.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+---
+
+## 📢 Status (Stories)
+
+### POST /api/status/{sessionId}/update
+**Description**: Post a status update.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Body**:
+- `content` (string): Text content or caption
+- `mediaUrl` (string, optional): URL for image/video status
+
+---
+
+## 📅 Scheduler
+
+### GET /api/scheduler/{sessionId}
+**Description**: Get scheduled messages.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+---
+
+### POST /api/scheduler/{sessionId}
+**Description**: Schedule a message.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Body**:
+- `jid` (string, required): Recipient JID
+- `content` (string, required): Message content
+- `sendAt` (string, required): ISO Date string (e.g. 2024-12-31T23:59:00Z)
+- `mediaUrl` (string, optional): Media URL
+
+---
+
+### DELETE /api/scheduler/{sessionId}/{scheduleId}
+**Description**: Cancel a scheduled message.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `scheduleId` (string, required): Schedule ID
+
+---

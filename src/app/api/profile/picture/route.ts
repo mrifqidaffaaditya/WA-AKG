@@ -2,8 +2,13 @@ import { NextResponse, NextRequest } from "next/server";
 import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 
+/**
+ * @deprecated This endpoint is deprecated. Use PUT/DELETE /api/profile/{sessionId}/picture instead.
+ * This endpoint will be removed in a future version.
+ */
 // PUT: Update profile picture
 export async function PUT(request: NextRequest) {
+    console.warn('[DEPRECATED] PUT /api/profile/picture is deprecated. Use PUT /api/profile/{sessionId}/picture instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
@@ -54,6 +59,7 @@ export async function PUT(request: NextRequest) {
 
 // DELETE: Remove profile picture
 export async function DELETE(request: NextRequest) {
+    console.warn('[DEPRECATED] DELETE /api/profile/picture is deprecated. Use DELETE /api/profile/{sessionId}/picture instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

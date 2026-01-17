@@ -2,8 +2,13 @@ import { NextResponse, NextRequest } from "next/server";
 import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 
+/**
+ * @deprecated This endpoint is deprecated. Use POST /api/contacts/{sessionId}/{jid}/unblock instead.
+ * This endpoint will be removed in a future version.
+ */
 // POST: Unblock a contact
 export async function POST(request: NextRequest) {
+    console.warn('[DEPRECATED] POST /api/contacts/unblock is deprecated. Use POST /api/contacts/{sessionId}/{jid}/unblock instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

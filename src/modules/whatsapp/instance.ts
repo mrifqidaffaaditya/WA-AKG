@@ -89,43 +89,58 @@ export class WhatsAppInstance {
             
             if (connection === "close") {
                 const code = (lastDisconnect?.error as any)?.output?.statusCode;
-                // Only reconnect if NOT logged out AND NOT explicitly stopped
-                const shouldReconnect = code !== DisconnectReason.loggedOut && !this.isStopped;
+                const isLoggedOut = code === DisconnectReason.loggedOut;
                 
-                this.status = this.isStopped ? "STOPPED" : "DISCONNECTED";
-                 this.io?.to(this.sessionId).emit("connection.update", { status: this.status, qr: null });
+                // Only reconnect if NOT logged out AND NOT explicitly stopped
+                const shouldReconnect = !isLoggedOut && !this.isStopped;
+                
+                // Determine status based on reason
+                if (isLoggedOut) {
+                    this.status = "LOGGED_OUT";
+                } else if (this.isStopped) {
+                    this.status = "STOPPED";
+                } else {
+                    this.status = "DISCONNECTED";
+                }
+                
+                this.io?.to(this.sessionId).emit("connection.update", { status: this.status, qr: null });
                  
-                 // Use try-catch specifically for update as session might be deleted
-                 try {
-                     await prisma.session.update({
+                // Use try-catch specifically for update as session might be deleted
+                try {
+                    await prisma.session.update({
                         where: { sessionId: this.sessionId },
                         data: { status: this.status, qr: null }
                     });
-                 } catch (e) {
-                     // Ignore if session not found (deleted)
-                 }
+                } catch (e) {
+                    // Ignore if session not found (deleted)
+                }
 
                 if (shouldReconnect) {
+                    // Connection lost unexpectedly, reconnect
                     this.init();
-                } else {
-                         console.log(`Session ${this.sessionId} logged out. Cleaning up...`);
-                         try {
-                             await prisma.$transaction([
-                                 prisma.session.update({
-                                    where: { sessionId: this.sessionId },
-                                    data: { status: "LOGGED_OUT", qr: null }
-                                 }),
-                                 prisma.authState.deleteMany({
-                                     where: { sessionId: this.sessionId }
-                                 })
-                             ]);
-                         } catch (e) { /* ignore */ }
-                         this.socket = null;
-                         this.config = {}; // Clear config cache if needed
-                         console.log(`Session ${this.sessionId} stopped gracefully.`);
-                         this.socket = null;
-                     }
+                } else if (isLoggedOut) {
+                    // Explicit logout: delete credentials
+                    console.log(`Session ${this.sessionId} logged out. Deleting credentials...`);
+                    try {
+                        await prisma.$transaction([
+                            prisma.session.update({
+                                where: { sessionId: this.sessionId },
+                                data: { status: "LOGGED_OUT", qr: null }
+                            }),
+                            prisma.authState.deleteMany({
+                                where: { sessionId: this.sessionId }
+                            })
+                        ]);
+                    } catch (e) { /* ignore */ }
+                    this.socket = null;
+                    this.config = {}; // Clear config cache
+                    console.log(`Session ${this.sessionId} credentials deleted.`);
+                } else if (this.isStopped) {
+                    // Stopped: preserve credentials for future restart
+                    console.log(`Session ${this.sessionId} stopped. Credentials preserved for auto-login.`);
+                    this.socket = null;
                 }
+            }
 
 
             if (connection === "open") {

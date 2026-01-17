@@ -4,7 +4,12 @@ import { broadcastSchema } from "@/lib/validations";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 import type { AnyMessageContent } from "@whiskeysockets/baileys";
 
+/**
+ * @deprecated This endpoint is deprecated. Use POST /api/messages/{sessionId}/broadcast instead.
+ * This endpoint will be removed in a future version.
+ */
 export async function POST(request: NextRequest) {
+    console.warn('[DEPRECATED] POST /api/messages/broadcast is deprecated. Use POST /api/messages/{sessionId}/broadcast instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

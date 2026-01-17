@@ -2,8 +2,13 @@ import { NextResponse, NextRequest } from "next/server";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 
+/**
+ * @deprecated This endpoint is deprecated. Use GET /api/labels/{sessionId} instead.
+ * This endpoint will be removed in a future version.
+ */
 // GET: Get all labels for a session
 export async function GET(request: NextRequest) {
+    console.warn('[DEPRECATED] GET /api/labels is deprecated. Use GET /api/labels/{sessionId} instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
@@ -41,8 +46,13 @@ export async function GET(request: NextRequest) {
     }
 }
 
+/**
+ * @deprecated This endpoint is deprecated. Use POST /api/labels/{sessionId} instead.
+ * This endpoint will be removed in a future version.
+ */
 // POST: Create a new label
 export async function POST(request: NextRequest) {
+    console.warn('[DEPRECATED] POST /api/labels is deprecated. Use POST /api/labels/{sessionId} instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

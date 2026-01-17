@@ -3,9 +3,14 @@ import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 
 // POST: Accept group invite using invite code
+/**
+ * @deprecated This endpoint is deprecated. Use POST /api/groups/{sessionId}/invite/accept instead.
+ * This endpoint will be removed in a future version.
+ */
 export async function POST(
     request: NextRequest
 ) {
+    console.warn('[DEPRECATED] POST /api/groups/invite/accept is deprecated. Use POST /api/groups/{sessionId}/invite/accept instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {

@@ -59,7 +59,7 @@ export default function AutoReplyPage() {
     const fetchRules = async (sessionId: string) => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/autoreplies?sessionId=${sessionId}`);
+            const res = await fetch(`/api/autoreplies/${sessionId}`);
             if (res.ok) {
                 const data = await res.json();
                 setRules(data);
@@ -78,11 +78,10 @@ export default function AutoReplyPage() {
         if (!selectedSessionId || !newKeyword || !newResponse) return;
 
         try {
-            const res = await fetch("/api/autoreplies", {
+            const res = await fetch(`/api/autoreplies/${selectedSessionId}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    sessionId: selectedSessionId,
                     keyword: newKeyword,
                     response: newResponse,
                     matchType: newMatchType
@@ -106,7 +105,7 @@ export default function AutoReplyPage() {
     const confirmDelete = async () => {
         if (!deleteId) return;
         try {
-            const res = await fetch(`/api/autoreplies/${deleteId}`, { method: "DELETE" });
+            const res = await fetch(`/api/autoreplies/${selectedSessionId}/${deleteId}`, { method: "DELETE" });
             if (res.ok) {
                 toast.success("Rule deleted");
                 setRules(rules.filter(r => r.id !== deleteId));

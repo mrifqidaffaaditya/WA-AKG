@@ -2,8 +2,13 @@ import { NextResponse, NextRequest } from "next/server";
 import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 
+/**
+ * @deprecated This endpoint is deprecated. Use POST /api/chat/{sessionId}/{jid}/profile-picture instead.
+ * This endpoint will be removed in a future version.
+ */
 // POST: Fetch profile picture URL for a JID
 export async function POST(request: NextRequest) {
+    console.warn('[DEPRECATED] POST /api/chat/profile-picture is deprecated. Use POST /api/chat/{sessionId}/{jid}/profile-picture instead.');
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
