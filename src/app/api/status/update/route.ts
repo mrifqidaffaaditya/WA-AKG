@@ -100,11 +100,20 @@ export async function POST(request: NextRequest) {
             userJid: userJid
         });
 
-        await instance.socket.relayMessage(statusJid, msg.message!, { 
+        console.log("Debug Status Update:", {
+            userJid,
+            statusJid,
+            messageContent: JSON.stringify(messageContent),
+            msgKey: msg.key
+        });
+
+        const messageId = await instance.socket.relayMessage(statusJid, msg.message!, { 
             messageId: msg.key.id!, 
-            statusJidList: mentions && Array.isArray(mentions) && mentions.length > 0 ? mentions : [] ,
+            statusJidList: mentions && Array.isArray(mentions) && mentions.length > 0 ? mentions : undefined,
             additionalNodes 
         });
+        
+        console.log("Relay Message Result:", messageId);
         
         // Save to DB with correct session ID
         await prisma.story.create({
