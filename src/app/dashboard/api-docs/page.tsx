@@ -44,12 +44,24 @@ export default function ApiDocsPage() {
         { category: "Groups", method: "PUT", path: "/api/groups/[sessionId]/[jid]/ephemeral", description: "Toggle disappearing", params: "Path: sessionId, jid, Body: { ephemeral }" },
         { category: "Groups", method: "POST", path: "/api/groups/[sessionId]/[jid]/leave", description: "Leave group", params: "Path: sessionId, jid" },
 
+        // Groups (Legacy)
+        { category: "Groups", method: "GET", path: "/api/groups", description: "List groups [DEPRECATED]", params: "Query: sessionId" },
+        { category: "Groups", method: "POST", path: "/api/groups/create", description: "Create group [DEPRECATED]", params: "Body: { sessionId, subject, participants }" },
+        { category: "Groups", method: "POST", path: "/api/groups/invite/accept", description: "Accept invite [DEPRECATED]", params: "Body: { sessionId, code }" },
+
         // Profile
         { category: "Profile", method: "GET", path: "/api/profile/[sessionId]", description: "Get own profile", params: "Path: sessionId" },
         { category: "Profile", method: "PUT", path: "/api/profile/[sessionId]/name", description: "Update name", params: "Path: sessionId, Body: { name }" },
         { category: "Profile", method: "PUT", path: "/api/profile/[sessionId]/status", description: "Update status", params: "Path: sessionId, Body: { status }" },
         { category: "Profile", method: "PUT", path: "/api/profile/[sessionId]/picture", description: "Update picture", params: "Path: sessionId, Body: { image } (multipart/form-data)" },
         { category: "Profile", method: "DELETE", path: "/api/profile/[sessionId]/picture", description: "Remove picture", params: "Path: sessionId" },
+
+        // Profile (Legacy)
+        { category: "Profile", method: "GET", path: "/api/profile", description: "Get profile [DEPRECATED]", params: "Query: sessionId" },
+        { category: "Profile", method: "PUT", path: "/api/profile/name", description: "Update name [DEPRECATED]", params: "Body: { sessionId, name }" },
+        { category: "Profile", method: "PUT", path: "/api/profile/picture", description: "Update picture [DEPRECATED]", params: "Body: { sessionId, image }" },
+        { category: "Profile", method: "DELETE", path: "/api/profile/picture", description: "Remove picture [DEPRECATED]", params: "Body: { sessionId }" },
+        { category: "Profile", method: "PUT", path: "/api/profile/status", description: "Update status [DEPRECATED]", params: "Body: { sessionId, status }" },
 
         // Messaging
         { category: "Messaging", method: "POST", path: "/api/messages/[sessionId]/[jid]/send", description: "Send message", params: "Path: sessionId, jid, Body: { message }" },
@@ -67,6 +79,18 @@ export default function ApiDocsPage() {
         { category: "Messaging", method: "GET", path: "/api/messages/[sessionId]/download/[messageId]/media", description: "Download media", params: "Path: sessionId, messageId" },
         { category: "Messaging", method: "GET", path: "/api/media/[filename]", description: "Serve media file", params: "Path: filename" },
 
+        // Messaging (Legacy)
+        { category: "Messaging", method: "POST", path: "/api/messages/broadcast", description: "Broadcast message [DEPRECATED]", params: "Body: { sessionId, jids[], message }" },
+        { category: "Messaging", method: "POST", path: "/api/messages/contact", description: "Send contact [DEPRECATED]", params: "Body: { sessionId, jid, vcard }" },
+        { category: "Messaging", method: "DELETE", path: "/api/messages/delete", description: "Delete message [DEPRECATED]", params: "Body: { sessionId, jid, messageId }" },
+        { category: "Messaging", method: "POST", path: "/api/messages/forward", description: "Forward message [DEPRECATED]", params: "Body: { sessionId, jid, messageId }" },
+        { category: "Messaging", method: "POST", path: "/api/messages/list", description: "Send list message [DEPRECATED]", params: "Body: { sessionId, jid, ... }" },
+        { category: "Messaging", method: "POST", path: "/api/messages/location", description: "Send location [DEPRECATED]", params: "Body: { sessionId, jid, location }" },
+        { category: "Messaging", method: "POST", path: "/api/messages/poll", description: "Send poll [DEPRECATED]", params: "Body: { sessionId, jid, poll }" },
+        { category: "Messaging", method: "POST", path: "/api/messages/react", description: "Send reaction [DEPRECATED]", params: "Body: { sessionId, jid, reaction }" },
+        { category: "Messaging", method: "POST", path: "/api/messages/spam", description: "Report spam [DEPRECATED]", params: "Body: { sessionId, jid }" },
+        { category: "Messaging", method: "POST", path: "/api/messages/sticker", description: "Send sticker [DEPRECATED]", params: "Body: { sessionId, jid, sticker }" },
+
         // Chat
         { category: "Chat", method: "GET", path: "/api/chat/[sessionId]", description: "Get chats", params: "Path: sessionId, Query: page, limit" },
         { category: "Chat", method: "GET", path: "/api/chat/[sessionId]/[jid]", description: "Get specific chat", params: "Path: sessionId, jid, Query: limit" },
@@ -79,10 +103,27 @@ export default function ApiDocsPage() {
         { category: "Chat", method: "PUT", path: "/api/chat/[sessionId]/[jid]/pin", description: "Pin chat", params: "Path: sessionId, jid, Body: { pin }" },
         { category: "Chat", method: "GET", path: "/api/chats/[sessionId]/by-label/[labelId]", description: "Filter by label", params: "Path: sessionId, labelId" },
 
+        // Chat (Legacy)
+        { category: "Chat", method: "POST", path: "/api/chat/[sessionId]/send", description: "Send message [DEPRECATED]", params: "Path: sessionId, Body: { jid, message }" },
+        { category: "Chat", method: "PUT", path: "/api/chat/archive", description: "Archive chat [DEPRECATED]", params: "Body: { sessionId, jid, archive }" },
+        { category: "Chat", method: "POST", path: "/api/chat/check", description: "Check WhatsApp numbers [DEPRECATED]", params: "Body: { sessionId, phones[] }" },
+        { category: "Chat", method: "PUT", path: "/api/chat/mute", description: "Mute chat [DEPRECATED]", params: "Body: { sessionId, jid, mute }" },
+        { category: "Chat", method: "PUT", path: "/api/chat/pin", description: "Pin chat [DEPRECATED]", params: "Body: { sessionId, jid, pin }" },
+        { category: "Chat", method: "POST", path: "/api/chat/presence", description: "Send presence [DEPRECATED]", params: "Body: { sessionId, jid, presence }" },
+        { category: "Chat", method: "POST", path: "/api/chat/profile-picture", description: "Get profile picture [DEPRECATED]", params: "Body: { sessionId, jid }" },
+        { category: "Chat", method: "PUT", path: "/api/chat/read", description: "Mark as read [DEPRECATED]", params: "Body: { sessionId, jid }" },
+        { category: "Chat", method: "POST", path: "/api/chat/send", description: "Send message [DEPRECATED]", params: "Body: { sessionId, jid, message }" },
+        { category: "Chat", method: "GET", path: "/api/chats/by-label/[labelId]", description: "Filter by label [DEPRECATED]", params: "Path: labelId, Query: sessionId" },
+
         // Contacts
         { category: "Contacts", method: "GET", path: "/api/contacts/[sessionId]", description: "List contacts", params: "Path: sessionId, Query: search" },
         { category: "Contacts", method: "POST", path: "/api/contacts/[sessionId]/[jid]/block", description: "Block contact", params: "Path: sessionId, jid" },
         { category: "Contacts", method: "POST", path: "/api/contacts/[sessionId]/[jid]/unblock", description: "Unblock contact", params: "Path: sessionId, jid" },
+
+        // Contacts (Legacy)
+        { category: "Contacts", method: "GET", path: "/api/contacts", description: "List contacts [DEPRECATED]", params: "Query: search" },
+        { category: "Contacts", method: "POST", path: "/api/contacts/block", description: "Block contact [DEPRECATED]", params: "Body: { sessionId, jid }" },
+        { category: "Contacts", method: "POST", path: "/api/contacts/unblock", description: "Unblock contact [DEPRECATED]", params: "Body: { sessionId, jid }" },
 
         // Labels
         { category: "Labels", method: "GET", path: "/api/labels/[sessionId]", description: "List labels", params: "Path: sessionId" },
@@ -92,12 +133,22 @@ export default function ApiDocsPage() {
         { category: "Labels", method: "GET", path: "/api/labels/[sessionId]/chat-labels/[jid]", description: "Get chat labels", params: "Path: sessionId, jid" },
         { category: "Labels", method: "PUT", path: "/api/labels/[sessionId]/chat-labels/[jid]", description: "Add/remove labels", params: "Path: sessionId, jid, Body: { labelIds[], action }" },
 
+        // Labels (Legacy)
+        { category: "Labels", method: "GET", path: "/api/labels", description: "List labels [DEPRECATED]", params: "Query: sessionId" },
+        { category: "Labels", method: "POST", path: "/api/labels", description: "Create label [DEPRECATED]", params: "Body: { sessionId, name, color }" },
+        { category: "Labels", method: "GET", path: "/api/labels/chat-labels", description: "Get chat labels [DEPRECATED]", params: "Query: sessionId, jid" },
+        { category: "Labels", method: "PUT", path: "/api/labels/chat-labels", description: "Update chat labels [DEPRECATED]", params: "Body: { sessionId, jid, labelIds[], action }" },
+
         // Auto Reply
         { category: "Auto Reply", method: "GET", path: "/api/autoreplies/[sessionId]", description: "List auto replies", params: "Path: sessionId" },
         { category: "Auto Reply", method: "POST", path: "/api/autoreplies/[sessionId]", description: "Create auto reply", params: "Path: sessionId, Body: { keyword, response, matchType }" },
         { category: "Auto Reply", method: "GET", path: "/api/autoreplies/[sessionId]/[id]", description: "Get auto reply", params: "Path: sessionId, id" },
         { category: "Auto Reply", method: "PUT", path: "/api/autoreplies/[sessionId]/[id]", description: "Update auto reply", params: "Path: sessionId, id, Body: { ... }" },
         { category: "Auto Reply", method: "DELETE", path: "/api/autoreplies/[sessionId]/[id]", description: "Delete auto reply", params: "Path: sessionId, id" },
+
+        // Auto Reply (Legacy)
+        { category: "Auto Reply", method: "GET", path: "/api/autoreplies", description: "List auto replies [DEPRECATED]", params: "Query: sessionId" },
+        { category: "Auto Reply", method: "POST", path: "/api/autoreplies", description: "Create auto reply [DEPRECATED]", params: "Body: { sessionId, keyword, ... }" },
 
         // Scheduler
         { category: "Scheduler", method: "GET", path: "/api/scheduler/[sessionId]", description: "List scheduled", params: "Path: sessionId" },
@@ -106,11 +157,19 @@ export default function ApiDocsPage() {
         { category: "Scheduler", method: "PUT", path: "/api/scheduler/[sessionId]/[id]", description: "Update scheduled", params: "Path: sessionId, id, Body: { ... }" },
         { category: "Scheduler", method: "DELETE", path: "/api/scheduler/[sessionId]/[id]", description: "Delete scheduled", params: "Path: sessionId, id" },
 
+        // Scheduler (Legacy)
+        { category: "Scheduler", method: "GET", path: "/api/scheduler", description: "List scheduled [DEPRECATED]", params: "Query: sessionId" },
+        { category: "Scheduler", method: "POST", path: "/api/scheduler", description: "Create scheduled [DEPRECATED]", params: "Body: { sessionId, content, ... }" },
+
         // Webhooks
         { category: "Webhooks", method: "GET", path: "/api/webhooks/[sessionId]", description: "List webhooks", params: "Path: sessionId" },
         { category: "Webhooks", method: "POST", path: "/api/webhooks/[sessionId]", description: "Create webhook", params: "Path: sessionId, Body: { name, url, events[] }" },
         { category: "Webhooks", method: "PUT", path: "/api/webhooks/[sessionId]/[id]", description: "Update webhook", params: "Path: sessionId, id, Body: { ... }" },
         { category: "Webhooks", method: "DELETE", path: "/api/webhooks/[sessionId]/[id]", description: "Delete webhook", params: "Path: sessionId, id" },
+
+        // Webhooks (Legacy)
+        { category: "Webhooks", method: "GET", path: "/api/webhooks", description: "List webhooks [DEPRECATED]", params: "Query: sessionId" },
+        { category: "Webhooks", method: "POST", path: "/api/webhooks", description: "Create webhook [DEPRECATED]", params: "Body: { sessionId, url, ... }" },
 
         // Notifications
         { category: "Notifications", method: "GET", path: "/api/notifications", description: "List notifications", params: "-" },
