@@ -310,7 +310,8 @@ curl -X DELETE https://your-domain.com/api/sessions/sales-01/settings \
   "jid": "628123456789@s.whatsapp.net",
   "message": {
     "text": "Hello! Welcome to our store."
-  }
+  },
+  "mentions": ["628123456789@s.whatsapp.net"]
 }
 ```
 
@@ -862,6 +863,53 @@ curl -X GET "https://your-domain.com/api/groups?sessionId=sales-01" \
     "createdAt": 1703980800
   }
 ]
+```
+
+---
+
+### GET /api/groups/{jid}
+**Description**: Get detailed information about a group (metadata, participants, picture).
+
+**Path Parameters**:
+- `jid` (string): Group JID (e.g. `123456@g.us`)
+
+**Query Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Request Example**:
+```bash
+curl -X GET "https://your-domain.com/api/groups/120363123456789012%40g.us?sessionId=sales-01" \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "id": "120363123456789012@g.us",
+  "subject": "Sales Team",
+  "subjectOwner": "628123456789@s.whatsapp.net",
+  "subjectTime": 1704067200,
+  "size": 15,
+  "creation": 1704067200,
+  "owner": "628123456789@s.whatsapp.net",
+  "desc": "Official Sales Team Group",
+  "descId": "3EB0...",
+  "restrict": false,
+  "announce": true,
+  "participants": [
+      {
+          "id": "628123456789@s.whatsapp.net",
+          "admin": "admin"
+      },
+      {
+          "id": "628987654321@s.whatsapp.net",
+          "admin": null
+      }
+  ],
+  "ephemeralDuration": 0,
+  "inviteCode": "AbCdEf...",
+  "pictureUrl": "https://pps.whatsapp.net/..."
+}
 ```
 
 ---
@@ -2225,6 +2273,7 @@ curl -X POST https://your-domain.com/api/system/check-updates \
 - `mediaUrl` (string, optional): URL of the media (required for `IMAGE` and `VIDEO`).
 - `backgroundColor` (number, optional): Background color ARGB for text status (e.g., `0xff123456`).
 - `font` (number, optional): Font style index for text status.
+- `mentions` (array of strings, optional): List of JIDs to mention in the status.
 
 **Request Example (Text Status)**:
 ```bash
@@ -2234,7 +2283,8 @@ curl -X POST https://your-domain.com/api/status/update \
   -d '{
     "sessionId": "sales-01",
     "content": "Hello World!",
-    "backgroundColor": 4278190080
+    "backgroundColor": 4278190080,
+    "mentions": ["628123456789@s.whatsapp.net"]
   }'
 ```
 

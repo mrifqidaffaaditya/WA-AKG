@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { sessionId, content, type = "TEXT", mediaUrl, backgroundColor, font } = body; 
+        const { sessionId, content, type = "TEXT", mediaUrl, backgroundColor, font, mentions } = body; 
         
         if (!sessionId || !content) {
              return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -41,6 +41,11 @@ export async function POST(request: NextRequest) {
         const statusJid = 'status@broadcast';
 
         let message: any = {};
+        let options: any = {};
+
+        if (mentions && Array.isArray(mentions) && mentions.length > 0) {
+            options.statusJidList = mentions;
+        }
         
         if (type === 'TEXT') {
             message = { 
@@ -56,13 +61,13 @@ export async function POST(request: NextRequest) {
                 caption: content
             };
         } else if (type === 'VIDEO' && mediaUrl) {
-           message = {
+            message = {
                 video: { url: mediaUrl },
                 caption: content
             };
         }
 
-        await instance.socket.sendMessage(statusJid, message);
+        await instance.socket.sendMessage(statusJid, message, options);
         
         // Save to DB with correct session ID
         await prisma.story.create({

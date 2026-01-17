@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { sessionId, jid, message } = body;
+        const { sessionId, jid, message, mentions } = body;
 
         if (!sessionId || !jid || !message) {
             return NextResponse.json({ error: "sessionId, jid, and message are required" }, { status: 400 });
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Send Message
-        await socket.sendMessage(jid, msgPayload);
+        await socket.sendMessage(jid, msgPayload, { mentions: mentions || [] } as any);
 
         return NextResponse.json({ success: true });
     } catch (error) {

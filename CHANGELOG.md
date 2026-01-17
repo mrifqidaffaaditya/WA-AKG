@@ -1,5 +1,13 @@
 # Changelog
 
+## [beta-v1.1.3.1] - 2026-01-17
+
+### Added
+- **Group Mentions**: Added support for `@mention` in group chats via `/api/chat/send`.
+- **Status Mentions**: Added support for tagging users in status updates (Stories) via `/api/status/update`.
+- **Group Details API**: New endpoint `GET /api/groups/{jid}` to fetch full group metadata (participants, description, admin status) and profile picture.
+- **Documentation**: Updated Swagger and Markdown docs to reflect these changes.
+
 ## [v1.1.2] - 2026-01-17
 
 ### Added

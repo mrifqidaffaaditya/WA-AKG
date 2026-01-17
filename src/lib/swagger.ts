@@ -440,7 +440,13 @@ All endpoints require authentication via:
                                                         }
                                                     }
                                                 ]
-                                            } 
+                                            },
+                                            mentions: {
+                                                type: "array",
+                                                items: { type: "string" },
+                                                example: ["628123456789@s.whatsapp.net"],
+                                                description: "List of JIDs to mention"
+                                            }
                                         } 
                                     },
                                     examples: {
@@ -2191,6 +2197,59 @@ All endpoints require authentication via:
                     }
                 },
 
+                "/groups/{jid}": {
+                    get: { 
+                        tags: ["Groups"], 
+                        summary: "Get group details", 
+                        description: "Get detailed group information including participants and helper data.",
+                        parameters: [
+                            { name: "jid", in: "path", required: true, schema: { type: "string" } },
+                            { name: "sessionId", in: "query", required: true, schema: { type: "string" } }
+                        ], 
+                        responses: { 
+                            200: { 
+                                description: "Group details",
+                                content: {
+                                    "application/json": {
+                                        schema: {
+                                            type: "object",
+                                            properties: {
+                                                id: { type: "string" },
+                                                subject: { type: "string" },
+                                                subjectOwner: { type: "string" },
+                                                subjectTime: { type: "integer" },
+                                                size: { type: "integer" },
+                                                creation: { type: "integer" },
+                                                owner: { type: "string" },
+                                                desc: { type: "string" },
+                                                descId: { type: "string" },
+                                                restrict: { type: "boolean" },
+                                                announce: { type: "boolean" },
+                                                participants: { 
+                                                    type: "array",
+                                                    items: {
+                                                        type: "object",
+                                                        properties: {
+                                                            id: { type: "string" },
+                                                            admin: { type: "string", nullable: true }
+                                                        }
+                                                    }
+                                                },
+                                                ephemeralDuration: { type: "integer" },
+                                                inviteCode: { type: "string" },
+                                                pictureUrl: { type: "string", nullable: true }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            401: { $ref: "#/components/responses/Unauthorized" },
+                            403: { $ref: "#/components/responses/Forbidden" },
+                            404: { description: "Group not found" },
+                            500: { $ref: "#/components/responses/ServerError" }
+                        } 
+                    }
+                },
                 "/groups/{jid}/leave": {
                     post: { 
                         tags: ["Groups"], 
