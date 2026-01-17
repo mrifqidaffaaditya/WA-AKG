@@ -40,7 +40,25 @@ If you need to wipe the database and start fresh:
 npx prisma migrate reset
 ```
 
-## 4. Creating an Admin User
+## 4. Switching Database Provider
+By default, the project might be configured for **MySQL** or **PostgreSQL**. To switch providers (e.g., from MySQL to PostgreSQL):
+
+1.  **Open `prisma/schema.prisma`**:
+2.  **Locate the `datasource` block**:
+    ```prisma
+    datasource db {
+      provider = "mysql" // Change this to "postgresql"
+      url      = env("DATABASE_URL")
+    }
+    ```
+3.  **Update `.env`**: Change your `DATABASE_URL` format to match the new provider (see [Configuration](#2-configuration)).
+4.  **Remove Migrations** (Optional but Recommended): Delete the `prisma/migrations` folder to avoid conflicts.
+5.  **Push changes**:
+    ```bash
+    npm run db:push
+    ```
+
+## 5. Creating an Admin User
 
 After setting up the database, you need a **SUPERADMIN** user to access the dashboard settings.
 We included a script to help you create one quickly.
@@ -58,7 +76,7 @@ npm run make-admin admin@example.com password123
 -   If the user **does not exist**, it will be created with `SUPERADMIN` role.
 -   If the user **already exists**, it will be promoted to `SUPERADMIN` (password ignored).
 
-## 5. Troubleshooting
+## 6. Troubleshooting
 
 -   **Connection Error**: Check if your database server is running and the credentials in `.env` are correct.
 -   **Prisma Client Error**: If you change the schema, always run `npm run db:push` or `npx prisma generate` to update the client.

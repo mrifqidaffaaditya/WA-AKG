@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Plus, MessageSquare, RefreshCw } from "lucide-react";
@@ -183,10 +184,11 @@ export default function AutoReplyPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label>Response Message</Label>
-                                <Input
+                                <Textarea
                                     value={newResponse}
                                     onChange={e => setNewResponse(e.target.value)}
                                     placeholder="Hello! How can I help you?"
+                                    rows={4}
                                 />
                             </div>
                             <div className="flex justify-end gap-2">

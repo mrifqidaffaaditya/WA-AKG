@@ -2,6 +2,14 @@ import { prisma } from "@/lib/prisma";
 import type { WASocket, WAMessage } from "@whiskeysockets/baileys";
 import { downloadMediaMessage } from "@whiskeysockets/baileys";
 import Sticker from "wa-sticker-formatter"; 
+import sharp from "sharp"; 
+import fs from "fs/promises";
+import path from "path";
+import os from "os";
+import { exec } from "child_process";
+import { promisify } from "util";
+
+const execAsync = promisify(exec); 
 
 // Map to track start times for uptime
 const startTimes = new Map<string, number>();
@@ -15,6 +23,8 @@ const DEFAULT_CONFIG = {
     autoReplyMode: 'ALL',
     autoReplyAllowedJids: [] as string[],
     enableSticker: true,
+    enableVideoSticker: true,
+    maxStickerDuration: 10,
     enablePing: true,
     enableUptime: true,
     botName: "WA-AKG Bot",
@@ -85,7 +95,15 @@ export async function handleBotCommand(
         } else if (botMode === 'SPECIFIC') {
             const allowedJids = (config as any).botAllowedJids || [];
             // Handle JID formats (ensure comparison is clean)
-            const senderJid = msg.key.participant || msg.key.remoteJid || "";
+            // Standardized Sender Logic (matches webhook & store)
+            const isGroup = msg.key.remoteJid?.endsWith("@g.us") || false;
+            const remoteJidAlt = msg.key.remoteJidAlt;
+            let senderJid = (isGroup ? (msg.key.participant || msg.participant) : msg.key.remoteJid) || "";
+            
+            if (!isGroup && remoteJidAlt) {
+                senderJid = remoteJidAlt;
+            }
+
             // Check if senderJid is in allowed list (checking substrings or bare JIDs)
             if (Array.isArray(allowedJids)) {
                 // Simple check: does allowedJids include the clean JID?
@@ -135,7 +153,7 @@ export async function handleBotCommand(
             case "stiker": {
                 if (!config.enableSticker) return;
 
-                // Check if message has image
+                    // Check if message has image or video
                 let mediaMsg: WAMessage | null = msg;
                 
                 // If quoted, check quoted
@@ -150,12 +168,34 @@ export async function handleBotCommand(
                     } as WAMessage;
                 }
 
-                // Verify it is an image
-                const isImage = !!mediaMsg.message?.imageMessage;
+                const msgContent = mediaMsg.message;
+                const isImage = !!msgContent?.imageMessage;
+                const isVideo = !!msgContent?.videoMessage;
                 
-                if (!isImage) {
-                    await sock.sendMessage(remoteJid, { text: "❌ Please reply to an image or send an image with caption #sticker" }, { quoted: msg });
+                if (!isImage && !isVideo) {
+                    await sock.sendMessage(remoteJid, { text: "❌ Please reply to an image/video or send media with caption #sticker" }, { quoted: msg });
                     return;
+                }
+
+                if (msgContent?.extendedTextMessage) {
+                    await sock.sendMessage(remoteJid, { text: "❌ Cannot convert text message to sticker." }, { quoted: msg });
+                    return;
+                }
+
+                // Handle Video Limits
+                if (isVideo) {
+                    if (!(config as any).enableVideoSticker) {
+                        await sock.sendMessage(remoteJid, { text: "❌ Video stickers are disabled in bot settings." }, { quoted: msg });
+                        return;
+                    }
+
+                    const seconds = msgContent?.videoMessage?.seconds || 0;
+                    const maxDuration = (config as any).maxStickerDuration || 10;
+                    
+                    if (seconds > maxDuration) {
+                        await sock.sendMessage(remoteJid, { text: `❌ Video too long! Max duration is ${maxDuration} seconds.` }, { quoted: msg });
+                        return;
+                    }
                 }
 
                 await sock.sendMessage(remoteJid, { react: { text: "⏳", key: msg.key } });
@@ -165,12 +205,52 @@ export async function handleBotCommand(
                     let buffer = await downloadMediaMessage(
                         mediaMsg,
                         "buffer",
-                        {}
+                        {},
+                        { 
+                            logger: console as any,
+                            reuploadRequest: sock.updateMediaMessage
+                        }
                     ) as Buffer;
+
+                    // Resize/Compress Logic
+                    if (isImage) {
+                        try {
+                           // Use limitInputPixels: false to handle large images
+                           buffer = await sharp(buffer, { limitInputPixels: false })
+                                .resize(512, 512, { // Resize to standard 512x512 sticker size directly
+                                    fit: 'inside',
+                                    withoutEnlargement: true
+                                })
+                                .toBuffer();
+                        } catch (resizeErr) {
+                            console.error("Image Resize failed", resizeErr);
+                        }
+                    } else if (isVideo) {
+                         try {
+                            const tempInput = path.join(os.tmpdir(), `input_${Date.now()}.mp4`);
+                            const tempOutput = path.join(os.tmpdir(), `output_${Date.now()}.mp4`);
+                            
+                            await fs.writeFile(tempInput, buffer);
+                            
+                            // Compress Video using ffmpeg
+                            // Extreme Compression: 8fps, CRF 40, 300k bitrate, ultrafast
+                            await execAsync(`ffmpeg -y -i "${tempInput}" -vf "scale=512:512:force_original_aspect_ratio=decrease,fps=10" -c:v libx264 -preset ultrafast -crf 40 -b:v 300k -maxrate 300k -bufsize 600k -an "${tempOutput}"`);
+                            
+                            buffer = await fs.readFile(tempOutput);
+                            
+                            // Cleanup
+                            await fs.unlink(tempInput).catch(() => {});
+                            await fs.unlink(tempOutput).catch(() => {});
+                         } catch (videoErr) {
+                             console.error("Video Compression failed", videoErr);
+                             // Continue with original buffer if compression fails, or throw? 
+                             // If it fails, likely original will fail too, but let's try.
+                         }
+                    }
                     
-                    // Check for background removal
+                    // Check for background removal (Only for Images)
                     const isRemoveBg = args.includes("nobg") || args.includes("removebg");
-                    if (isRemoveBg && config.removeBgApiKey) {
+                    if (isImage && isRemoveBg && config.removeBgApiKey) {
                         try {
                             // Convert Buffer to Uint8Array for Blob compatibility
                             const uint8Array = new Uint8Array(buffer);
@@ -199,16 +279,17 @@ export async function handleBotCommand(
                             console.error("RemoveBG Failed:", bgError);
                             await sock.sendMessage(remoteJid, { text: `⚠️ Remove BG failed: ${(bgError as any).message}. Sending normal sticker...` }, { quoted: msg });
                         }
-                    } else if (isRemoveBg && !config.removeBgApiKey) {
+                    } else if (isImage && isRemoveBg && !config.removeBgApiKey) {
                          await sock.sendMessage(remoteJid, { text: `⚠️ Remove BG API Key not configured in dashboard. Sending normal sticker...` }, { quoted: msg });
                     }
+
 
                     // Convert
                     const sticker = new Sticker(buffer as Buffer, {
                         pack: (config as any).botName || "WA-AKG Bot",
                         author: "By " + ((config as any).botName || "WA-AKG Bot"),
                         type: "full", // full, crop, circle
-                        quality: 50
+                        quality: 15 // Extreme quality reduction for size
                     });
 
                     const stickerBuffer = await sticker.toBuffer();
@@ -231,8 +312,9 @@ export async function handleBotCommand(
 🤖 *${botName} Menu* 🤖
 
 📌 *Commands:*
-• *#sticker* / *#s*: Convert Image to Sticker
-  - Use *#sticker nobg* to remove background (Requires API Key)
+• *#sticker* / *#s*: Convert Image/Video to Sticker
+  - Supports Images, GIFs, and Videos (max ${(config as any).maxStickerDuration || 10}s)
+  - Use *#sticker nobg* to remove background (Images only)
 • *#ping*: Check Bot Status
 • *#uptime*: Check Session Uptime
 • *#id*: Get Chat ID

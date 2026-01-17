@@ -10,6 +10,7 @@ Welcome to the **WA-AKG** User Guide. This document provides step-by-step instru
 5.  [Auto-Replies](#5-auto-replies)
 6.  [Broadcasts](#6-broadcasts)
 7.  [Sticker Maker](#7-sticker-maker)
+8.  [Contact Management](#8-contact-management)
 
 ---
 
@@ -92,6 +93,16 @@ Convert images to stickers easily.
 3.  (Optional) Toggle "Remove Background" if you have an API key configured.
 4.  Enter the recipient's phone number.
 5.  Click **"Send Sticker"**.
+
+---
+
+## 8. Contact Management
+View and manage your synced WhatsApp contacts.
+
+1.  Navigate to **Contacts**.
+2.  **Search**: Use the search bar to find contacts by Name, JID, or Phone Number.
+3.  **Pagination Limit**: Use the dropdown next to the search bar to change the number of contacts displayed per page (up to 3000).
+4.  **Session Filter**: The list automatically shows contacts synced with your currently active session.
 
 ---
 

@@ -51,7 +51,7 @@ function LoginForm() {
       if (result?.error) {
         setError("Invalid email or password");
       } else {
-        router.push(callbackUrl);
+        window.location.href = callbackUrl; // Force hard redirect to ensure session update
         router.refresh(); // Ensure session cookies are applied immediately
       }
     } catch (err) {

@@ -1,5 +1,3 @@
-Testing APIs with Key: wag_TESTAPIKEY123
-
 1. GET /sessions
 [{"id":"cmkcmowwg0lf4bdz8eezr4w1p","userId":"cmkcmkcqt000056ywj49l5k7x","name":"API Test Session","sessionId":"fklndtd","status":"SCAN_QR","qr":"2@ZtOJ2yDKoMSVfmKQPIGHkhjyDE2uF6VbUONvzSz7SyZkmpwaPbzRzzgUKhWUqicFFVoeOC6ptzgEuHKofOY+Izn/Cs+UGCQLaMU=,JiXIiKKif3mL1WOny5i1koFdW9QY/seelnBXNKHMw0E=,4vaLXHb7GLLvIb1tDYk4W8Tw2NuSGWXDKFkIgQ/gBFk=,GrbGoaZ8Qo3eDPZP8DiDaKPMgf86uwhuNiIKGe4wfRE=","config":null,"createdAt":"2026-01-13T13:29:24.807Z","updatedAt":"2026-01-13T13:29:26.244Z"},{"id":"cmkcmkd85000256y...
 

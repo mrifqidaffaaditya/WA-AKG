@@ -1,7 +1,7 @@
 {
   "name": "wa-akg",
-  "version": "1.1.0",
-  "private": true,
+  "version": "beta-v1.1.0.2",
+  "private": false,
   "scripts": {
     "dev": "npx tsx src/server/index.ts",
     "build": "next build",
@@ -59,8 +59,11 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19",
+    "@types/swagger-ui-react": "^5.18.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "next-swagger-doc": "^0.4.1",
+    "swagger-ui-react": "^5.31.0",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",

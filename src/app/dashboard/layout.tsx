@@ -14,13 +14,17 @@ import {
     Webhook,
     CalendarClock,
     Bot,
-    Bell
+    Bell,
+    FileText,
+    Code
 } from "lucide-react";
 
 import { UpdateChecker } from "@/components/dashboard/update-checker";
 
 import { prisma } from "@/lib/prisma"; // Add prisma import
 import { Toaster } from "sonner"; // Assuming sonner is installed
+import pkg from "../../../package.json";
+
 
 export default async function DashboardLayout({
     children,
@@ -55,6 +59,10 @@ export default async function DashboardLayout({
                             <Users size={20} />
                             <span>Groups</span>
                         </Link>
+                        <Link href="/dashboard/contacts" className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md">
+                            <Users size={20} />
+                            <span>Contacts</span>
+                        </Link>
                         <Link href="/dashboard/sticker" className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md">
                             <ImageIcon size={20} />
                             <span>Sticker Maker</span>
@@ -82,6 +90,14 @@ export default async function DashboardLayout({
                         <Link href="/dashboard/scheduler" className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md">
                             <CalendarClock size={20} />
                             <span>Scheduler</span>
+                        </Link>
+                        <Link href="/dashboard/api-docs" className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md">
+                            <FileText size={20} />
+                            <span>API Documentation</span>
+                        </Link>
+                        <Link href="/docs" target="_blank" className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md">
+                            <Code size={20} />
+                            <span>Swagger UI</span>
                         </Link>
                         <Link href="/dashboard/users" className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md">
                             <Users size={20} />
@@ -117,6 +133,9 @@ export default async function DashboardLayout({
                                 <LogOut size={16} /> Logout
                             </Button>
                         </form>
+                        <div className="mt-4 text-center">
+                            <span className="text-xs text-gray-400 font-mono">Version: {pkg.version}</span>
+                        </div>
                     </div>
                 </aside>
 

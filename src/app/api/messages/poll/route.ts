@@ -1,0 +1,61 @@
+import { NextResponse, NextRequest } from "next/server";
+import { waManager } from "@/modules/whatsapp/manager";
+import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
+
+// POST: Send poll message
+export async function POST(request: NextRequest) {
+    try {
+        const user = await getAuthenticatedUser(request);
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const body = await request.json();
+        const { sessionId, jid, question, options, selectableCount } = body;
+
+        if (!sessionId || !jid || !question || !options || !Array.isArray(options)) {
+            return NextResponse.json({ 
+                error: "sessionId, jid, question, and options (array) are required" 
+            }, { status: 400 });
+        }
+
+        if (options.length < 2 || options.length > 12) {
+            return NextResponse.json({ 
+                error: "Poll must have between 2 and 12 options" 
+            }, { status: 400 });
+        }
+
+        const count = selectableCount || 1;
+        if (count < 1 || count > options.length) {
+            return NextResponse.json({ 
+                error: "selectableCount must be between 1 and number of options" 
+            }, { status: 400 });
+        }
+
+        // Check if user can access this session
+        const canAccess = await canAccessSession(user.id, user.role, sessionId);
+        if (!canAccess) {
+            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+        }
+
+        const instance = waManager.getInstance(sessionId);
+        if (!instance?.socket) {
+            return NextResponse.json({ error: "Session not ready" }, { status: 503 });
+        }
+
+        // Send poll message
+        await instance.socket.sendMessage(jid, {
+            poll: {
+                name: question,
+                values: options,
+                selectableCount: count
+            }
+        });
+
+        return NextResponse.json({ success: true });
+
+    } catch (error) {
+        console.error("Send poll error:", error);
+        return NextResponse.json({ error: "Failed to send poll" }, { status: 500 });
+    }
+}

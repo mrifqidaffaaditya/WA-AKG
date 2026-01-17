@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { WASocket, WAMessage, Contact } from "@whiskeysockets/baileys";
 import { normalizeMessageContent } from "@whiskeysockets/baileys";
-import { onMessageReceived, onMessageSent, dispatchWebhook } from "@/lib/webhook";
+import { onMessageReceived, onMessageSent, dispatchWebhook, downloadAndSaveMedia } from "@/lib/webhook";
 import { handleBotCommand, setSessionStartTime } from "../bot/command-handler";
 
 export const bindSessionStore = (sock: WASocket, sessionId: string, _unused: string) => {
@@ -42,13 +42,13 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, _unused: str
 
         for (const msg of messages) {
             try {
+                const isNew = await processAndSaveMessage(msg, dbSessionId, sessionId, type === 'notify');
+                
                 // Execute Bot Commands (Only for Notify / New Messages)
-                if (type === 'notify') {
+                if (type === 'notify' && isNew) {
                    // Run in background, don't await strictly to not block saving
                    handleBotCommand(sock, sessionId, msg).catch(e => console.error("Bot Handler Error", e));
                 }
-
-                await processAndSaveMessage(msg, dbSessionId, sessionId, type === 'notify');
             } catch (error) {
                 console.error("Error saving message", error);
             }
@@ -102,12 +102,24 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, _unused: str
                     create: {
                         sessionId: dbSessionId,
                         jid: c.id,
-                        name: c.name || c.notify,
-                        notify: c.notify
+                        // @ts-ignore
+                        lid: c.lid || undefined,
+                        name: c.name || c.notify || c.verifiedName,
+                        notify: c.notify,
+                        // @ts-ignore
+                        verifiedName: c.verifiedName,
+                        profilePic: c.imgUrl || undefined,
+                        data: c as any
                     },
                     update: {
+                        // @ts-ignore
+                        lid: c.lid || undefined,
                         name: c.name || undefined,
-                        notify: c.notify || undefined
+                        notify: c.notify || undefined,
+                        // @ts-ignore
+                        verifiedName: c.verifiedName || undefined,
+                        profilePic: c.imgUrl || undefined,
+                        data: c as any
                     }
                 });
                 
@@ -165,8 +177,45 @@ async function processAndSaveMessage(msg: WAMessage, dbSessionId: string, sessio
         ? new Date((typeof msg.messageTimestamp === 'number' ? msg.messageTimestamp : Number(msg.messageTimestamp)) * 1000)
         : new Date();
     
-    if (!keyId || !remoteJid) return;
+    // Filter out Protocol & Empty Messages
+    if (!msg.message) return false;
+    if (!keyId || !remoteJid) return false;
     
+    // Ignore specific technical message types
+    const messageKeys = Object.keys(msg.message);
+    const ignoredTypes = [
+        'protocolMessage', 
+        'senderKeyDistributionMessage', 
+        'reactionMessage', // Optional: User might want reactions, but usually "kosong" means junk
+        'keepInChatMessage' 
+    ];
+    
+    // If message only contains ignored types, skip
+    if (messageKeys.every(k => ignoredTypes.includes(k))) {
+        console.log(`Skipping technical message: ${keyId} (${messageKeys.join(', ')})`);
+        return false;
+    }
+
+    // Check if message already exists to avoid duplicates
+    // Baileys 'notify' event can sometimes trigger multiple times or for history
+    // Baileys 'notify' event can sometimes trigger multiple times or for history
+    const existingMessage = await prisma.message.findUnique({
+        where: { sessionId_keyId: { sessionId: dbSessionId, keyId: keyId! } },
+        select: { id: true, status: true }
+    });
+
+    if (existingMessage) {
+        // Message exists! Update status if changed, but DO NOT re-trigger webhooks/bot
+        if (fromMe && existingMessage.status !== 'SENT') {
+             await prisma.message.update({
+                where: { id: existingMessage.id },
+                data: { status: 'SENT' }
+            });
+        }
+        // Return false to indicate "Not New"
+        return false;
+    }
+
     // Debug fromMe issue (Keep this for a while)
     if (fromMe === undefined || fromMe === null) {
         console.log(`[DEBUG] Message ${keyId} has fromMe=${fromMe}. Key:`, JSON.stringify(msg.key));
@@ -203,11 +252,27 @@ async function processAndSaveMessage(msg: WAMessage, dbSessionId: string, sessio
     }
 
     // Determine effective participant for groups
-    const senderJid = fromMe ? undefined : (remoteJid.includes('@g.us') ? msg.key.participant : remoteJid);
+    // Determine effective participant for groups with standard logic
+    const isGroup = remoteJid.endsWith("@g.us");
+    const remoteJidAlt = msg.key.remoteJidAlt; // LID/Phone JID handling
+    let senderJid = fromMe ? undefined : (isGroup ? (msg.key.participant || msg.participant) : remoteJid);
+    
+    // Prefer remoteJidAlt for DMs if available (matches webhook logic)
+    if (!fromMe && !isGroup && remoteJidAlt) {
+        senderJid = remoteJidAlt;
+    }
 
-    await prisma.message.upsert({
-        where: { sessionId_keyId: { sessionId: dbSessionId, keyId } },
-        create: {
+
+    // Download Media First (to save URL to DB)
+    let fileUrl: string | null = null;
+    try {
+        fileUrl = await downloadAndSaveMedia(msg, sessionId);
+    } catch (e) {
+        console.error("Error downloading media in store", e);
+    }
+
+    await prisma.message.create({
+        data: {
             sessionId: dbSessionId,
             remoteJid,
             senderJid,
@@ -216,12 +281,9 @@ async function processAndSaveMessage(msg: WAMessage, dbSessionId: string, sessio
             pushName,
             type: messageType as any,
             content: text,
+            mediaUrl: fileUrl, // Save Media URL
             status: fromMe ? "SENT" : "PENDING",
             timestamp
-        },
-        update: {
-            // Only update if we have new information
-            status: fromMe ? "SENT" : "PENDING", 
         }
     });
 
@@ -244,23 +306,31 @@ async function processAndSaveMessage(msg: WAMessage, dbSessionId: string, sessio
                 sessionId: dbSessionId,
                 jid: remoteJid,
                 notify: !fromMe ? pushName : undefined,
-                name: !fromMe ? pushName : undefined
+                name: !fromMe ? pushName : undefined,
+                // @ts-ignore
+                remoteJidAlt: remoteJidAlt || undefined
             },
             update: !fromMe ? {
                 notify: pushName,
                 // Only update name if it was null? Or always? Let's just update notify usually.
                 // But Baileys often sends name in pushName.
+                // @ts-ignore
+                remoteJidAlt: remoteJidAlt || undefined // Update Alt JID if we see it
             } : {}
         });
     }
 
     // Trigger webhook for new messages only (not history sync)
+    // AND filter duplicates is implicitly done because we return 'false' above if existing
     if (triggerWebhook) {
         if (fromMe) {
-            onMessageSent(sessionId, msg).catch(e => console.error("Error in onMessageSent", e));
+            onMessageSent(sessionId, msg, fileUrl).catch(e => console.error("Error in onMessageSent", e));
         } else {
-            onMessageReceived(sessionId, msg).catch(e => console.error("Error in onMessageReceived", e));
+            // Pass the fileUrl we just downloaded
+            onMessageReceived(sessionId, msg, fileUrl).catch(e => console.error("Error in onMessageReceived", e));
         }
     }
+
+    return true; // Is New Message = True
 }
 // Placeholder - verified that I need to find the logic first

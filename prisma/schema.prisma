@@ -76,8 +76,11 @@ model Contact {
   id          String   @id @default(cuid())
   sessionId   String
   jid         String   // remoteJid (123456@s.whatsapp.net)
+  lid         String?  // LID JID
   name        String?
   notify      String?  // Pushname
+  verifiedName String? // Business Name
+  remoteJidAlt String? // Alternate JID (e.g. Phone if JID is LID)
   profilePic  String?  @db.Text
   data        Json?    // Detailed contact data
   createdAt   DateTime @default(now())
@@ -224,6 +227,8 @@ model BotConfig {
   autoReplyAllowedJids Json?
 
   enableSticker Boolean  @default(true)
+  enableVideoSticker Boolean @default(true)
+  maxStickerDuration Int @default(10) // in seconds
   enablePing    Boolean  @default(true)
   enableUptime  Boolean  @default(true)
   removeBgApiKey String?
@@ -242,6 +247,36 @@ model SystemConfig {
   timezone      String   @default("Asia/Jakarta")
   
   updatedAt     DateTime @updatedAt
+}
+
+// Labels/Tags for organizing chats
+model Label {
+  id          String      @id @default(cuid())
+  sessionId   String
+  name        String
+  color       Int         @default(0) // 0-19 for WhatsApp color codes
+  colorHex    String      @default("#FF0000") // Hex representation
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  chatLabels  ChatLabel[]
+  
+  @@unique([sessionId, name]) // Unique label name per session
+  @@index([sessionId])
+}
+
+// Many-to-many relationship between chats and labels
+model ChatLabel {
+  id        String   @id @default(cuid())
+  labelId   String
+  chatJid   String   // The JID of the chat
+  createdAt DateTime @default(now())
+  
+  label     Label    @relation(fields: [labelId], references: [id], onDelete: Cascade)
+  
+  @@unique([labelId, chatJid]) // Prevent duplicate label assignments
+  @@index([chatJid])
+  @@index([labelId])
 }
 
 model Notification {

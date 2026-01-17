@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Trash2, Plus, CalendarClock, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
@@ -188,10 +189,11 @@ export default function SchedulerPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label>Message</Label>
-                                <Input
+                                <Textarea
                                     value={newContent}
                                     onChange={e => setNewContent(e.target.value)}
                                     placeholder="Hello there!"
+                                    rows={4}
                                 />
                             </div>
                             <div className="flex justify-end gap-2">

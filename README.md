@@ -11,7 +11,12 @@
 **A powerful, self-hosted WhatsApp Gateway, Dashboard, and Bot Management System.**  
 Built for developers and businesses to manage multi-session WhatsApp accounts, schedule messages, create auto-replies, and integrate with external apps via Webhooks.
 
-[Features](#-features) • [User Guide](docs/USER_GUIDE.md) • [API Documentation](docs/API_DOCUMENTATION.md) • [Database Setup](docs/DATABASE_SETUP.md) • [Installation](#-installation)
+[Features](#-features) • [User Guide](docs/USER_GUIDE.md) • [API Documentation](docs/API_DOCUMENTATION.md) • [Database Setup](docs/DATABASE_SETUP.md) • [Update Guide](docs/UPDATE_GUIDE.md) • [Installation](#-installation)
+
+## 📖 Documentation
+- **[Master Project Documentation](docs/PROJECT_DOCUMENTATION.md)**: Full architecture, database, and frontend guide.
+- **[API Documentation](docs/API_DOCUMENTATION.md)**: Detailed API endpoints and parameters.
+- **[Environment Variables](docs/ENVIRONMENT_VARIABLES.md)**: Configuration guide.
 
 
 </div>
@@ -23,16 +28,70 @@ Built for developers and businesses to manage multi-session WhatsApp accounts, s
 Turn your WhatsApp into a programmable API. Whether you need a simple **WhatsApp Bot**, a **Marketing Broadcast Tool**, or a robust **WhatsApp Webhook** integration for your CRM, WA-AKG handles it all with a modern, responsive dashboard.
 
 ### 🔥 Key Features
-- **📱 Multi-Session Management**: Connect unlimited WhatsApp accounts via QR Code.
-- **⚡ Real-time Messaging**: Instant sending and receiving with low latency.
-- **📅 Smart Scheduler**: Schedule messages to be sent at precise times (supports **Global Timezone** configuration).
-- **📢 Broadcast / Blast**: Send bulk messages to contacts or groups with random delays to **avoid bans**.
-- **🤖 Advanced Auto-Reply**: Create keyword-based bots (Exact, Contains, Starts With) with ease.
-- **🔗 Powerful Webhooks**: Forward incoming messages (`text`, `image`, `sticker`) to your own API endpoint.
-- **👥 Group Management**: Manage groups, fetch participants, and send group announcements.
-- **🎨 Sticker Maker**: Convert images to stickers automatically with `#sticker` command (supports remove.bg).
-- **🔒 Role-Based Access**: Secure your dashboard with `Owner`, `Admin`, and `User` roles.
-- **🌐 RESTful API**: Full documentation for external integrations.
+- **📱 Multi-Session Management**: Connect unlimited WhatsApp accounts via QR Code scanning.
+- **⚡ Real-time Messaging & Chat**: Send texts and media (images with attachments) directly from a responsive dashboard.
+- **📅 Smart Scheduler**: Plan messages with precision using your local or global timezone.
+- **📢 Broadcast / Blast**: Safe bulk messaging with random delays (10-30s) to minimize ban risks.
+- **🤖 Advanced Auto-Reply**: Create smart bots with `EXACT`, `CONTAINS`, or `STARTS_WITH` keyword matching.
+- **🔗 Powerful Webhooks**: Real-time event forwarding (`message.received`, `message.sent`) to your external APIs.
+  <details>
+  <summary>View Webhook Payload</summary>
+
+  ```json
+  {
+    "event": "message.received",
+    "sessionId": "marketing-1",
+    "timestamp": "2024-01-01T12:00:00Z",
+    "data": {
+      "key": {
+        "remoteJid": "12345@g.us",
+        "fromMe": false,
+        "id": "ABC12345",
+        "participant": "62812345678@lid" 
+      },
+      "pushName": "John Doe",
+      "messageTimestamp": 1704110400,
+      
+      // Standardized Fields
+      "from": "12345@g.us", // Chat JID (Room)
+      "sender": { // Enriched Sender Info
+          "id": "62812345678@lid",
+          "phoneNumber": "62812345678@s.whatsapp.net",
+          "admin": "admin"
+      },
+      "remoteJidAlt": "62812345678@s.whatsapp.net", // Sender Phone JID
+      "isGroup": true,
+      
+      // Content
+      "type": "IMAGE",
+      "content": "Check this out", 
+      "fileUrl": "/media/marketing-1-ABC12345.jpg", // Path to downloaded media
+      "caption": "Check this out",
+      
+      // Quoted Message (Reply)
+      "quoted": { 
+          "key": {
+              "remoteJid": "12345@g.us",
+              "participant": "62898765432@s.whatsapp.net",
+              "id": "QUOTED_ID"
+          },
+          "type": "IMAGE",
+          "content": "Caption",
+          "caption": "Caption",
+          "fileUrl": "/media/marketing-1-QUOTED_ID.jpg" // Includes Media URL from DB!
+      },
+      
+      // Raw Data (Debugging)
+      "raw": { ... }
+    }
+  }
+  ```
+  </details>
+- **👥 Group Management**: Fetch groups, manage participants, and send announcements effortlessly.
+- **📇 Contact Management**: View, search, and manage synced contacts with rich details (LID, Verified Name, Profile Pic).
+- **🎨 Sticker Maker**: Convert images to stickers securely; supports removing backgrounds via API.
+- **🔒 Role-Based Access**: Granular control with `Owner` (Superadmin) and `User` roles.
+- **🌐 RESTful API**: Comprehensive endpoints for programmatic control.
 
 ---
 
@@ -61,26 +120,28 @@ npm install
 ```
 
 ### 3. Configure Environment
-Copy the example environment file and update your credentials:
-```bash
-cp .env.example .env
-```
-Update `.env` with your Database URL and Auth Secret:
-```env
-DATABASE_URL="mysql://user:pass@localhost:5432/wa_gateway_db"
-AUTH_SECRET="generate-a-strong-secret-here"
-```
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
+2. Update `.env` with your Database URL and Auth Secret:
+   ```env
+   # PostgreSQL (Recommended) or MySQL
+   DATABASE_URL="postgresql://user:pass@localhost:5432/wa_gateway_db?schema=public"
+   AUTH_SECRET="generate-a-strong-secret-here"
+   ```
 
 ### 4. Setup Database
-For detailed instructions, see [Database Setup Guide](docs/DATABASE_SETUP.md).
+Sync the Prisma schema with your database (creates tables automatically):
 
 ```bash
-# Push schema and generate client
 npm run db:push
-
-# (Optional) Open Prisma Studio to view data
-npm run db:studio
 ```
+
+> **Tip**: For a fresh start or to wipe data, use `npx prisma migrate reset`. See [Database Setup](docs/DATABASE_SETUP.md) for details.
+>
+> **Switching Database?**
+> Need to switch from MySQL to PostgreSQL (or vice versa)? Check out the [Switching Provider Guide](docs/DATABASE_SETUP.md#4-switching-database-provider) in the documentation.
 
 ### 5. Create Admin User
 ```bash
@@ -103,15 +164,31 @@ Access the dashboard at: `http://localhost:3000/dashboard`
 
 ## 📚 API Reference
 
-Interact with your WhatsApp sessions programmatically.
+Interact with your WhatsApp sessions programmatically. All endpoints are documented in detail in [API Documentation](docs/API_DOCUMENTATION.md) and accessible via Swagger UI at `/docs`.
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/api/chat/send` | Send text or media message |
-| `POST` | `/api/scheduler` | Schedule a future message |
-| `GET` | `/api/sessions` | List connected sessions |
-| `POST` | `/api/sessions` | Create a new session |
-| `GET` | `/api/groups/[sessionId]` | Fetch joined groups |
+### Authentication
+Include in headers: `X-API-Key: your_secret_key`
+
+| Method | Endpoint | Description | Params Type |
+| :--- | :--- | :--- | :--- |
+| **Sessions** | | | |
+| `GET` | `/api/sessions` | List all sessions | - |
+| `POST` | `/api/sessions` | Create a new session | Body |
+| `DELETE` | `/api/sessions/[id]` | Delete a session | Path |
+| `GET` | `/api/sessions/[id]/qr` | Get QR code | Path |
+| **Messaging** | | | |
+| `POST` | `/api/chat/send` | Send text/media | Body |
+| `POST` | `/api/messages/broadcast` | Send broadcast | Body |
+| `GET` | `/api/messages/[id]/media` | Download media | Path & Query |
+| **Groups** | | | |
+| `GET` | `/api/groups` | List groups | Query |
+| `POST` | `/api/groups/create` | Create a group | Body |
+| `PUT` | `/api/groups/[jid]/participants` | Manage members | Path & Body |
+| **Tools** | | | |
+| `GET` | `/api/webhooks` | List webhooks | - |
+| `POST` | `/api/webhooks` | Create webhook | Body |
+
+> **Full Reference**: Check [API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) for the complete list of all 64 endpoints with detailed parameters.
 
 ### Example: Send Message
 ```bash
@@ -120,7 +197,9 @@ curl -X POST http://localhost:3000/api/chat/send \
   -d '{
     "sessionId": "session_1",
     "jid": "62812345678@s.whatsapp.net",
-    "content": "Hello from WA-AKG API!"
+    "message": {
+      "text": "Hello from WA-AKG API!"
+    }
   }'
 ```
 

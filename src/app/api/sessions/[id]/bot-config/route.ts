@@ -40,7 +40,9 @@ export async function GET(
             enablePing: true,
             enableUptime: true,
             botName: "WA-AKG Bot",
-            removeBgApiKey: null
+            removeBgApiKey: null,
+            enableVideoSticker: true,
+            maxStickerDuration: 10
         };
 
         return NextResponse.json(session.botConfig);
@@ -86,6 +88,8 @@ export async function POST(
                 autoReplyAllowedJids: body.autoReplyAllowedJids || [],
                 
                 enableSticker: body.enableSticker ?? true,
+                enableVideoSticker: body.enableVideoSticker ?? true,
+                maxStickerDuration: body.maxStickerDuration || 10,
                 enablePing: body.enablePing ?? true,
                 enableUptime: body.enableUptime ?? true,
                 removeBgApiKey: body.removeBgApiKey || null,
@@ -97,6 +101,8 @@ export async function POST(
                 autoReplyAllowedJids: body.autoReplyAllowedJids,
                 botName: body.botName,
                 enableSticker: body.enableSticker,
+                enableVideoSticker: body.enableVideoSticker,
+                maxStickerDuration: body.maxStickerDuration,
                 enablePing: body.enablePing,
                 enableUptime: body.enableUptime,
                 removeBgApiKey: body.removeBgApiKey || null,

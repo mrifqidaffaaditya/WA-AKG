@@ -1,9 +1,10 @@
 "use client";
 
+
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { Menu, Bell } from "lucide-react";
 import Link from "next/link";
 import {
     LayoutDashboard,
@@ -15,18 +16,24 @@ import {
     ImageIcon,
     Webhook,
     CalendarClock,
-    Bot
+    Bot,
+    FileText,
+    Code
 } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
+import pkg from "../../../package.json";
 
 export function MobileNav({ appName = "WA-AKG" }: { appName?: string }) {
     const [open, setOpen] = useState(false);
     const pathname = usePathname();
+    const { data: session } = useSession();
 
     const links = [
         { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
         { href: "/dashboard/chat", label: "Chat", Icon: MessageSquare },
         { href: "/dashboard/groups", label: "Groups", Icon: Users },
+        { href: "/dashboard/contacts", label: "Contacts", Icon: Users },
         { href: "/dashboard/sticker", label: "Sticker Maker", Icon: ImageIcon },
         { href: "/dashboard/broadcast", label: "Broadcast", Icon: Users },
         { href: "/dashboard/sessions", label: "Sessions / QR", Icon: QrCode },
@@ -34,6 +41,8 @@ export function MobileNav({ appName = "WA-AKG" }: { appName?: string }) {
         { href: "/dashboard/webhooks", label: "Webhooks & API", Icon: Webhook },
         { href: "/dashboard/autoreply", label: "Auto Reply", Icon: MessageSquare },
         { href: "/dashboard/scheduler", label: "Scheduler", Icon: CalendarClock },
+        { href: "/dashboard/api-docs", label: "API Documentation", Icon: FileText },
+        { href: "/docs", label: "Swagger UI", Icon: Code, external: true },
         { href: "/dashboard/users", label: "Users", Icon: Users },
         { href: "/dashboard/settings", label: "Settings", Icon: Settings },
     ];
@@ -64,8 +73,42 @@ export function MobileNav({ appName = "WA-AKG" }: { appName?: string }) {
                             <span>{label}</span>
                         </Link>
                     ))}
+                    {/* Admin Notification Link */}
+                    {/* @ts-ignore */}
+                    {session?.user?.role === "SUPERADMIN" && (
+                        <Link
+                            href="/dashboard/notifications"
+                            onClick={() => setOpen(false)}
+                            className={`flex items-center space-x-2 px-4 py-3 rounded-md transition-colors ${pathname === "/dashboard/notifications"
+                                ? "bg-slate-100 text-slate-900 font-medium"
+                                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                                }`}
+                        >
+                            <Bell size={20} />
+                            <span>Notification Manager</span>
+                        </Link>
+                    )}
                 </nav>
+
+                <div className="p-4 border-t bg-slate-50">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex flex-col">
+                            <span className="text-sm font-medium text-slate-900">{session?.user?.name || "User"}</span>
+                            <span className="text-xs text-slate-500">{session?.user?.email}</span>
+                        </div>
+                    </div>
+                    <Button
+                        variant="outline"
+                        className="w-full flex items-center justify-center gap-2"
+                        onClick={() => signOut()}
+                    >
+                        <LogOut size={16} /> Logout
+                    </Button>
+                    <div className="mt-4 text-center">
+                        <span className="text-xs text-gray-400 font-mono">Version: {pkg.version}</span>
+                    </div>
+                </div>
             </SheetContent>
-        </Sheet>
+        </Sheet >
     );
 }

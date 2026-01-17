@@ -22,6 +22,8 @@ interface BotConfig {
     autoReplyMode: 'ALL' | 'OWNER' | 'SPECIFIC';
     autoReplyAllowedJids: string[];
     enableSticker: boolean;
+    enableVideoSticker: boolean;
+    maxStickerDuration: number;
     enablePing: boolean;
     enableUptime: boolean;
     removeBgApiKey: string | null;
@@ -37,6 +39,8 @@ export default function BotSettingsPage() {
         autoReplyMode: 'ALL',
         autoReplyAllowedJids: [],
         enableSticker: true,
+        enableVideoSticker: true,
+        maxStickerDuration: 10,
         enablePing: true,
         enableUptime: true,
         removeBgApiKey: ""
@@ -68,6 +72,8 @@ export default function BotSettingsPage() {
                     autoReplyMode: data.autoReplyMode || 'ALL',
                     botAllowedJids: Array.isArray(data.botAllowedJids) ? data.botAllowedJids : [],
                     autoReplyAllowedJids: Array.isArray(data.autoReplyAllowedJids) ? data.autoReplyAllowedJids : [],
+                    enableVideoSticker: data.enableVideoSticker !== undefined ? data.enableVideoSticker : true,
+                    maxStickerDuration: data.maxStickerDuration || 10,
                     removeBgApiKey: data.removeBgApiKey || ""
                 });
                 // Init text areas
@@ -191,7 +197,7 @@ export default function BotSettingsPage() {
                             <CardContent className="space-y-8">
                                 {/* Bot Commands */}
                                 <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:items-center md:justify-between">
                                         <Label className="text-base flex items-center gap-2">
                                             <Bot className="h-4 w-4" /> Bot Commands Access
                                         </Label>
@@ -199,7 +205,7 @@ export default function BotSettingsPage() {
                                             value={config.botMode}
                                             onValueChange={(val: any) => setConfig(prev => ({ ...prev, botMode: val }))}
                                         >
-                                            <SelectTrigger className="w-[180px]">
+                                            <SelectTrigger className="w-full md:w-[200px]">
                                                 <SelectValue placeholder="Select Mode" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -231,7 +237,7 @@ export default function BotSettingsPage() {
 
                                 {/* Auto Reply */}
                                 <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:items-center md:justify-between">
                                         <Label className="text-base flex items-center gap-2">
                                             <MessageSquare className="h-4 w-4" /> Auto Reply Access
                                         </Label>
@@ -239,7 +245,7 @@ export default function BotSettingsPage() {
                                             value={config.autoReplyMode}
                                             onValueChange={(val: any) => setConfig(prev => ({ ...prev, autoReplyMode: val }))}
                                         >
-                                            <SelectTrigger className="w-[180px]">
+                                            <SelectTrigger className="w-full md:w-[200px]">
                                                 <SelectValue placeholder="Select Mode" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -286,6 +292,42 @@ export default function BotSettingsPage() {
                                     />
                                 </div>
 
+                                <div className="space-y-3 p-3 border rounded-lg">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="flex items-center gap-2 font-medium">
+                                            <ImageIcon className="h-4 w-4" /> Enable Video/GIF
+                                        </Label>
+                                        <Switch
+                                            checked={config.enableSticker && config.enableVideoSticker}
+                                            onCheckedChange={(checked) => setConfig(prev => ({ ...prev, enableVideoSticker: checked }))}
+                                            disabled={!config.enableSticker}
+                                        />
+                                    </div>
+                                    <div className="flex items-center justify-between gap-4">
+                                        <Label className="text-xs text-muted-foreground whitespace-nowrap">
+                                            Max Duration
+                                        </Label>
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                type="number"
+                                                min={1}
+                                                max={60}
+                                                className="h-8 w-20 text-right"
+                                                value={config.maxStickerDuration || ""}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setConfig(prev => ({
+                                                        ...prev,
+                                                        maxStickerDuration: val === "" ? 0 : parseInt(val)
+                                                    }));
+                                                }}
+                                                disabled={!config.enableVideoSticker}
+                                            />
+                                            <span className="text-xs text-muted-foreground">sec</span>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div className="flex items-center justify-between md:block md:space-y-2">
                                     <Label className="flex items-center gap-2">
                                         <Activity className="h-4 w-4" /> Ping (#ping)
@@ -330,7 +372,7 @@ export default function BotSettingsPage() {
                                         />
                                     </div>
                                     <p className="text-xs text-muted-foreground">
-                                        Required for background removal features. Get one at <a href="https://www.remove.bg/api" target="_blank" className="underline hover:text-primary">remove.bg</a>.
+                                        Required for background removal features. Get one at <a href="https://www.remove.bg/api" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">remove.bg</a>.
                                         <br />Command: <code>#sticker nobg</code>
                                     </p>
                                 </div>

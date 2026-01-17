@@ -145,7 +145,7 @@ async function sendWebhookRequest(url: string, payload: WebhookPayload, secret?:
 /**
  * Helper to download and save media
  */
-async function downloadAndSaveMedia(message: WAMessage, sessionId: string): Promise<string | null> {
+export async function downloadAndSaveMedia(message: WAMessage, sessionId: string): Promise<string | null> {
     try {
         const messageContent = normalizeMessageContent(message.message);
         if (!messageContent) {
@@ -221,7 +221,7 @@ async function downloadAndSaveMedia(message: WAMessage, sessionId: string): Prom
  * Helper to dispatch message received event
  * Normalizes message content to match API structure
  */
-export async function onMessageReceived(sessionId: string, message: any) {
+export async function onMessageReceived(sessionId: string, message: any, existingFileUrl?: string | null) {
     // Re-calculate fields to match store logic EXACTLY
     const remoteJid = message.key?.remoteJid || "";
     const fromMe = message.key?.fromMe || false;
@@ -277,15 +277,18 @@ export async function onMessageReceived(sessionId: string, message: any) {
         }
     }
 
-    // Download media if available
-    let fileUrl: string | null = null;
-    try {
-        fileUrl = await downloadAndSaveMedia(message, sessionId);
-    } catch (e) {
-         console.error("Error handling media download", e);
+    // Download media if available (or use existing)
+    let fileUrl: string | null = existingFileUrl || null;
+    if (!fileUrl) {
+        try {
+            fileUrl = await downloadAndSaveMedia(message, sessionId);
+        } catch (e) {
+             console.error("Error handling media download", e);
+        }
     }
 
     const normalized = extractMessageContent(message);
+    const quoted = await extractQuotedMessageAsync(message, sessionId); // Extract quoted message (async now)
     
     dispatchWebhook(sessionId, "message.received", {
         key: {
@@ -308,6 +311,7 @@ export async function onMessageReceived(sessionId: string, message: any) {
         content: normalized.content,
         fileUrl: fileUrl,           // Link to file if media
         caption: normalized.caption, // Separate caption
+        quoted: quoted,             // Quoted Message Details
         
         // Raw Data (Requested by User)
         raw: message
@@ -317,15 +321,18 @@ export async function onMessageReceived(sessionId: string, message: any) {
 /**
  * Helper to dispatch message sent event
  */
-export async function onMessageSent(sessionId: string, message: any) {
+export async function onMessageSent(sessionId: string, message: any, existingFileUrl?: string | null) {
     const normalized = extractMessageContent(message);
+    const quoted = await extractQuotedMessageAsync(message, sessionId); // Extract quoted message
     const remoteJid = message.key?.remoteJid || "";
     
     // Download media for sent messages too (optional but good)
-    let fileUrl: string | null = null;
-    try {
-        fileUrl = await downloadAndSaveMedia(message, sessionId);
-    } catch (e) { /* ignore */ }
+    let fileUrl: string | null = existingFileUrl || null;
+    if (!fileUrl) {
+        try {
+            fileUrl = await downloadAndSaveMedia(message, sessionId);
+        } catch (e) { /* ignore */ }
+    }
     
     // For sent messages, sender is always ME (or represented by the bot)
     // If it's a group, the participant might be undefined in the key if sent by us, 
@@ -345,6 +352,7 @@ export async function onMessageSent(sessionId: string, message: any) {
         content: normalized.content,
         fileUrl: fileUrl,
         caption: normalized.caption,
+        quoted: quoted,
         
         timestamp: Date.now(),
         raw: message
@@ -413,5 +421,93 @@ function extractMessageContent(msg: any): { type: string, content: string, capti
     }
 
     return { type: messageType, content: text, caption };
+}
+
+
+
+/**
+ * Extract Quoted Message recursively (Async to Lookup DB)
+ */
+async function extractQuotedMessageAsync(msg: any, sessionId: string): Promise<any> {
+    const messageContent = normalizeMessageContent(msg.message);
+    if (!messageContent) return null;
+    
+    // Check for contextInfo in common message types
+    let contextInfo: any = null;
+    
+    if (messageContent.extendedTextMessage) {
+        contextInfo = messageContent.extendedTextMessage.contextInfo;
+    } else if (messageContent.imageMessage) {
+        contextInfo = messageContent.imageMessage.contextInfo;
+    } else if (messageContent.videoMessage) {
+        contextInfo = messageContent.videoMessage.contextInfo;
+    } else if (messageContent.audioMessage) {
+        contextInfo = messageContent.audioMessage.contextInfo;
+    } else if (messageContent.stickerMessage) {
+        contextInfo = messageContent.stickerMessage.contextInfo;
+    } else if (messageContent.documentMessage) {
+        contextInfo = messageContent.documentMessage.contextInfo;
+    } else if (messageContent.contactMessage) {
+         contextInfo = messageContent.contactMessage.contextInfo;
+    } else if (messageContent.locationMessage) {
+         contextInfo = messageContent.locationMessage.contextInfo;
+    }
+
+    if (contextInfo && contextInfo.quotedMessage) {
+        const quotedMsg = contextInfo.quotedMessage;
+        const normalized = extractMessageContent({ message: quotedMsg });
+        
+        let fileUrl = null;
+        
+        // Lookup Media URL in DB if possible
+        if (contextInfo.stanzaId) {
+            try {
+                // We need the dbSessionId... this is tricky without fetching session again.
+                // But we can try to look up by sessionId (baileys ID) and keyId
+                // Message table has @@unique([sessionId, keyId]). BUT sessionId there is the CUID, not the string.
+                
+                // Fetch CUID First
+                 const session = await prisma.session.findUnique({
+                    where: { sessionId },
+                    select: { id: true }
+                });
+                
+                if (session) {
+                    const savedMsg = await prisma.message.findUnique({
+                        where: {
+                            sessionId_keyId: {
+                                sessionId: session.id,
+                                keyId: contextInfo.stanzaId
+                            }
+                        },
+                        select: { mediaUrl: true }
+                    });
+                    
+                    if (savedMsg?.mediaUrl) {
+                        fileUrl = savedMsg.mediaUrl;
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to lookup quoted media url", e);
+            }
+        }
+        
+        return {
+            key: {
+                remoteJid: contextInfo.remoteJid || null, // Group JID
+                participant: contextInfo.participant || null, // Sender JID
+                fromMe: contextInfo.participant === undefined, // Not reliable, better check participant
+                id: contextInfo.stanzaId || null
+            },
+            type: normalized.type,
+            content: normalized.content, // Text or Caption
+            caption: normalized.caption,
+            fileUrl: fileUrl, // <--- Added!
+            // We don't download quoted media automatically unless it was already saved
+            // raw: quotedMsg 
+        };
+    }
+    
+    return null;
 }
 

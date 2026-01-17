@@ -76,7 +76,15 @@ export async function bindAutoReply(sock: WASocket, sessionId: string) {
         for (const msg of messages) {
             const fromMe = msg.key.fromMe || false;
             const remoteJid = msg.key.remoteJid;
-            const senderJid = msg.key.participant || remoteJid;
+            
+            // Standardized Sender Logic
+            const isGroup = remoteJid?.endsWith("@g.us") || false;
+            const remoteJidAlt = msg.key.remoteJidAlt;
+            let senderJid = (isGroup ? (msg.key.participant || msg.participant) : remoteJid);
+            
+            if (!isGroup && remoteJidAlt) {
+                senderJid = remoteJidAlt;
+            }
 
             if (!remoteJid || !senderJid) continue;
 
