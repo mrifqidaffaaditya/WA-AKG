@@ -1,73 +1,63 @@
 # 🔄 WA-AKG Update Guide
 
-This guide covers how to update the application code, dependencies, and database schema, as well as how to bump the application version.
+Keep your **WA-AKG** instance up-to-date with the latest features, security patches, and performance improvements.
 
 ---
 
-## 🚀 Updating the Application
+## 🚀 Standard Update Process
 
-### 1. Pull Latest Code
-If you are using git, pull the latest changes from the repository:
+Follow these steps to update your application safely.
+
+### 1. Pull Latest Changes
 ```bash
 git pull origin main
 ```
 
-### 2. Install New Dependencies
-New features might require new packages. Always run install after pulling:
+### 2. Update Dependencies
 ```bash
 npm install
 ```
 
-### 3. Update Database Schema
-If there are changes to `prisma/schema.prisma` (e.g., new tables or fields), you must push them to your database:
+### 3. Sync Database Schema
+If the update includes database changes, run:
 ```bash
 npm run db:push
 ```
-> **Note**: This command syncs your schema with the database without losing data (in most cases). If you need to create migration files for production safety, use `npx prisma migrate dev`.
+> [!NOTE]
+> For production environments requiring strict migration history, use `npx prisma migrate deploy` instead.
 
-### 4. Rebuild the Application
-Rebuild the Next.js application to apply changes:
+### 4. Build & Restart
 ```bash
+# Build the optimized production bundle
 npm run build
-```
 
-### 5. Restart the Server
-If you are using a process manager like PM2:
-```bash
+# Restart your process (example using PM2)
 pm2 restart wa-akg
 ```
-Or if running manually:
-`npm start`
 
 ---
 
-## 🏷️ Versioning
+## 🏷️ Version Management
 
-To update the application version displayed in the dashboard:
+To manually bump your application version:
 
-1.  Open `package.json` in the root directory.
-2.  Locate the `"version"` field.
-3.  Increment the version number (e.g., change `"1.0.0"` to `"1.1.0"`).
+1.  Open `package.json`.
+2.  Update the `"version"` field (e.g., `"1.1.1"` -> `"1.1.2"`).
+3.  Rebuild the application.
 
-```json
-{
-  "name": "wa-akg",
-  "version": "1.1.0", 
-  ...
-}
-```
-
-The new version will automatically be reflected in the Dashboard Sidebar footer after a rebuild.
+The version number is displayed in the **Dashboard Sidebar** footer.
 
 ---
 
-## 🛠️ Common Issues
+## 🛠️ Troubleshooting Updates
 
-### Database Client Error
-If you see errors related to Prisma Client after an update, regenerate it:
-```bash
-npx prisma generate
-```
+| Issue | Resolution |
+| :--- | :--- |
+| **Prisma Type Errors** | Run `npx prisma generate` to refresh the client. |
+| **Build Failures** | Delete `.next` and `node_modules`, then `npm install`. |
+| **API Errors** | Ensure your `.env` matches the latest requirements in `docs/ENVIRONMENT_VARIABLES.md`. |
 
-### Type Errors
-If `npm run build` fails with type errors, ensure you have pulled all files correctly and that `node_modules` is up to date (`npm install`).
+---
+<div align="center">
+  **Version**: 1.1.2 | **Last Verified**: 2026-01-17
+</div>

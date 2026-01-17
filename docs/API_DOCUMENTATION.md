@@ -1674,6 +1674,80 @@ curl -X DELETE https://your-domain.com/api/webhooks/webhook123 \
 
 ---
 
+### 📦 Webhook Payload Anatomy
+
+When an event occurs, WA-AKG sends a POST request to your configured URL. The payload structure is consistent across all events.
+
+#### 🔐 Security (Signature Verification)
+If you configured a `secret`, each request includes an `X-Hub-Signature-256` header.
+```javascript
+const crypto = require('crypto');
+const hmac = crypto.createHmac('sha256', YOUR_WEBHOOK_SECRET);
+const digest = hmac.update(JSON.stringify(requestBody)).digest('hex');
+const isValid = request.headers['x-hub-signature-256'] === digest;
+```
+
+#### 📝 Event: `message.upsert` (Complex Reply Example)
+Triggered when a new message is received or sent. This example demonstrates a text reply to an image message, showcasing LID info and nested quoted data.
+
+```json
+{
+  "event": "message.received",
+  "sessionId": "xgj7d9",
+  "timestamp": "2026-01-17T05:33:08.545Z",
+  "data": {
+    "key": {
+      "id": "3EB0B78DEA13E7ACC4D167",
+      "remoteJid": "6287748687946@s.whatsapp.net",
+      "fromMe": false
+    },
+    "pushName": "Adit",
+    "messageTimestamp": 1768627988,
+    "from": "6287748687946@s.whatsapp.net",
+    "sender": "100429287395370@lid",
+    "remoteJidAlt": "100429287395370@lid",
+    "isGroup": false,
+    "type": "TEXT",
+    "content": "saya sedang reply",
+    "fileUrl": null,
+    "quoted": {
+      "key": {
+        "remoteJid": null,
+        "participant": "6285134586690@s.whatsapp.net",
+        "fromMe": false,
+        "id": "A54FD0B6F9E9AF237C09899284D90586"
+      },
+      "type": "IMAGE",
+      "content": "Ini caption dari reply",
+      "caption": "Ini caption dari reply",
+      "fileUrl": "/media/xgj7d9-A54FD0B6F9E9AF237C09899284D90586.jpeg"
+    }
+  }
+}
+```
+
+> [!NOTE]
+> - `sender`: The primary identifier for the sender (often a `.lid` for newer WhatsApp versions).
+> - `remoteJidAlt`: Alternative JID often used for routing or identification.
+> - `quoted`: Contains full context if the message is a reply, including media references.
+
+#### 🚪 Event: `connection.update`
+Triggered when the session status changes.
+
+```json
+{
+  "event": "connection.update",
+  "sessionId": "marketing-01",
+  "data": {
+    "status": "Connected",
+    "qr": null,
+    "isOnline": true
+  }
+}
+```
+
+---
+
 ### PUT /api/labels/{id}
 **Description**: Update a label.
 

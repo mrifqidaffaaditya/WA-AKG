@@ -12,14 +12,14 @@ Ensure you have a database server running.
 
 Edit your `.env` file and set the `DATABASE_URL`.
 
-### PostgreSQL (Recommended)
+### MySQL (Recommended)
 ```env
-DATABASE_URL="postgresql://username:password@localhost:5432/wa_gateway_db?schema=public"
+DATABASE_URL="mysql://user:pass@db-host:3306/wa_akg"
 ```
 
-### MySQL
+### PostgreSQL
 ```env
-DATABASE_URL="mysql://username:password@localhost:3306/wa_gateway_db"
+DATABASE_URL="postgresql://user:pass@db-host:5432/wa_akg?schema=public"
 ```
 
 ## 3. Initialization Commands
