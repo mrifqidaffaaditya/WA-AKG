@@ -61,7 +61,7 @@ export default function ApiDocsPage() {
         { category: "Messaging", method: "POST", path: "/api/messages/broadcast", description: "Broadcast message", params: "Body: { sessionId, jids[], message }" },
         { category: "Messaging", method: "POST", path: "/api/messages/spam", description: "Report spam", params: "Body: { sessionId, jid }" },
         { category: "Messaging", method: "DELETE", path: "/api/messages/delete", description: "Delete message", params: "Body: { sessionId, jid, messageId }" },
-        { category: "Messaging", method: "GET", path: "/api/messages/[id]/media", description: "Download media", params: "Path: id, Query: sessionId" },
+        { category: "Messaging", method: "GET", path: "/api/messages/[sessionId]/download/[messageId]/media", description: "Download media", params: "Path: sessionId, messageId" },
 
         // Chat
         { category: "Chat", method: "GET", path: "/api/chat/[sessionId]", description: "Get chats", params: "Path: sessionId, Query: page, limit" },

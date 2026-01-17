@@ -718,7 +718,7 @@ curl -X POST https://your-domain.com/api/messages/broadcast \
 
 ---
 
-### GET /api/messages/{sessionId}/{messageId}/media
+### GET /api/messages/{sessionId}/download/{messageId}/media
 **Description**: Download media (image, video, audio, or document) from a message by its ID.
 
 **Path Parameters**:
@@ -727,7 +727,7 @@ curl -X POST https://your-domain.com/api/messages/broadcast \
 
 **Request Example**:
 ```bash
-curl -X GET "https://your-domain.com/api/messages/sales-01/3EB0ABCD1234567890/media" \
+curl -X GET "https://your-domain.com/api/messages/sales-01/download/3EB0ABCD1234567890/media" \
   -H "X-API-Key: your-api-key"
 ```
 
@@ -742,7 +742,7 @@ Returns the binary media file with appropriate `Content-Type` and `Content-Dispo
 ---
 
 ### GET /api/messages/{id}/media (DEPRECATED)
-> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `GET /api/messages/{sessionId}/{messageId}/media` instead. This endpoint will be removed in a future version.
+> **⚠️ DEPRECATED**: This endpoint is deprecated. Use `GET /api/messages/{sessionId}/download/{messageId}/media` instead. This endpoint will be removed in a future version.
 
 **Description**: Download media (image, video, audio, or document) from a message by its ID.
 

@@ -1049,7 +1049,7 @@ All endpoints require authentication via:
                     } 
                 },
 
-                "/messages/{sessionId}/{messageId}/media": {
+                "/messages/{sessionId}/download/{messageId}/media": {
                     get: {
                         tags: ["Messaging"],
                         summary: "Download message media",
