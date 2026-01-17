@@ -90,8 +90,14 @@ export async function POST(request: NextRequest) {
              return NextResponse.json({ error: "Invalid status type" }, { status: 400 });
         }
 
+        const userJid = instance.socket.user?.id || (instance.socket.authState.creds.me?.id);
+        
+        if (!userJid) {
+             return NextResponse.json({ error: "Session not fully connected (User JID missing)" }, { status: 503 });
+        }
+
         const msg = generateWAMessageFromContent(statusJid, messageContent, { 
-            userJid: instance.userId ? (instance.userId.includes(':') ? instance.userId.split(':')[0] + '@s.whatsapp.net' : instance.userId) : instance.socket.user?.id! 
+            userJid: userJid
         });
 
         await instance.socket.relayMessage(statusJid, msg.message!, { 
