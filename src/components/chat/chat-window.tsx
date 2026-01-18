@@ -38,20 +38,33 @@ export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploadType, setUploadType] = useState<string>("image");
 
+    // Scroll to bottom helper
+    const scrollToBottom = (smooth = true) => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "end" });
+        }
+    };
+
+    // Auto-scroll on messages change
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
     const fetchMessages = async () => {
         try {
-            // We need to implement this API endpoint specifically later, 
-            // for now assume /api/chat/:sessionId/:jid or query param
             const res = await fetch(`/api/chat/${sessionId}/${encodeURIComponent(jid)}`);
             if (res.ok) {
                 const data = await res.json();
                 setMessages(data);
-                // Scroll to bottom
+                // Force scroll buffer
+                setTimeout(() => scrollToBottom(false), 100);
             }
         } catch (error) {
             console.error("Failed to load messages", error);
         }
     }
+
+
 
     useEffect(() => {
         // Initial Fetch
@@ -75,12 +88,7 @@ export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
                 const unique = Array.from(new Map(combined.map(m => [m.keyId, m])).values());
                 return unique.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
             });
-            // Scroll to bottom on new message
-            setTimeout(() => {
-                if (scrollRef.current) {
-                    scrollRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                }
-            }, 100);
+            // Scroll will happen via the [messages] dependency
         });
 
         setSocket(newSocket);
@@ -89,17 +97,6 @@ export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
             newSocket.disconnect();
         };
     }, [sessionId, jid]);
-
-    // Auto-scroll on messages change
-    useEffect(() => {
-        if (scrollRef.current) {
-            // Use a wrapper div ref or last element logic?
-            // scrollRef currently on the container of messages list
-            // We need to scroll the ScrollArea viewport. 
-            // With Shadcn ScrollArea usually we need to target the viewport or just use a dummy element at bottom.
-        }
-    }, [messages]);
-
 
     const handleSend = async () => {
         if (!newMessage.trim()) return;

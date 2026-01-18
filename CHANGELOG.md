@@ -1,4 +1,21 @@
-# Changelog
+
+## [v1.2.0-beta.2] - 2026-01-18
+
+### Added
+- **Real-time Chat Sync**:
+    - Implemented Socket.IO integration for instant message updates in Chat Window and Chat List.
+    - Removed legacy polling mechanisms for better performance.
+    - Added auto-scroll to bottom functionality for new messages.
+- **Media Sending Support**:
+    - Added UI for sending Images, Videos, Audio, Documents, and Stickers via a new attachment menu.
+    - Implemented new API endpoint `POST /api/messages/{sessionId}/{jid}/media`.
+- **Session Manager V2**:
+    - Refactored Session Manager UI to a modern Grid Layout.
+    - Added support for **Custom Session IDs** during creation.
+    - Improved status indicators and navigation controls.
+- **Documentation**:
+    - Updated `API_DOCUMENTATION.md` and `swagger.ts` with the new Media API endpoint.
+
 
 ## [v1.2.0.beta-1] - 2026-01-18
 
