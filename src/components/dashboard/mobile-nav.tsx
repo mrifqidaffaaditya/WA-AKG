@@ -100,7 +100,10 @@ export function MobileNav({ appName = "WA-AKG" }: { appName?: string }) {
                     <Button
                         variant="outline"
                         className="w-full flex items-center justify-center gap-2"
-                        onClick={() => signOut()}
+                        onClick={async () => {
+                            setOpen(false);
+                            await signOut({ callbackUrl: "/auth/login" });
+                        }}
                     >
                         <LogOut size={16} /> Logout
                     </Button>

@@ -41,14 +41,23 @@ export function DocsClient({ content, toc }: DocsClientProps) {
         setOpenSections(initial);
     }, [toc]);
 
+    // Debounce search query to prevent excessive re-renders
+    const [debouncedQuery, setDebouncedQuery] = useState("");
+
     useEffect(() => {
-        if (!searchQuery) {
+        const timer = setTimeout(() => {
+            setDebouncedQuery(searchQuery);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    useEffect(() => {
+        if (!debouncedQuery) {
             setFilteredToc(toc);
             return;
         }
 
-        const lowerQuery = searchQuery.toLowerCase();
-        // Filter logic: Keep section if title matches OR if any item matches
+        const lowerQuery = debouncedQuery.toLowerCase();
         const filtered = toc.map(section => {
             const titleMatches = section.title.toLowerCase().includes(lowerQuery);
             const matchingItems = section.items.filter(item =>
@@ -58,7 +67,7 @@ export function DocsClient({ content, toc }: DocsClientProps) {
             if (titleMatches || matchingItems.length > 0) {
                 return {
                     ...section,
-                    items: titleMatches ? section.items : matchingItems // If title matches, show all items. Else show only matching items.
+                    items: titleMatches ? section.items : matchingItems
                 };
             }
             return null;
@@ -66,12 +75,11 @@ export function DocsClient({ content, toc }: DocsClientProps) {
 
         setFilteredToc(filtered);
 
-        // Auto-expand all results when searching
         const allOpen: Record<string, boolean> = {};
         filtered.forEach(s => allOpen[s.id] = true);
         setOpenSections(allOpen);
 
-    }, [searchQuery, toc]);
+    }, [debouncedQuery, toc]);
 
     const toggleSection = (id: string) => {
         setOpenSections(prev => ({ ...prev, [id]: !prev[id] }));
@@ -92,41 +100,60 @@ export function DocsClient({ content, toc }: DocsClientProps) {
         }
     };
 
+    // Memoized Sidebar Item to prevent full list re-renders
+    const SidebarItem = React.memo(({ section, isOpen, onToggle, onScroll, isMobile }: {
+        section: TocSection,
+        isOpen: boolean,
+        onToggle: (id: string) => void,
+        onScroll: (id: string, mobile: boolean) => void,
+        isMobile: boolean
+    }) => (
+        <div className="space-y-1">
+            <button
+                onClick={() => section.items.length > 0 ? onToggle(section.id) : onScroll(section.id, isMobile)}
+                className="flex items-center justify-between w-full text-left font-semibold text-gray-900 hover:text-blue-600 transition-colors py-2 group" // Increased touch target py-2
+            >
+                <span className="truncate pr-2">{section.title}</span>
+                {section.items.length > 0 && (
+                    <ChevronRight
+                        className={`h-4 w-4 flex-shrink-0 text-gray-400 transition-transform duration-200 group-hover:text-blue-500 ${isOpen ? "rotate-90" : ""}`}
+                    />
+                )}
+            </button>
+
+            {isOpen && (
+                <div className="space-y-1 ml-2 border-l-2 border-slate-100 pl-2"> {/* Removed heavy animate-in for performance */}
+                    {section.items.map((item) => (
+                        <button
+                            key={item.id}
+                            onClick={() => onScroll(item.id, isMobile)}
+                            className="block text-left w-full text-sm text-gray-500 hover:text-blue-600 hover:bg-slate-50 py-2 px-2 rounded transition-colors truncate" // Increased touch target py-2
+                            title={item.text}
+                        >
+                            {item.text}
+                        </button>
+                    ))}
+                    {section.items.length === 0 && (
+                        <p className="text-xs text-gray-300 italic px-2 py-1">No subsections</p>
+                    )}
+                </div>
+            )}
+        </div>
+    ));
+    SidebarItem.displayName = "SidebarItem";
+
     const renderSidebarContent = (isMobile = false) => (
-        <nav className="space-y-4 pb-8">
+        <nav className="space-y-2 pb-8"> {/* Reduced space-y */}
             {filteredToc.length > 0 ? (
                 filteredToc.map((section) => (
-                    <div key={section.id} className="space-y-1">
-                        <button
-                            onClick={() => section.items.length > 0 ? toggleSection(section.id) : scrollToSection(section.id, isMobile)}
-                            className="flex items-center justify-between w-full text-left font-semibold text-gray-900 hover:text-blue-600 transition-colors py-1 group"
-                        >
-                            <span className="truncate">{section.title}</span>
-                            {section.items.length > 0 && (
-                                <ChevronRight
-                                    className={`h-4 w-4 text-gray-400 transition-transform duration-200 group-hover:text-blue-500 ${openSections[section.id] ? "rotate-90" : ""}`}
-                                />
-                            )}
-                        </button>
-
-                        {openSections[section.id] && (
-                            <div className="space-y-1 ml-2 border-l-2 border-slate-100 pl-2 animate-in slide-in-from-top-1 duration-200">
-                                {section.items.map((item) => (
-                                    <button
-                                        key={item.id}
-                                        onClick={() => scrollToSection(item.id, isMobile)}
-                                        className="block text-left w-full text-sm text-gray-500 hover:text-blue-600 hover:bg-slate-50 py-1.5 px-2 rounded transition-colors truncate"
-                                        title={item.text}
-                                    >
-                                        {item.text}
-                                    </button>
-                                ))}
-                                {section.items.length === 0 && (
-                                    <p className="text-xs text-gray-300 italic px-2">No subsections</p>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                    <SidebarItem
+                        key={section.id}
+                        section={section}
+                        isOpen={!!openSections[section.id]}
+                        onToggle={toggleSection}
+                        onScroll={scrollToSection}
+                        isMobile={isMobile}
+                    />
                 ))
             ) : (
                 <p className="text-sm text-gray-400 text-center py-4">No results found</p>
@@ -159,18 +186,18 @@ export function DocsClient({ content, toc }: DocsClientProps) {
                             <Menu className="h-6 w-6" />
                         </Button>
                     </SheetTrigger>
-                    <SheetContent side="left" className="w-[300px] sm:w-[400px] p-0 flex flex-col">
+                    <SheetContent side="left" className="w-[85vw] sm:w-[400px] p-0 flex flex-col"> {/* Adjusted width for mobile */}
                         <div className="p-6 border-b bg-gray-50/50">
                             <h2 className="text-lg font-bold text-gray-900">Documentation</h2>
                             <p className="text-xs text-gray-500 mt-1">Navigate through sections</p>
                         </div>
-                        <div className="p-4 flex-1 overflow-y-auto">
+                        <div className="p-4 flex-1 overflow-y-auto overscroll-contain"> {/* Added overscroll-contain */}
                             <div className="mb-6 relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                                 <input
                                     type="text"
                                     placeholder="Search topic..."
-                                    className="w-full pl-9 pr-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full pl-9 pr-4 py-3 text-base bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" // Larger text/padding for mobile
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
@@ -198,7 +225,7 @@ export function DocsClient({ content, toc }: DocsClientProps) {
                     </div>
                 </div>
 
-                <article className="prose prose-slate prose-blue max-w-none prose-headings:scroll-mt-24 prose-pre:p-0 prose-pre:bg-transparent prose-pre:border-none">
+                <article className="prose prose-slate prose-blue max-w-none prose-headings:scroll-mt-24 prose-pre:p-0 prose-pre:bg-transparent prose-pre:border-none break-words"> {/* Added break-words */}
                     <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
@@ -228,7 +255,7 @@ export function DocsClient({ content, toc }: DocsClientProps) {
                                         </SyntaxHighlighter>
                                     </div>
                                 ) : (
-                                    <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono border border-gray-200" {...props}>
+                                    <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono border border-gray-200 break-all" {...props}> {/* break-all for inline code */}
                                         {children}
                                     </code>
                                 )
@@ -255,3 +282,4 @@ export function DocsClient({ content, toc }: DocsClientProps) {
         </div>
     );
 }
+
