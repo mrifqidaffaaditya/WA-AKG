@@ -4,7 +4,9 @@ import { normalizeMessageContent } from "@whiskeysockets/baileys";
 import { onMessageReceived, onMessageSent, dispatchWebhook, downloadAndSaveMedia } from "@/lib/webhook";
 import { handleBotCommand, setSessionStartTime } from "../bot/command-handler";
 
-export const bindSessionStore = (sock: WASocket, sessionId: string, _unused: string) => {
+import { Server } from "socket.io";
+
+export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server | null) => {
     // Set start time for uptime command
     setSessionStartTime(sessionId);
 
@@ -33,6 +35,11 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, _unused: str
             console.log(`Received ${messages.length} messages of type: ${type}`);
         }
 
+        // Emit to socket room for real-time frontend updates
+        if (type === 'notify' || type === 'append') {
+            io?.to(sessionId).emit('message.upsert', { messages, type });
+        }
+
         // Ensure we have the database session ID
         if (!dbSessionId) {
             const session = await prisma.session.findUnique({ where: { sessionId }, select: { id: true } });
@@ -40,18 +47,28 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, _unused: str
             dbSessionId = session.id;
         }
 
+        const processedMessages = [];
+
         for (const msg of messages) {
             try {
-                const isNew = await processAndSaveMessage(msg, dbSessionId, sessionId, type === 'notify');
+                const savedMessage = await processAndSaveMessage(msg, dbSessionId, sessionId, type === 'notify');
+                if (savedMessage) {
+                    processedMessages.push(savedMessage);
+                }
                 
                 // Execute Bot Commands (Only for Notify / New Messages)
-                if (type === 'notify' && isNew) {
+                if (type === 'notify' && savedMessage) {
                    // Run in background, don't await strictly to not block saving
                    handleBotCommand(sock, sessionId, msg).catch(e => console.error("Bot Handler Error", e));
                 }
             } catch (error) {
                 console.error("Error saving message", error);
             }
+        }
+
+        // Emit to socket room for real-time frontend updates
+        if (processedMessages.length > 0) {
+            io?.to(sessionId).emit('message.update', processedMessages);
         }
     });
 
@@ -193,7 +210,7 @@ async function processAndSaveMessage(msg: WAMessage, dbSessionId: string, sessio
     // If message only contains ignored types, skip
     if (messageKeys.every(k => ignoredTypes.includes(k))) {
         console.log(`Skipping technical message: ${keyId} (${messageKeys.join(', ')})`);
-        return false;
+        return null;
     }
 
     // Check if message already exists to avoid duplicates
@@ -212,8 +229,8 @@ async function processAndSaveMessage(msg: WAMessage, dbSessionId: string, sessio
                 data: { status: 'SENT' }
             });
         }
-        // Return false to indicate "Not New"
-        return false;
+        // Return null to indicate "Not New"
+        return null;
     }
 
     // Debug fromMe issue (Keep this for a while)
@@ -271,7 +288,7 @@ async function processAndSaveMessage(msg: WAMessage, dbSessionId: string, sessio
         console.error("Error downloading media in store", e);
     }
 
-    await prisma.message.create({
+    const newMessage = await prisma.message.create({
         data: {
             sessionId: dbSessionId,
             remoteJid,
@@ -331,6 +348,6 @@ async function processAndSaveMessage(msg: WAMessage, dbSessionId: string, sessio
         }
     }
 
-    return true; // Is New Message = True
+    return newMessage; // Is New Message = True (Return Object)
 }
 // Placeholder - verified that I need to find the logic first

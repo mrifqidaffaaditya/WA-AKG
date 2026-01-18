@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Paperclip } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Image as ImageIcon, FileText, Music, Sticker as StickerIcon, Video, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { io, Socket } from "socket.io-client";
+import { toast } from "sonner";
 
 interface Message {
     keyId: string;
@@ -16,6 +20,8 @@ interface Message {
     type: string;
     status: string;
     pushName?: string;
+    mediaUrl?: string;
+    remoteJid?: string;
 }
 
 interface ChatWindowProps {
@@ -28,6 +34,9 @@ export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const scrollRef = useRef<HTMLDivElement>(null);
+    const [socket, setSocket] = useState<Socket | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploadType, setUploadType] = useState<string>("image");
 
     const fetchMessages = async () => {
         try {
@@ -45,12 +54,51 @@ export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
     }
 
     useEffect(() => {
+        // Initial Fetch
         fetchMessages();
-        // Setup socket listener for new messages here? 
-        // Or refetch interval for simplicity first.
-        const interval = setInterval(fetchMessages, 3000);
-        return () => clearInterval(interval);
+
+        // Socket Connection
+        const newSocket = io({
+            path: "/api/socket/io",
+            addTrailingSlash: false,
+        });
+
+        newSocket.on("connect", () => {
+            console.log("Connected to socket");
+            newSocket.emit("join-session", sessionId);
+        });
+
+        newSocket.on("message.update", (newMessages: Message[]) => {
+            setMessages((prev) => {
+                // De-duplicate and sort
+                const combined = [...prev, ...newMessages.filter(m => m.remoteJid === jid)];
+                const unique = Array.from(new Map(combined.map(m => [m.keyId, m])).values());
+                return unique.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+            });
+            // Scroll to bottom on new message
+            setTimeout(() => {
+                if (scrollRef.current) {
+                    scrollRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }
+            }, 100);
+        });
+
+        setSocket(newSocket);
+
+        return () => {
+            newSocket.disconnect();
+        };
     }, [sessionId, jid]);
+
+    // Auto-scroll on messages change
+    useEffect(() => {
+        if (scrollRef.current) {
+            // Use a wrapper div ref or last element logic?
+            // scrollRef currently on the container of messages list
+            // We need to scroll the ScrollArea viewport. 
+            // With Shadcn ScrollArea usually we need to target the viewport or just use a dummy element at bottom.
+        }
+    }, [messages]);
 
 
     const handleSend = async () => {
@@ -73,6 +121,42 @@ export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
         }
     };
 
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("type", uploadType);
+        // formData.append("caption", newMessage); // Optional: Send current text as caption
+
+        try {
+            toast.info("Sending...");
+            const res = await fetch(`/api/messages/${sessionId}/${encodeURIComponent(jid)}/media`, {
+                method: "POST",
+                body: formData
+            });
+
+            if (!res.ok) throw new Error("Failed to send media");
+            toast.success("Sent!");
+            // Socket will handle update
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to send media");
+        } finally {
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    };
+
+    const triggerUpload = (type: string) => {
+        setUploadType(type);
+        if (fileInputRef.current) {
+            fileInputRef.current.accept = type === 'image' ? "image/*" : type === 'video' ? "video/*" : type === 'audio' ? "audio/*" : type === 'sticker' ? "image/*" : "*/*";
+            // For sticker, we accept image to convert
+            fileInputRef.current.click();
+        }
+    };
+
     return (
         <div className="flex flex-col h-full bg-slate-50">
             {/* Header */}
@@ -88,7 +172,7 @@ export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
 
             {/* Messages Area */}
             <ScrollArea className="flex-1 min-h-0 p-4">
-                <div className="space-y-4" ref={scrollRef}>
+                <div className="space-y-4 pb-4">
                     {messages.map((msg) => (
                         <div
                             key={msg.keyId}
@@ -106,20 +190,64 @@ export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
                                 </span>
                             )}
 
+                            {msg.type === 'IMAGE' && msg.mediaUrl && (
+                                <img src={msg.mediaUrl} alt="Image" className="rounded-md max-h-64 object-cover mb-1" />
+                            )}
+                            {msg.type === 'STICKER' && msg.mediaUrl && (
+                                <img src={msg.mediaUrl} alt="Sticker" className="rounded-md max-h-32 object-contain mb-1" />
+                            )}
+                            {/* Simple fallback for other media */}
+                            {msg.type !== 'TEXT' && msg.type !== 'IMAGE' && msg.type !== 'STICKER' && (
+                                <div className="flex items-center gap-2 p-2 bg-black/10 rounded">
+                                    <FileText className="h-4 w-4" />
+                                    <span className="text-xs italic">{msg.type} Message</span>
+                                </div>
+                            )}
+
                             {msg.content}
                             <span className={cn("text-[10px] self-end opacity-70", msg.fromMe ? "text-primary-foreground" : "text-muted-foreground")}>
                                 {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                         </div>
                     ))}
+                    <div ref={scrollRef} />
                 </div>
             </ScrollArea>
 
             {/* Input Area */}
             <div className="p-4 bg-white border-t flex items-center gap-2">
-                <Button variant="ghost" size="icon">
-                    <Paperclip className="h-5 w-5 text-muted-foreground" />
-                </Button>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={handleFileUpload}
+                />
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <Paperclip className="h-5 w-5 text-muted-foreground" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-48 p-2" side="top" align="start">
+                        <div className="flex flex-col gap-1">
+                            <Button variant="ghost" size="sm" className="justify-start gap-2" onClick={() => triggerUpload('image')}>
+                                <ImageIcon className="h-4 w-4" /> Image
+                            </Button>
+                            <Button variant="ghost" size="sm" className="justify-start gap-2" onClick={() => triggerUpload('video')}>
+                                <Video className="h-4 w-4" /> Video
+                            </Button>
+                            <Button variant="ghost" size="sm" className="justify-start gap-2" onClick={() => triggerUpload('audio')}>
+                                <Music className="h-4 w-4" /> Audio
+                            </Button>
+                            <Button variant="ghost" size="sm" className="justify-start gap-2" onClick={() => triggerUpload('document')}>
+                                <FileText className="h-4 w-4" /> Document
+                            </Button>
+                            <Button variant="ghost" size="sm" className="justify-start gap-2" onClick={() => triggerUpload('sticker')}>
+                                <StickerIcon className="h-4 w-4" /> Sticker
+                            </Button>
+                        </div>
+                    </PopoverContent>
+                </Popover>
                 <Input
                     placeholder="Type a message..."
                     value={newMessage}

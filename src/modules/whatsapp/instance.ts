@@ -56,7 +56,7 @@ export class WhatsAppInstance {
         });
         
         // Bind Store for DB Sync (handles incoming messages)
-        bindSessionStore(this.socket, this.sessionId, this.sessionId);
+        bindSessionStore(this.socket, this.sessionId, this.io);
         
         // Bind Contact Sync (handles contacts.update and messaging-history.set events)
         bindContactSync(this.socket, this.sessionId);

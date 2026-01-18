@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label";
 import { MessageSquarePlus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+
 import { cn } from "@/lib/utils";
+import { io } from "socket.io-client";
 
 interface ChatContact {
     jid: string;
@@ -49,8 +51,60 @@ export function ChatList({ sessionId, onSelectChat, selectedJid }: ChatListProps
 
         if (sessionId) {
             fetchChats();
-            const interval = setInterval(fetchChats, 3000); // Poll every 3 seconds for new chats
-            return () => clearInterval(interval);
+
+            const socket = io({
+                path: "/api/socket/io",
+                addTrailingSlash: false,
+            });
+
+            socket.on("connect", () => {
+                socket.emit("join-session", sessionId);
+            });
+
+            socket.on("message.update", (newMessages: any[]) => {
+                // We could optimise this by only updating the specific chat
+                // But simplified: Update last message for existing chat OR Refetch if new chat
+
+                setChats((prevChats) => {
+                    let updatedChats = [...prevChats];
+                    let needsReorder = false;
+
+                    newMessages.forEach(msg => {
+                        const chatIndex = updatedChats.findIndex(c => c.jid === msg.remoteJid);
+                        if (chatIndex !== -1) {
+                            // Update existing
+                            updatedChats[chatIndex] = {
+                                ...updatedChats[chatIndex],
+                                lastMessage: {
+                                    content: msg.content,
+                                    timestamp: msg.timestamp,
+                                    type: msg.type
+                                }
+                            };
+                            needsReorder = true;
+                        } else {
+                            // New chat - fetch all again to get profile pic etc? 
+                            // Or just optimistic add? 
+                            // Let's refetch to be safe for now, or just ignore until user refresh 
+                            fetchChats();
+                        }
+                    });
+
+                    if (needsReorder) {
+                        updatedChats.sort((a, b) => {
+                            const tA = a.lastMessage?.timestamp ? new Date(a.lastMessage.timestamp).getTime() : 0;
+                            const tB = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : 0;
+                            return tB - tA;
+                        });
+                    }
+
+                    return updatedChats;
+                });
+            });
+
+            return () => {
+                socket.disconnect();
+            };
         }
     }, [sessionId]);
 
