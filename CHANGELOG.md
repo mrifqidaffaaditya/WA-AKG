@@ -15,7 +15,9 @@
     - Improved status indicators and navigation controls.
 - **Documentation**:
     - Updated `API_DOCUMENTATION.md` and `swagger.ts` with the new Media API endpoint.
-
+    
+### Fixed
+- **Chat History API**: Fixed issue where `/api/chat/[sessionId]/[jid]` fetched the oldest messages instead of the latest ones due to incorrect sorting. Now fetches the latest 100 messages chronologically.
 
 ## [v1.2.0.beta-1] - 2026-01-18
 

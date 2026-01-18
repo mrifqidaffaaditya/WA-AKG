@@ -38,9 +38,12 @@ export async function GET(
                 sessionId: dbSessionId,
                 remoteJid: decodedJid 
             },
-            orderBy: { timestamp: 'asc' },
+            orderBy: { timestamp: 'desc' }, // Fetch NEWEST first
             take: 100
         });
+
+        // Reverse to show oldest -> newest
+        messages.reverse();
 
         // Enrich with participant info if it's a group
         if (decodedJid.endsWith('@g.us')) {
