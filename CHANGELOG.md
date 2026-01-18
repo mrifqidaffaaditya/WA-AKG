@@ -2,7 +2,17 @@
 ## [v1.2.0] - 2026-01-18
 
 ### Added
-- **API Standardization**: Standardized API modules to use RESTful path parameters (`/api/{resource}/{sessionId}`) instead of query/body parameters.
+- **Major API Refactoring & Standardization**: 
+    - **RESTful Architecture**: Completely refactored core API modules to use standardized RESTful path parameters (`/api/{resource}/{sessionId}`) instead of inconsistent query/body params.
+    - **Affected Modules**:
+        - **Contacts**: `/api/contacts/{sessionId}`
+        - **Labels**: `/api/labels/{sessionId}`
+        - **Profile**: `/api/profile/{sessionId}`
+        - **Scheduler**: `/api/scheduler/{sessionId}`
+        - **Auto Replies**: `/api/autoreplies/{sessionId}`
+        - **Groups**: `/api/groups/{sessionId}`
+        - **Webhooks**: `/api/webhooks/{sessionId}`
+    - **Frontend Updates**: Updated all corresponding Dashboard pages (Contacts, Scheduler, Auto Reply, Groups) to consume these new endpoints.
 - **Real-time Chat Sync**:
     - Implemented Socket.IO integration for instant message updates in Chat Window and Chat List.
     - Removed legacy polling mechanisms for better performance.
