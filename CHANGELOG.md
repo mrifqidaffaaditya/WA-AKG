@@ -1,7 +1,8 @@
 
-## [v1.2.0-beta.2] - 2026-01-18
+## [v1.2.0] - 2026-01-18
 
 ### Added
+- **API Standardization**: Standardized API modules to use RESTful path parameters (`/api/{resource}/{sessionId}`) instead of query/body parameters.
 - **Real-time Chat Sync**:
     - Implemented Socket.IO integration for instant message updates in Chat Window and Chat List.
     - Removed legacy polling mechanisms for better performance.
@@ -13,137 +14,21 @@
     - Refactored Session Manager UI to a modern Grid Layout.
     - Added support for **Custom Session IDs** during creation.
     - Improved status indicators and navigation controls.
+- **Landing Page Overhaul**:
+    - Redesigned landing page with SaaS-style UI, features grid, and tech stack showcase.
+    - Added Dynamic Version display, Privacy Policy, and Terms of Service pages.
 - **Documentation**:
-    - Updated `API_DOCUMENTATION.md` and `swagger.ts` with the new Media API endpoint.
-    
-### Fixed
-- **Chat History API**: Fixed issue where `/api/chat/[sessionId]/[jid]` fetched the oldest messages instead of the latest ones due to incorrect sorting. Now fetches the latest 100 messages chronologically.
-
-### Enhancement
-- **Landing Page Redesign**:
-    - Complete overhaul of the landing page (`/`) with a modern "SaaS-style" UI.
-    - Added Hero section, Features grid, and Tech Stack showcase.
-    - Implemented dynamic version display from `package.json`.
-    - Added Privacy Policy (`/privacy`) and Terms of Service (`/terms`) pages.
-- **Docs Improvements**:
-    - **Sidebar**: Implemented accordion-style collapsible sidebar for nested navigation.
-    - **Versioning**: Added dynamic version display in the docs header.
-    - **Navigation**: Updated footer links and sidebar to be more responsive.
-
-## [v1.2.0.beta-1] - 2026-01-18
-
-### Changed
-- **API Standardization**: Refactored multiple API modules to use RESTful path parameters instead of query/body parameters.
-    - **Contacts**: `/api/contacts/{sessionId}`
-    - **Labels**: `/api/labels/{sessionId}`
-    - **Profile**: `/api/profile/{sessionId}`
-    - **Scheduler**: `/api/scheduler/{sessionId}`
-    - **Auto Replies**: `/api/autoreplies/{sessionId}`
-    - **Groups**: `/api/groups/{sessionId}`
-    - **Webhooks**: `/api/webhooks/{sessionId}`
-- **Frontend Refactoring**: Updated Dashboard pages (Contacts, Scheduler, Auto Reply, Groups, Webhooks, API Docs) to consume the new RESTful API endpoints.
-
-### Removed
-- **Legacy Routes**: Removed deprecated `[id]` based routes for Scheduler, Auto Replies, and Labels to resolve Next.js dynamic route conflicts.
-
-## [Unreleased] - 2026-01-17
-### Fixed
-- **Session Restart/Stop Logout Bug**: Fixed critical issue where restarting or stopping a session would incorrectly delete authentication credentials, causing complete logout instead of preserving credentials for auto-login.
-    - Now only explicit logout (`DisconnectReason.loggedOut`) deletes credentials
-    - Stop and Restart actions now preserve credentials for seamless auto-reconnect
-    - Modified `src/modules/whatsapp/instance.ts` to differentiate between logout, stop, and disconnect scenarios
-
-### Known Issues
-- **Status Update Feature (`POST /api/status/update`)**: 
-    - ⚠️ **This endpoint has known reliability issues and should not be used in production.**
-    - Text statuses with custom background colors may not display correctly.
-    - Media statuses (images/videos) may fail to upload to WhatsApp servers.
-    - The feature is experimental and under active development.
-
-### Documentation
-- Added prominent WARNING notices to all documentation about status update feature issues:
-    - `docs/API_DOCUMENTATION.md`
-    - `docs/API-QUICK-REFERENCE.md`
-    - `README.md`
-- Created API route `/api/media/[filename]` for reliable media file serving (fixes 404 errors).
-- Updated `src/lib/webhook.ts` to use new media API route.
-
-## [v1.1.3-beta.2] - 2026-01-17
-### Added
-- **Session Management Dashboard**: New dashboard page (`/dashboard/sessions/[id]`) for comprehensive session control.
-- **Session Actions**: Ability to Start, Stop, Restart, and Logout sessions directly from UI.
-- **Real-time Status**: Live uptime counter and status updates (Connected, Stopped, Scanning QR).
-- **API Endpoints**:
-    - `GET /api/sessions/{id}`: Detailed session info including uptime.
-    - `POST /api/sessions/{id}/{action}`: Control session lifecycle (start/stop/restart/logout).
-- **Documentation**: Updated Swagger and API Documentation with new endpoints.
+    - Enhanced Sidebar with accordion navigation and search.
+    - Updated `API_DOCUMENTATION.md` and `swagger.ts` with new Media API endpoint.
+- **Public API Enhancements**:
+    - Added `fileUrl`, `sender` (object), and `remoteJidAlt` to webhook payloads.
+    - Webhooks now include detailed `quoted` message information with auto-resolved media URLs.
 
 ### Fixed
-- **Session Loop**: Fixed issue where stopped sessions would auto-reconnect indefinitely.
-- **Logout Cleanup**: Fixed issue where QR code wouldn't reappear after logout due to stale credentials.
-- **API Cleanups**: Resolved proper parameter naming (`{id}` vs `{sessionId}`) in API routes.
+- **Chat History Sorting**: Fixed `/api/chat/[sessionId]/[jid]` to correctly fetch the latest 100 messages chronologically.
+- **Session Reliability**: Fixed issues with session restarting, stopping, and logout loops.
+- **Logout Logic**: Explicit logout now correctly cleans up credentials.
 
-## [beta-v1.1.3.1] - 2026-01-17
-
-### Added
-- **Group Mentions**: Added support for `@mention` in group chats via `/api/chat/send`.
-    ```json
-    {
-      "jid": "123456@g.us",
-      "message": { "text": "Hello @62812..." },
-      "mentions": ["628123456789@s.whatsapp.net"]
-    }
-    ```
-- **Status Mentions**: Added support for tagging users in status updates (Stories) via `/api/status/update`.
-    ```json
-    {
-      "content": "Check this out",
-      "mentions": ["628123456789@s.whatsapp.net"]
-    }
-    ```
-- **Group Details API**: New endpoint `GET /api/groups/{jid}` to fetch full group metadata (participants, description, admin status) and profile picture.
-    - Returns: `subject`, `desc`, `participants` (with admin status), `pictureUrl`, etc.
-- **Documentation**: Updated Swagger and Markdown docs to reflect these changes.
-
-## [v1.1.2] - 2026-01-17
-
-### Added
-- **API Documentation Audit & Refinement**:
-    - **Method Standardization**: Systematically verified all 86 API routes and corrected HTTP methods to match actual implementation (e.g., changed mislabeled `PUT` to `PATCH`, and `GET` to `POST` for action-based endpoints).
-    - **OpenAPI Schema Enrichment**: Added comprehensive JSON request and response schemas for all 86 endpoints in `src/lib/swagger.ts`, including nested object structures and detailed field descriptions.
-    - **Error Response Documentation**: Added explicitly documented common error responses (`400`, `401`, `403`, `404`, `500`) with example bodies for key modules.
-    - **Ghost Removal**: Cleaned up documentation by removing unimplemented or legacy API methods (e.g., ghost `GET` or `PUT` methods that were not present in the codebase).
-    - **Synchronization**: Ensured 1:1 parity between `docs/API_DOCUMENTATION.md` and the interactive Swagger UI.
-
-### Fixed
-- **Endpoint Accuracy**: Corrected several response structures and field names in the documentation to ensure they perfectly match the Prisma model outputs and API handlers.
-- **Improved Examples**: Standardized date formats to ISO 8601 and refined cURL examples for better copy-paste compatibility.
-
-## [beta-v1.1.0.2] - 2026-01-17
-
-### Added
-- **Comprehensive API Documentation**:
-    - **Full Coverage**: Documented all **86 API endpoints** in `docs/API_DOCUMENTATION.md`, covering Sessions, Messaging, Groups, Contacts, Labels, Scheduler, Auto Reply, Webhooks, Users, and System modules.
-    - **OpenAPI 3.0 Support**: Completely rewrote `src/lib/swagger.ts` to provide a full OpenAPI 3.0 specification.
-    - **Detailed Examples**: Added copy-paste ready cURL examples and JSON request/response bodies for every endpoint.
-    - **Guides**: Added new sections for "Parameter Quick Reference", "Validation Limits", "Error Responses", and "Best Practices".
-- **Swagger UI Integration**:
-    - Verified and synchronized the `/dashboard/api-docs` page to correctly display the full 86-endpoint specification.
-- **Route Tracking**:
-    - Updated `all_routes.txt` to accurately track 86 HTTP endpoints across 64 route files.
-
-### Fixed
-- **Documentation Accuracy**: Corrected endpoint counts and method definitions (GET/PUT/DELETE) for `autoreplies`, `scheduler`, `webhooks`, and `users` resources.
-- **Swagger Schema**: Fixed missing endpoints in the Swagger generator script (`users/{id}`, `labels`, `notifications`, `system`, etc.).
-
-## [1.1.0.1] - 2026-01-15
-
-### Added
-- **Webhook Quoted Message Support**: 
-    - The webhook payload now includes a `quoted` object when processing a reply to a message.
-    - **Recursive Extraction**: Extracts `type`, `content`, `caption`, and identifying keys (`id`, `participant`) of the quoted message.
-    - **Smart Media Lookup**: Automatically looks up the original message in the database using its `stanzaId`. If the original message was a media file (Image/Video/Sticker) that was previously saved, the `quoted.fileUrl` field is populated with the local path. This avoids re-downloading media and saves bandwidth.
-- **Documentation**: Updated `README.md` with detailed collapsible webhook payload examples.
 
 ### Fixed
 - **Webhook Syntax**: Resolved a critical syntax error (duplicate code block) in `src/lib/webhook.ts` that caused build failures.
