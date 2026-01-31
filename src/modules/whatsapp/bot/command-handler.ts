@@ -1,15 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import type { WASocket, WAMessage } from "@whiskeysockets/baileys";
 import { downloadMediaMessage } from "@whiskeysockets/baileys";
-import Sticker from "wa-sticker-formatter"; 
-import sharp from "sharp"; 
+import Sticker from "wa-sticker-formatter";
+import sharp from "sharp";
 import fs from "fs/promises";
 import path from "path";
 import os from "os";
 import { exec } from "child_process";
 import { promisify } from "util";
 
-const execAsync = promisify(exec); 
+const execAsync = promisify(exec);
 
 // Map to track start times for uptime
 const startTimes = new Map<string, number>();
@@ -46,11 +46,11 @@ export async function handleBotCommand(
 
     const remoteJid = msg.key.remoteJid;
     const fromMe = msg.key.fromMe || false;
-    
+
     // Get text content
     let text = "";
     const messageContent = msg.message;
-    
+
     if (messageContent.conversation) {
         text = messageContent.conversation;
     } else if (messageContent.extendedTextMessage?.text) {
@@ -70,20 +70,20 @@ export async function handleBotCommand(
     });
 
     if (!session) return;
-    
+
     // Fetch BotConfig separately
     // @ts-ignore - Prisma Client types might lag in IDE
     const botConfig = await (prisma as any).botConfig.findUnique({
         where: { sessionId: session.id }
     });
-    
+
     const config = botConfig || DEFAULT_CONFIG;
 
     if (!config.enabled) return;
-    
+
     // Verify Access Permissions
     const botMode = (config as any).botMode || 'OWNER'; // Default to OWNER if missing
-    
+
     // Check Permission
     let canExecute = false;
 
@@ -94,21 +94,33 @@ export async function handleBotCommand(
             canExecute = true;
         } else if (botMode === 'SPECIFIC') {
             const allowedJids = (config as any).botAllowedJids || [];
-            // Handle JID formats (ensure comparison is clean)
             // Standardized Sender Logic (matches webhook & store)
             const isGroup = msg.key.remoteJid?.endsWith("@g.us") || false;
             const remoteJidAlt = msg.key.remoteJidAlt;
             let senderJid = (isGroup ? (msg.key.participant || msg.participant) : msg.key.remoteJid) || "";
-            
+
             if (!isGroup && remoteJidAlt) {
                 senderJid = remoteJidAlt;
             }
 
-            // Check if senderJid is in allowed list (checking substrings or bare JIDs)
             if (Array.isArray(allowedJids)) {
-                // Simple check: does allowedJids include the clean JID?
-                // Usually JIDs are like 12345@s.whatsapp.net
                 canExecute = allowedJids.some(jid => senderJid.includes(jid));
+            }
+        } else if (botMode === 'BLACKLIST') {
+            const blockedJids = (config as any).botBlockedJids || [];
+            const isGroup = msg.key.remoteJid?.endsWith("@g.us") || false;
+            const remoteJidAlt = msg.key.remoteJidAlt;
+            let senderJid = (isGroup ? (msg.key.participant || msg.participant) : msg.key.remoteJid) || "";
+
+            if (!isGroup && remoteJidAlt) {
+                senderJid = remoteJidAlt;
+            }
+
+            // If blacklist, allowed by default UNLESS in blocked list
+            canExecute = true;
+            if (Array.isArray(blockedJids)) {
+                const isBlocked = blockedJids.some(jid => senderJid.includes(jid));
+                if (isBlocked) canExecute = false;
             }
         }
     }
@@ -125,37 +137,37 @@ export async function handleBotCommand(
                 await sock.sendMessage(remoteJid, { text: "Pong! 🏓" }, { quoted: msg });
                 break;
             }
-            
+
             case "id": {
-                await sock.sendMessage(remoteJid, { 
-                    text: `*Chat ID:* \`${remoteJid}\`` 
+                await sock.sendMessage(remoteJid, {
+                    text: `*Chat ID:* \`${remoteJid}\``
                 }, { quoted: msg });
                 break;
             }
 
             case "uptime": {
                 if (!config.enableUptime) return;
-                
+
                 const start = startTimes.get(sessionId) || Date.now();
                 const uptimeMs = Date.now() - start;
                 const hours = Math.floor(uptimeMs / 3600000);
                 const minutes = Math.floor((uptimeMs % 3600000) / 60000);
                 const seconds = Math.floor((uptimeMs % 60000) / 1000);
-                
-                await sock.sendMessage(remoteJid, { 
-                    text: `*Session Uptime:* ${hours}h ${minutes}m ${seconds}s` 
+
+                await sock.sendMessage(remoteJid, {
+                    text: `*Session Uptime:* ${hours}h ${minutes}m ${seconds}s`
                 }, { quoted: msg });
                 break;
             }
 
-            case "sticker": 
-            case "s": 
+            case "sticker":
+            case "s":
             case "stiker": {
                 if (!config.enableSticker) return;
 
-                    // Check if message has image or video
+                // Check if message has image or video
                 let mediaMsg: WAMessage | null = msg;
-                
+
                 // If quoted, check quoted
                 const quoted = messageContent.extendedTextMessage?.contextInfo?.quotedMessage;
                 if (quoted) {
@@ -171,7 +183,7 @@ export async function handleBotCommand(
                 const msgContent = mediaMsg.message;
                 const isImage = !!msgContent?.imageMessage;
                 const isVideo = !!msgContent?.videoMessage;
-                
+
                 if (!isImage && !isVideo) {
                     await sock.sendMessage(remoteJid, { text: "❌ Please reply to an image/video or send media with caption #sticker" }, { quoted: msg });
                     return;
@@ -191,7 +203,7 @@ export async function handleBotCommand(
 
                     const seconds = msgContent?.videoMessage?.seconds || 0;
                     const maxDuration = (config as any).maxStickerDuration || 10;
-                    
+
                     if (seconds > maxDuration) {
                         await sock.sendMessage(remoteJid, { text: `❌ Video too long! Max duration is ${maxDuration} seconds.` }, { quoted: msg });
                         return;
@@ -206,7 +218,7 @@ export async function handleBotCommand(
                         mediaMsg,
                         "buffer",
                         {},
-                        { 
+                        {
                             logger: console as any,
                             reuploadRequest: sock.updateMediaMessage
                         }
@@ -215,8 +227,8 @@ export async function handleBotCommand(
                     // Resize/Compress Logic
                     if (isImage) {
                         try {
-                           // Use limitInputPixels: false to handle large images
-                           buffer = await sharp(buffer, { limitInputPixels: false })
+                            // Use limitInputPixels: false to handle large images
+                            buffer = await sharp(buffer, { limitInputPixels: false })
                                 .resize(512, 512, { // Resize to standard 512x512 sticker size directly
                                     fit: 'inside',
                                     withoutEnlargement: true
@@ -226,28 +238,28 @@ export async function handleBotCommand(
                             console.error("Image Resize failed", resizeErr);
                         }
                     } else if (isVideo) {
-                         try {
+                        try {
                             const tempInput = path.join(os.tmpdir(), `input_${Date.now()}.mp4`);
                             const tempOutput = path.join(os.tmpdir(), `output_${Date.now()}.mp4`);
-                            
+
                             await fs.writeFile(tempInput, buffer);
-                            
+
                             // Compress Video using ffmpeg
                             // Extreme Compression: 8fps, CRF 40, 300k bitrate, ultrafast
                             await execAsync(`ffmpeg -y -i "${tempInput}" -vf "scale=512:512:force_original_aspect_ratio=decrease,fps=10" -c:v libx264 -preset ultrafast -crf 40 -b:v 300k -maxrate 300k -bufsize 600k -an "${tempOutput}"`);
-                            
+
                             buffer = await fs.readFile(tempOutput);
-                            
+
                             // Cleanup
-                            await fs.unlink(tempInput).catch(() => {});
-                            await fs.unlink(tempOutput).catch(() => {});
-                         } catch (videoErr) {
-                             console.error("Video Compression failed", videoErr);
-                             // Continue with original buffer if compression fails, or throw? 
-                             // If it fails, likely original will fail too, but let's try.
-                         }
+                            await fs.unlink(tempInput).catch(() => { });
+                            await fs.unlink(tempOutput).catch(() => { });
+                        } catch (videoErr) {
+                            console.error("Video Compression failed", videoErr);
+                            // Continue with original buffer if compression fails, or throw? 
+                            // If it fails, likely original will fail too, but let's try.
+                        }
                     }
-                    
+
                     // Check for background removal (Only for Images)
                     const isRemoveBg = args.includes("nobg") || args.includes("removebg");
                     if (isImage && isRemoveBg && config.removeBgApiKey) {
@@ -255,7 +267,7 @@ export async function handleBotCommand(
                             // Convert Buffer to Uint8Array for Blob compatibility
                             const uint8Array = new Uint8Array(buffer);
                             const blob = new Blob([uint8Array], { type: 'image/png' });
-                            
+
                             const formData = new FormData();
                             formData.append('image_file', blob, 'image.png');
                             formData.append('size', 'auto');
@@ -280,7 +292,7 @@ export async function handleBotCommand(
                             await sock.sendMessage(remoteJid, { text: `⚠️ Remove BG failed: ${(bgError as any).message}. Sending normal sticker...` }, { quoted: msg });
                         }
                     } else if (isImage && isRemoveBg && !config.removeBgApiKey) {
-                         await sock.sendMessage(remoteJid, { text: `⚠️ Remove BG API Key not configured in dashboard. Sending normal sticker...` }, { quoted: msg });
+                        await sock.sendMessage(remoteJid, { text: `⚠️ Remove BG API Key not configured in dashboard. Sending normal sticker...` }, { quoted: msg });
                     }
 
 
@@ -304,11 +316,11 @@ export async function handleBotCommand(
                 }
                 break;
             }
-            
+
             case "menu":
             case "help": {
-                 const botName = (config as any).botName || "WA-AKG Bot";
-                 const menu = `
+                const botName = (config as any).botName || "WA-AKG Bot";
+                const menu = `
 🤖 *${botName} Menu* 🤖
 
 📌 *Commands:*
@@ -321,8 +333,8 @@ export async function handleBotCommand(
 
 _Made with ❤️_
 `;
-                 await sock.sendMessage(remoteJid, { text: menu }, { quoted: msg });
-                 break;
+                await sock.sendMessage(remoteJid, { text: menu }, { quoted: msg });
+                break;
             }
 
             default:

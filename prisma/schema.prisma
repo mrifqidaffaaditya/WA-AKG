@@ -148,6 +148,7 @@ model AutoReply {
   response    String   @db.Text
   isMedia     Boolean  @default(false)
   mediaUrl    String?
+  triggerType String   @default("ALL") // ALL, GROUP, PRIVATE
   createdAt   DateTime @default(now())
 
   session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
@@ -172,6 +173,7 @@ model ScheduledMessage {
   jid         String
   content     String   @db.Text
   mediaUrl    String?
+  mediaType   String?  // image, video, document, etc.
   sendAt      DateTime
   status      String   @default("PENDING") // PENDING, SENT, FAILED
   createdAt   DateTime @default(now())
@@ -210,6 +212,7 @@ enum AccessMode {
   ALL
   OWNER
   SPECIFIC
+  BLACKLIST
 }
 
 model BotConfig {
@@ -221,10 +224,12 @@ model BotConfig {
   botName       String   @default("WA-AKG Bot")
   botMode       AccessMode @default(OWNER)
   botAllowedJids Json?     // Array of JIDs ["628123@s.whatsapp.net"]
+  botBlockedJids Json?     // Array of JIDs ["628123@s.whatsapp.net"] for BLACKLIST mode
 
   // Auto Reply Access
   autoReplyMode AccessMode @default(ALL)
   autoReplyAllowedJids Json?
+  autoReplyBlockedJids Json? // Array of JIDs for BLACKLIST mode
 
   enableSticker Boolean  @default(true)
   enableVideoSticker Boolean @default(true)

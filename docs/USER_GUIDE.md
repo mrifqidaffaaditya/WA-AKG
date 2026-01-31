@@ -26,6 +26,7 @@ Before you can use any automation features, you must link a WhatsApp account.
 ### 2. Smart Scheduler
 - Navigate to **Scheduler** > **New Schedule**.
 - **Message Content**: Supports multi-line text.
+- **Media**: Send images, videos, or documents via URL.
 - **Timing**: Accurate scheduling based on your configured timezone.
 
 ### 3. Automated Responses
@@ -35,6 +36,8 @@ Before you can use any automation features, you must link a WhatsApp account.
   - `EXACT`: Identical match.
   - `CONTAINS`: Keyword exists anywhere in the message.
   - `STARTS_WITH`: Message begins with the keyword.
+- **Media Support**: Send images or videos by providing a direct URL.
+- **Context Control**: Choose to reply in **All Chats**, **Private Only**, or **Group Only**.
 
 ---
 
@@ -68,6 +71,7 @@ Before you can use any automation features, you must link a WhatsApp account.
 
 Check the **Settings** page to customize:
 - **App Branding**: Change the dashboard name and logo.
+- **Access Control**: Configure **Whitelist** or **Blacklist** for Bot Commands and Auto Replies.
 - **Timezone**: Ensure your scheduled messages fire at the correct local hour.
 - **API Keys**: Manage your secret keys for third-party integrations.
 

@@ -6,8 +6,8 @@
 ![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
-![Version](https://img.shields.io/badge/Version-1.1.2-blue?style=for-the-badge)
-![Beta Branch](https://img.shields.io/badge/Branch-Beta-yellow?style=for-the-badge&logo=git)
+![Version](https://img.shields.io/badge/Version-1.3.0-blue?style=for-the-badge)
+![Beta Branch](https://img.shields.io/badge/Branch-Master-green?style=for-the-badge&logo=git)
 
 **A professional, multi-session WhatsApp Gateway, Dashboard, and Automation System.**  
 Built with Next.js 15 and Baileys for high-performance messaging automation.
@@ -48,9 +48,10 @@ graph LR
 
 - **📱 Multi-Session Management**: Connect and manage unlimited accounts via QR code.
 - **⚡ Pro WhatsApp Engine**: Powered by Baileys for high-speed, stable connections.
-- **📅 Advanced Scheduler**: Precise message planning with global timezone support.
+- **📅 Advanced Scheduler**: Precise message planning with **Media Support** (Images, Video, Docs).
 - **📢 Safe Broadcast**: Built-in anti-ban mechanisms with randomized delays (10-30s).
-- **🤖 Smart Auto-Reply**: Keywords matching (`EXACT`, `CONTAINS`, `STARTS_WITH`) with media support.
+- **🤖 Smart Auto-Reply**: Keywords matching with **Context Support** (Group/Private/All) and **Media Attachments**.
+- **🛡️ Granular Access Control**: Full **Whitelist** & **Blacklist** support for both Bot Commands and Auto Replies.
 - **🔗 Enterprise Webhooks**: Robust event forwarding for messages, connections, and group updates.
 - **📇 Advanced Contacts**: Rich contact management with LID, verified names, and profile pictures.
 - **🎨 Creative Tools**: Built-in Sticker Maker with background removal (remove.bg integration).
@@ -126,20 +127,20 @@ WA-AKG provides a comprehensive REST API. Full details in [API_DOCUMENTATION.md]
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/api/chat/send` | Send text, media, or stickers |
-| `POST` | `/api/messages/broadcast` | Scalable bulk messaging |
+| `POST` | `/api/messages/{sessionId}/{jid}/send` | Send text, media, or stickers |
+| `POST` | `/api/messages/{sessionId}/broadcast` | Scalable bulk messaging |
 | `PATCH` | `/api/sessions/{id}/settings` | Update session configuration |
-| `GET` | `/api/groups` | List all available groups |
-| `POST` | `/api/webhooks` | Register real-time event listeners |
+| `GET` | `/api/groups/{sessionId}` | List all available groups |
+| `POST` | `/api/webhooks/{sessionId}` | Register real-time event listeners |
+| `POST` | `/api/autoreplies/{sessionId}` | Create context-aware auto-replies |
+| `PUT` | `/api/sessions/{id}/bot-config` | Configure Access Control (Blacklist/Whitelist) |
 
 ### Example: Send Text Message
 ```bash
-curl -X POST http://localhost:3000/api/chat/send \
+curl -X POST http://localhost:3000/api/messages/session_01/62812345678@s.whatsapp.net/send \
   -H "X-API-Key: your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
-    "sessionId": "session_01",
-    "jid": "62812345678@s.whatsapp.net",
     "message": { "text": "Hello from WA-AKG!" }
   }'
 ```

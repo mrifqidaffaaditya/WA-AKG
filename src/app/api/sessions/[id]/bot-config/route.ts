@@ -34,8 +34,10 @@ export async function GET(
             enabled: true,
             botMode: 'OWNER',
             botAllowedJids: [],
+            botBlockedJids: [],
             autoReplyMode: 'ALL',
             autoReplyAllowedJids: [],
+            autoReplyBlockedJids: [],
             enableSticker: true,
             enablePing: true,
             enableUptime: true,
@@ -66,7 +68,7 @@ export async function POST(
         if (!canAccess) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
         const body = await request.json();
-        
+
         // Find session DB ID
         const session = await prisma.session.findUnique({
             where: { sessionId },
@@ -84,9 +86,11 @@ export async function POST(
                 enabled: body.enabled ?? true,
                 botMode: body.botMode || 'OWNER',
                 botAllowedJids: body.botAllowedJids || [],
+                botBlockedJids: body.botBlockedJids || [],
                 autoReplyMode: body.autoReplyMode || 'ALL',
                 autoReplyAllowedJids: body.autoReplyAllowedJids || [],
-                
+                autoReplyBlockedJids: body.autoReplyBlockedJids || [],
+
                 enableSticker: body.enableSticker ?? true,
                 enableVideoSticker: body.enableVideoSticker ?? true,
                 maxStickerDuration: body.maxStickerDuration || 10,
@@ -97,8 +101,10 @@ export async function POST(
             update: {
                 botMode: body.botMode,
                 botAllowedJids: body.botAllowedJids,
+                botBlockedJids: body.botBlockedJids,
                 autoReplyMode: body.autoReplyMode,
                 autoReplyAllowedJids: body.autoReplyAllowedJids,
+                autoReplyBlockedJids: body.autoReplyBlockedJids,
                 botName: body.botName,
                 enableSticker: body.enableSticker,
                 enableVideoSticker: body.enableVideoSticker,

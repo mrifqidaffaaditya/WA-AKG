@@ -17,10 +17,12 @@ interface BotConfig {
     id?: string;
     enabled: boolean;
     botName: string;
-    botMode: 'ALL' | 'OWNER' | 'SPECIFIC';
+    botMode: 'ALL' | 'OWNER' | 'SPECIFIC' | 'BLACKLIST';
     botAllowedJids: string[];
-    autoReplyMode: 'ALL' | 'OWNER' | 'SPECIFIC';
+    botBlockedJids: string[];
+    autoReplyMode: 'ALL' | 'OWNER' | 'SPECIFIC' | 'BLACKLIST';
     autoReplyAllowedJids: string[];
+    autoReplyBlockedJids: string[];
     enableSticker: boolean;
     enableVideoSticker: boolean;
     maxStickerDuration: number;
@@ -36,8 +38,10 @@ export default function BotSettingsPage() {
         botName: "WA-AKG Bot",
         botMode: 'OWNER',
         botAllowedJids: [],
+        botBlockedJids: [],
         autoReplyMode: 'ALL',
         autoReplyAllowedJids: [],
+        autoReplyBlockedJids: [],
         enableSticker: true,
         enableVideoSticker: true,
         maxStickerDuration: 10,
@@ -50,7 +54,9 @@ export default function BotSettingsPage() {
 
     // Helpers to manage JID text area
     const [botJidsText, setBotJidsText] = useState("");
+    const [botBlockedJidsText, setBotBlockedJidsText] = useState("");
     const [autoReplyJidsText, setAutoReplyJidsText] = useState("");
+    const [autoReplyBlockedJidsText, setAutoReplyBlockedJidsText] = useState("");
 
     useEffect(() => {
         if (currentSessionId) {
@@ -71,14 +77,18 @@ export default function BotSettingsPage() {
                     botMode: data.botMode || 'OWNER',
                     autoReplyMode: data.autoReplyMode || 'ALL',
                     botAllowedJids: Array.isArray(data.botAllowedJids) ? data.botAllowedJids : [],
+                    botBlockedJids: Array.isArray(data.botBlockedJids) ? data.botBlockedJids : [],
                     autoReplyAllowedJids: Array.isArray(data.autoReplyAllowedJids) ? data.autoReplyAllowedJids : [],
+                    autoReplyBlockedJids: Array.isArray(data.autoReplyBlockedJids) ? data.autoReplyBlockedJids : [],
                     enableVideoSticker: data.enableVideoSticker !== undefined ? data.enableVideoSticker : true,
                     maxStickerDuration: data.maxStickerDuration || 10,
                     removeBgApiKey: data.removeBgApiKey || ""
                 });
                 // Init text areas
                 setBotJidsText((data.botAllowedJids || []).join('\n'));
+                setBotBlockedJidsText((data.botBlockedJids || []).join('\n'));
                 setAutoReplyJidsText((data.autoReplyAllowedJids || []).join('\n'));
+                setAutoReplyBlockedJidsText((data.autoReplyBlockedJids || []).join('\n'));
             }
         } catch (error) {
             console.error("Failed to fetch config", error);
@@ -94,12 +104,16 @@ export default function BotSettingsPage() {
 
         // Parse JIDs
         const botJids = botJidsText.split('\n').map(s => s.trim()).filter(Boolean);
+        const botBlockedJids = botBlockedJidsText.split('\n').map(s => s.trim()).filter(Boolean);
         const autoReplyJids = autoReplyJidsText.split('\n').map(s => s.trim()).filter(Boolean);
+        const autoReplyBlockedJids = autoReplyBlockedJidsText.split('\n').map(s => s.trim()).filter(Boolean);
 
         const payload = {
             ...config,
             botAllowedJids: botJids,
-            autoReplyAllowedJids: autoReplyJids
+            botBlockedJids: botBlockedJids,
+            autoReplyAllowedJids: autoReplyJids,
+            autoReplyBlockedJids: autoReplyBlockedJids
         };
 
         try {
@@ -212,6 +226,7 @@ export default function BotSettingsPage() {
                                                 <SelectItem value="OWNER">Owner Only (Me)</SelectItem>
                                                 <SelectItem value="ALL">Public (Everyone)</SelectItem>
                                                 <SelectItem value="SPECIFIC">Specific Contacts</SelectItem>
+                                                <SelectItem value="BLACKLIST">Block Specific Contacts</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -229,6 +244,19 @@ export default function BotSettingsPage() {
                                                 className="font-mono text-sm max-h-[150px]"
                                             />
                                             <p className="text-xs text-muted-foreground">Enter specific WhatsApp IDs (JIDs) allowed to use the bot.</p>
+                                        </div>
+                                    )}
+
+                                    {config.botMode === 'BLACKLIST' && (
+                                        <div className="ml-1 pl-4 border-l-2 border-slate-200 space-y-2">
+                                            <Label>Blocked JIDs (one per line)</Label>
+                                            <Textarea
+                                                placeholder="628123456789@s.whatsapp.net"
+                                                value={botBlockedJidsText}
+                                                onChange={(e) => setBotBlockedJidsText(e.target.value)}
+                                                className="font-mono text-sm max-h-[150px]"
+                                            />
+                                            <p className="text-xs text-muted-foreground">Enter WhatsApp IDs (JIDs) blocked from using the bot.</p>
                                         </div>
                                     )}
                                 </div>
@@ -252,6 +280,7 @@ export default function BotSettingsPage() {
                                                 <SelectItem value="ALL">Everyone (Public)</SelectItem>
                                                 <SelectItem value="OWNER">Owner Only (Me)</SelectItem>
                                                 <SelectItem value="SPECIFIC">Specific Contacts</SelectItem>
+                                                <SelectItem value="BLACKLIST">Block Specific Contacts</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -266,6 +295,18 @@ export default function BotSettingsPage() {
                                                 placeholder="628123456789@s.whatsapp.net"
                                                 value={autoReplyJidsText}
                                                 onChange={(e) => setAutoReplyJidsText(e.target.value)}
+                                                className="font-mono text-sm max-h-[150px]"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {config.autoReplyMode === 'BLACKLIST' && (
+                                        <div className="ml-1 pl-4 border-l-2 border-slate-200 space-y-2">
+                                            <Label>Blocked JIDs (one per line)</Label>
+                                            <Textarea
+                                                placeholder="628123456789@s.whatsapp.net"
+                                                value={autoReplyBlockedJidsText}
+                                                onChange={(e) => setAutoReplyBlockedJidsText(e.target.value)}
                                                 className="font-mono text-sm max-h-[150px]"
                                             />
                                         </div>

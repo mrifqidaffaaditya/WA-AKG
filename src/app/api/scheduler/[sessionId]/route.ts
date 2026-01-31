@@ -18,7 +18,7 @@ export async function GET(
 
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
         const session = await prisma.session.findUnique({
@@ -27,7 +27,7 @@ export async function GET(
         });
 
         if (!session) {
-             return NextResponse.json({ error: "Session not found" }, { status: 404 });
+            return NextResponse.json({ error: "Session not found" }, { status: 404 });
         }
 
         const messages = await prisma.scheduledMessage.findMany({
@@ -56,7 +56,7 @@ export async function POST(
         }
 
         const body = await request.json();
-        const { jid, content, sendAt, mediaUrl } = body;
+        const { jid, content, sendAt, mediaUrl, mediaType } = body;
 
         if (!jid || !content || !sendAt) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -68,12 +68,12 @@ export async function POST(
         }
 
         const session = await prisma.session.findUnique({
-             where: { sessionId: sessionId },
-             select: { id: true }
+            where: { sessionId: sessionId },
+            select: { id: true }
         });
 
         if (!session) {
-             return NextResponse.json({ error: "Session not found" }, { status: 404 });
+            return NextResponse.json({ error: "Session not found" }, { status: 404 });
         }
 
         // @ts-ignore
@@ -88,6 +88,7 @@ export async function POST(
                 jid,
                 content,
                 mediaUrl,
+                mediaType,
                 sendAt: utcDate,
                 status: "PENDING"
             }

@@ -5,7 +5,7 @@ const checkScheduledMessages = async () => {
     try {
         const now = new Date();
         console.log(`[Scheduler] Checking for messages due before ${now.toISOString()}...`);
-        
+
         const pendingMessages = await prisma.scheduledMessage.findMany({
             where: {
                 status: "PENDING",
@@ -19,16 +19,24 @@ const checkScheduledMessages = async () => {
 
         for (const msg of pendingMessages) {
             const instance = waManager.getInstance(msg.sessionId);
-            
+
             if (instance?.socket) {
                 try {
                     let content: any = {};
                     // Simple text support for now, expand for media later
                     if (msg.mediaUrl) {
-                            // Assuming image for now, logic needs to be robust for types
-                            content = { image: { url: msg.mediaUrl }, caption: msg.content };
+                        const url = msg.mediaUrl;
+                        const type = msg.mediaType || 'image'; // Default to image if null
+
+                        if (type === 'video') {
+                            content = { video: { url }, caption: msg.content };
+                        } else if (type === 'document') {
+                            content = { document: { url }, caption: msg.content, fileName: 'file', mimetype: 'application/octet-stream' };
+                        } else {
+                            content = { image: { url }, caption: msg.content };
+                        }
                     } else {
-                            content = { text: msg.content };
+                        content = { text: msg.content };
                     }
 
                     await instance.socket.sendMessage(msg.jid, content);
@@ -58,10 +66,10 @@ const checkScheduledMessages = async () => {
 
 export function startScheduler() {
     console.log("Starting Message Scheduler...");
-    
+
     // Run immediately on start
     checkScheduledMessages();
 
     // Then run every 30 seconds
-    setInterval(checkScheduledMessages, 30 * 1000); 
+    setInterval(checkScheduledMessages, 30 * 1000);
 }

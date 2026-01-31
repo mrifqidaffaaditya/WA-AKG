@@ -1,4 +1,25 @@
 
+## [v1.3.0] - 2026-02-01
+
+### Added
+- **Granular Access Control**:
+    - Introduced `BLACKLIST` mode for both Bot Commands and Auto Replies.
+    - Added `botBlockedJids` and `autoReplyBlockedJids` to `BotConfig`.
+    - Updated Dashboard "Bot Settings" to configure Blocked/Allowed JIDs visually.
+- **Advanced Auto Reply Features**:
+    - **Context Awareness**: Auto replies can now be scoped to `ALL`, `GROUP`, or `PRIVATE` chats via `triggerType`.
+    - **Media Support**: Auto replies can now include media attachments (Images, Videos, Documents) via `mediaUrl` and `isMedia`.
+- **Scheduler Enhancements**:
+    - **Media Support**: Scheduled messages now support `image`, `video`, and `document` types.
+    - **Smart JID Helpers**: Added UI dropdown to easily select recipient type (`@s.whatsapp.net`, `@g.us`, `@newsletter`).
+- **Documentation**:
+    - Comprehensive audit of `src/lib/swagger.ts` with complete examples for all endpoints.
+    - Updated `USER_GUIDE.md` and `README.md` with new feature instructions.
+
+### Fixed
+- **Type Safety**: Resolved Prisma type definition conflicts in Auto Reply API route.
+- **Stability**: Improvements to context-based message filtering logic.
+
 ## [v1.2.0] - 2026-01-18
 
 ### Added

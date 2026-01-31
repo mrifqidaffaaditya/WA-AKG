@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { getAuthenticatedUser, canAccessSession, isAdmin } from "@/lib/api-auth";
 
 // GET: List Auto Replies
@@ -21,12 +22,12 @@ export async function GET(
         }
 
         const session = await prisma.session.findUnique({
-             where: { sessionId: sessionId },
-             select: { id: true }
+            where: { sessionId: sessionId },
+            select: { id: true }
         });
 
         if (!session) {
-             return NextResponse.json({ error: "Session not found" }, { status: 404 });
+            return NextResponse.json({ error: "Session not found" }, { status: 404 });
         }
 
         const rules = await prisma.autoReply.findMany({
@@ -56,7 +57,7 @@ export async function POST(
         }
 
         const body = await request.json();
-        const { keyword, response, matchType } = body;
+        const { keyword, response, matchType, isMedia, mediaUrl } = body;
 
         if (!keyword || !response) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -70,20 +71,25 @@ export async function POST(
         const session = await prisma.session.findUnique({
             where: { sessionId: sessionId },
             select: { id: true }
-       });
+        });
 
-       if (!session) {
+        if (!session) {
             return NextResponse.json({ error: "Session not found" }, { status: 404 });
-       }
+        }
+
+        const createData: Prisma.AutoReplyUncheckedCreateInput = {
+            sessionId: session.id,
+            keyword,
+            response,
+            matchType: matchType || "EXACT",
+            isMedia: isMedia || false,
+            mediaUrl: mediaUrl || null,
+            // @ts-ignore: triggerType exists in generated schema but may be stale in editor types
+            triggerType: (body.triggerType as string) || "ALL"
+        };
 
         const newRule = await prisma.autoReply.create({
-            data: {
-                sessionId: session.id,
-                keyword,
-                response,
-                matchType: matchType || "EXACT",
-                isMedia: false
-            }
+            data: createData
         });
 
         return NextResponse.json(newRule);

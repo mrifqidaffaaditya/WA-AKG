@@ -245,8 +245,9 @@ curl -X GET https://your-domain.com/api/sessions/sales-01/bot-config \
 ```json
 {
   "enabled": true,
-  "botMode": "OWNER",
-  "autoReplyMode": "WHITELIST",
+  "botMode": "BLACKLIST",
+  "botBlockedJids": ["628123456789@s.whatsapp.net"],
+  "autoReplyMode": "SPECIFIC",
   "autoReplyAllowedJids": ["628123456789@s.whatsapp.net"],
   "enableSticker": true,
   "botName": "My Custom Bot"
@@ -2262,13 +2263,23 @@ curl -X GET https://your-domain.com/api/autoreplies/sales-01 \
 - `keyword` (string, required): Trigger keyword
 - `response` (string, required): Reply message
 - `matchType` (string, optional): EXACT, CONTAINS, or STARTS_WITH
+- `triggerType` (string, optional): ALL, GROUP, or PRIVATE (default: ALL)
+- `isMedia` (boolean, optional): Send media?
+- `mediaUrl` (string, optional): Direct URL to media
 
 **Request Example**:
 ```bash
 curl -X POST https://your-domain.com/api/autoreplies/sales-01 \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your-api-key" \
-  -d '{ "keyword": "hello", "response": "Hi there!", "matchType": "EXACT" }'
+  -d '{ 
+    "keyword": "promo", 
+    "response": "Here is our flyer!", 
+    "matchType": "EXACT",
+    "triggerType": "ALL",
+    "isMedia": true, 
+    "mediaUrl": "https://example.com/flyer.jpg" 
+  }'
 ```
 
 ---
@@ -2521,13 +2532,20 @@ curl -X GET https://your-domain.com/api/scheduler/sales-01 \
 - `content` (string, required): Message content
 - `sendAt` (string, required): Send time (ISO format)
 - `mediaUrl` (string, optional): Media URL
+- `mediaType` (string, optional): image, video, document
 
 **Request Example**:
 ```bash
 curl -X POST https://your-domain.com/api/scheduler/sales-01 \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your-api-key" \
-  -d '{ "jid": "628123456789@s.whatsapp.net", "content": "Reminder!", "sendAt": "2024-12-25T10:00:00" }'
+  -d '{ 
+    "jid": "628123456789@s.whatsapp.net", 
+    "content": "Reminder!", 
+    "sendAt": "2024-12-25T10:00:00",
+    "mediaUrl": "https://example.com/image.jpg",
+    "mediaType": "image"
+  }'
 ```
 
 ---

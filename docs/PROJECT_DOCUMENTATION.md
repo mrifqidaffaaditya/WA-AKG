@@ -68,7 +68,8 @@ The system uses a relational schema optimized for multi-session messaging.
 | :--- | :--- | :--- |
 | **Core** | `User`, `Session`, `AuthState` | Authentication and session lifecycle. |
 | **Messaging** | `Message`, `Contact`, `Group` | Chat history and metadata sync. |
-| **Automation** | `AutoReply`, `ScheduledMessage` | Automated logic and queues. |
+| **Automation** | `AutoReply`, `ScheduledMessage` | Automated logic and queues. Supports **Access Control** and **Context**. |
+| **Configuration** | `BotConfig` | Bot settings, granular access control (Whitelist/Blacklist). |
 | **Infrastructure** | `Webhook`, `Notification`, `Label` | Logs, tagging, and event forwarding. |
 
 ---
@@ -89,6 +90,15 @@ Every incoming message follows this path:
 3. Record is saved to `Message` table.
 4. Webhook Dispatcher identifies active webhooks for that session.
 5. Payload is sent asynchronously to external URLs with retry logic.
+
+### 3. Access Control & Automation
+- **Granular Access**: 
+  - `BotConfig` controls who can use bot commands (`#ping`, etc) via `OWNER`, `SPECIFIC` (Whitelist), or `BLACKLIST` modes.
+  - Auto-replies also support these access modes independently.
+- **Context Awareness**:
+  - Auto-replies can be scoped to `ALL`, `GROUP`, or `PRIVATE` chats.
+- **Media Support**:
+  - Scheduler and Auto-replies support sending images, videos, and documents via URL.
 
 ---
 

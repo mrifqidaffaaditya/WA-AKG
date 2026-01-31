@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Plus, CalendarClock, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -28,6 +29,8 @@ interface ScheduledMessage {
     content: string;
     sendAt: string;
     status: string;
+    mediaUrl?: string;
+    mediaType?: string;
 }
 
 export default function SchedulerPage() {
@@ -43,6 +46,8 @@ export default function SchedulerPage() {
     const [newJid, setNewJid] = useState("");
     const [newContent, setNewContent] = useState("");
     const [newSendAt, setNewSendAt] = useState("");
+    const [newMediaUrl, setNewMediaUrl] = useState("");
+    const [newMediaType, setNewMediaType] = useState("image");
 
     // Delete state
     const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -82,6 +87,8 @@ export default function SchedulerPage() {
         const jidUser = msg.jid.split('@')[0];
         setNewJid(jidUser);
         setNewContent(msg.content);
+        setNewMediaUrl(msg.mediaUrl || "");
+        setNewMediaType(msg.mediaType || "image");
         // Format date for datetime-local input (YYYY-MM-DDTHH:mm)
         const date = new Date(msg.sendAt);
         // Adjust to local ISO string roughly or use library. 
@@ -115,7 +122,9 @@ export default function SchedulerPage() {
                 body: JSON.stringify({
                     jid,
                     content: newContent,
-                    sendAt: newSendAt
+                    sendAt: newSendAt,
+                    mediaUrl: newMediaUrl,
+                    mediaType: newMediaType
                 })
             });
 
@@ -125,6 +134,8 @@ export default function SchedulerPage() {
                 setNewJid("");
                 setNewContent("");
                 setNewSendAt("");
+                setNewMediaUrl("");
+                setNewMediaType("image");
                 setEditingId(null);
                 fetchMessages(selectedSessionId);
             } else {
@@ -180,6 +191,8 @@ export default function SchedulerPage() {
                             setNewJid("");
                             setNewContent("");
                             setNewSendAt("");
+                            setNewMediaUrl("");
+                            setNewMediaType("image");
                             setShowForm(!showForm);
                         }} disabled={!selectedSessionId}>
                             <Plus className="h-4 w-4 mr-2" /> Schedule Message
@@ -201,13 +214,30 @@ export default function SchedulerPage() {
                         <CardContent className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Receiver</Label>
-                                    <Input
-                                        value={newJid}
-                                        onChange={e => setNewJid(e.target.value)}
-                                        placeholder="Phone number (e.g. 628123456789)"
-                                    />
-                                    <p className="text-xs text-muted-foreground">Enter number only, default suffix added automatically.</p>
+                                    <Label>Recipient JID</Label>
+                                    <div className="flex gap-2">
+                                        <Select onValueChange={(val) => {
+                                            if (val === "GROUP" && !newJid.endsWith("@g.us")) setNewJid(newJid + "@g.us");
+                                            if (val === "PRIVATE" && !newJid.endsWith("@s.whatsapp.net")) setNewJid(newJid + "@s.whatsapp.net");
+                                            if (val === "NEWSLETTER" && !newJid.endsWith("@newsletter")) setNewJid(newJid + "@newsletter");
+                                        }}>
+                                            <SelectTrigger className="w-[120px]">
+                                                <SelectValue placeholder="Type" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="PRIVATE">Private</SelectItem>
+                                                <SelectItem value="GROUP">Group</SelectItem>
+                                                <SelectItem value="NEWSLETTER">Channel</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <Input
+                                            value={newJid}
+                                            onChange={e => setNewJid(e.target.value)}
+                                            placeholder="e.g. 62812345678@s.whatsapp.net"
+                                            className="flex-1"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">Select type to auto-append suffix, or type full JID.</p>
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Send At</Label>
@@ -227,6 +257,30 @@ export default function SchedulerPage() {
                                     rows={4}
                                 />
                             </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Media URL (Optional)</Label>
+                                    <Input
+                                        value={newMediaUrl}
+                                        onChange={e => setNewMediaUrl(e.target.value)}
+                                        placeholder="https://example.com/image.jpg"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Media Type</Label>
+                                    <Select value={newMediaType} onValueChange={setNewMediaType}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="image">Image</SelectItem>
+                                            <SelectItem value="video">Video</SelectItem>
+                                            <SelectItem value="document">Document</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
                             <div className="flex justify-end gap-2">
                                 <Button variant="ghost" onClick={() => {
                                     setShowForm(false);
@@ -234,6 +288,8 @@ export default function SchedulerPage() {
                                     setNewJid("");
                                     setNewContent("");
                                     setNewSendAt("");
+                                    setNewMediaUrl("");
+                                    setNewMediaType("image");
                                 }}>Cancel</Button>
                                 <Button onClick={handleSaveSchedule}>{editingId ? "Update" : "Schedule"}</Button>
                             </div>
