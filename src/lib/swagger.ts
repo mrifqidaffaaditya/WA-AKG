@@ -330,7 +330,7 @@ All endpoints require authentication via:
                                             enableUptime: { type: "boolean" },
                                             removeBgApiKey: { type: "string", nullable: true }
                                         }
-                                    }
+                                    },
                                     example: {
                                         enabled: true,
                                         botMode: "BLACKLIST",
@@ -2900,7 +2900,7 @@ All endpoints require authentication via:
                                             mediaUrl: { type: "string" },
                                             triggerType: { type: "string", enum: ["ALL", "GROUP", "PRIVATE"] }
                                         }
-                                    }
+                                    },
                                     example: {
                                         keyword: "hello",
                                         response: "Hi there! How can I help?",
@@ -2940,7 +2940,7 @@ All endpoints require authentication via:
                                             mediaUrl: { type: "string" },
                                             triggerType: { type: "string", enum: ["ALL", "GROUP", "PRIVATE"] }
                                         }
-                                    }
+                                    },
                                     example: {
                                         keyword: "hello",
                                         response: "Hi there! How can I help?",
@@ -3093,7 +3093,7 @@ All endpoints require authentication via:
                                             mediaUrl: { type: "string" },
                                             mediaType: { type: "string", enum: ["image", "video", "document"] }
                                         }
-                                    }
+                                    },
                                     example: {
                                         jid: "628123456789@s.whatsapp.net",
                                         content: "Reminder: Meeting in 10 mins",
@@ -3133,7 +3133,7 @@ All endpoints require authentication via:
                                             mediaUrl: { type: "string" },
                                             mediaType: { type: "string", enum: ["image", "video", "document"] }
                                         }
-                                    }
+                                    },
                                     example: {
                                         jid: "628123456789@s.whatsapp.net",
                                         content: "Updated meeting reminder",
