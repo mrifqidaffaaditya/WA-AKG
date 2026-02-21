@@ -137,8 +137,8 @@ export function Navbar({ appName }: NavbarProps) {
     };
 
     return (
-        <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 sticky top-0 z-10 w-full">
-            <div className="flex items-center gap-4">
+        <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200/80 h-14 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-10 w-full">
+            <div className="flex items-center gap-3">
                 <MobileNav appName={appName} />
             </div>
 

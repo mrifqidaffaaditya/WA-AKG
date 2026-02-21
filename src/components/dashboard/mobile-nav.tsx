@@ -1,10 +1,9 @@
 "use client";
 
-
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu, Bell } from "lucide-react";
+import { Menu, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import {
     LayoutDashboard,
@@ -17,35 +16,82 @@ import {
     Webhook,
     CalendarClock,
     Bot,
+    Bell,
     FileText,
-    Code
+    Code,
+    Send,
+    UserCheck,
+    Megaphone,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import pkg from "../../../package.json";
 
+interface NavGroup {
+    label: string;
+    items: { href: string; label: string; icon: React.ElementType; external?: boolean; superadminOnly?: boolean }[];
+}
+
+const navGroups: NavGroup[] = [
+    {
+        label: "Main",
+        items: [
+            { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        ],
+    },
+    {
+        label: "Messaging",
+        items: [
+            { href: "/dashboard/chat", label: "Chat", icon: MessageSquare },
+            { href: "/dashboard/broadcast", label: "Broadcast", icon: Megaphone },
+            { href: "/dashboard/autoreply", label: "Auto Reply", icon: Send },
+            { href: "/dashboard/sticker", label: "Sticker Maker", icon: ImageIcon },
+        ],
+    },
+    {
+        label: "Contacts",
+        items: [
+            { href: "/dashboard/groups", label: "Groups", icon: Users },
+            { href: "/dashboard/contacts", label: "Contacts", icon: UserCheck },
+        ],
+    },
+    {
+        label: "Automation",
+        items: [
+            { href: "/dashboard/bot-settings", label: "Bot Settings", icon: Bot },
+            { href: "/dashboard/scheduler", label: "Scheduler", icon: CalendarClock },
+            { href: "/dashboard/webhooks", label: "Webhooks & API", icon: Webhook },
+        ],
+    },
+    {
+        label: "Developer",
+        items: [
+            { href: "/docs", label: "API Docs", icon: FileText },
+            { href: "/swagger", label: "Swagger UI", icon: Code, external: true },
+        ],
+    },
+    {
+        label: "Administration",
+        items: [
+            { href: "/dashboard/sessions", label: "Sessions / QR", icon: QrCode },
+            { href: "/dashboard/users", label: "Users", icon: Users },
+            { href: "/dashboard/settings", label: "Settings", icon: Settings },
+            { href: "/dashboard/notifications", label: "Notifications", icon: Bell, superadminOnly: true },
+        ],
+    },
+];
+
 export function MobileNav({ appName = "WA-AKG" }: { appName?: string }) {
     const [open, setOpen] = useState(false);
     const pathname = usePathname();
     const { data: session } = useSession();
+    // @ts-ignore
+    const userRole = session?.user?.role;
 
-    const links = [
-        { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
-        { href: "/dashboard/chat", label: "Chat", Icon: MessageSquare },
-        { href: "/dashboard/groups", label: "Groups", Icon: Users },
-        { href: "/dashboard/contacts", label: "Contacts", Icon: Users },
-        { href: "/dashboard/sticker", label: "Sticker Maker", Icon: ImageIcon },
-        { href: "/dashboard/broadcast", label: "Broadcast", Icon: Users },
-        { href: "/dashboard/sessions", label: "Sessions / QR", Icon: QrCode },
-        { href: "/dashboard/bot-settings", label: "Bot Settings", Icon: Bot },
-        { href: "/dashboard/webhooks", label: "Webhooks & API", Icon: Webhook },
-        { href: "/dashboard/autoreply", label: "Auto Reply", Icon: MessageSquare },
-        { href: "/dashboard/scheduler", label: "Scheduler", Icon: CalendarClock },
-        { href: "/docs", label: "API Documentation", Icon: FileText },
-        { href: "/swagger", label: "Swagger UI", Icon: Code, external: true },
-        { href: "/dashboard/users", label: "Users", Icon: Users },
-        { href: "/dashboard/settings", label: "Settings", Icon: Settings },
-    ];
+    const isActive = (href: string) => {
+        if (href === "/dashboard") return pathname === "/dashboard";
+        return pathname.startsWith(href);
+    };
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>
@@ -54,64 +100,79 @@ export function MobileNav({ appName = "WA-AKG" }: { appName?: string }) {
                     <Menu className="h-5 w-5" />
                 </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[80vw] sm:w-[350px] p-0">
-                <SheetHeader className="p-6 text-left border-b">
-                    <SheetTitle className="text-2xl font-bold text-gray-800">{appName}</SheetTitle>
+            <SheetContent side="left" className="w-[85vw] sm:w-[320px] p-0 flex flex-col">
+                <SheetHeader className="px-5 py-4 text-left border-b border-slate-100">
+                    <SheetTitle className="text-xl font-bold text-slate-800">{appName}</SheetTitle>
+                    <p className="text-[11px] text-slate-400 -mt-1">WhatsApp Gateway</p>
                 </SheetHeader>
-                <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto h-[calc(100vh-5rem)]">
-                    {links.map(({ href, label, Icon }) => (
-                        <Link
-                            key={href}
-                            href={href}
-                            onClick={() => setOpen(false)}
-                            className={`flex items-center space-x-2 px-4 py-3 rounded-md transition-colors ${pathname === href
-                                ? "bg-slate-100 text-slate-900 font-medium"
-                                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                                }`}
-                        >
-                            <Icon size={20} />
-                            <span>{label}</span>
-                        </Link>
-                    ))}
-                    {/* Admin Notification Link */}
-                    {/* @ts-ignore */}
-                    {session?.user?.role === "SUPERADMIN" && (
-                        <Link
-                            href="/dashboard/notifications"
-                            onClick={() => setOpen(false)}
-                            className={`flex items-center space-x-2 px-4 py-3 rounded-md transition-colors ${pathname === "/dashboard/notifications"
-                                ? "bg-slate-100 text-slate-900 font-medium"
-                                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                                }`}
-                        >
-                            <Bell size={20} />
-                            <span>Notification Manager</span>
-                        </Link>
-                    )}
+
+                <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-1">
+                    {navGroups.map((group) => {
+                        const visibleItems = group.items.filter(
+                            (item) => !item.superadminOnly || userRole === "SUPERADMIN"
+                        );
+                        if (visibleItems.length === 0) return null;
+
+                        return (
+                            <div key={group.label} className="mb-1">
+                                {group.label !== "Main" && (
+                                    <p className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                                        {group.label}
+                                    </p>
+                                )}
+                                <div className="space-y-0.5">
+                                    {visibleItems.map(({ href, label, icon: Icon, external }) => (
+                                        <Link
+                                            key={href}
+                                            href={href}
+                                            target={external ? "_blank" : undefined}
+                                            onClick={() => setOpen(false)}
+                                            className={`
+                                                flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium
+                                                transition-all duration-150
+                                                ${isActive(href)
+                                                    ? "bg-slate-900 text-white shadow-sm"
+                                                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                                                }
+                                            `}
+                                        >
+                                            <Icon
+                                                size={18}
+                                                className={`flex-shrink-0 ${isActive(href) ? "text-white" : "text-slate-400"}`}
+                                            />
+                                            <span>{label}</span>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
                 </nav>
 
-                <div className="p-4 border-t bg-slate-50">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex flex-col">
-                            <span className="text-sm font-medium text-slate-900">{session?.user?.name || "User"}</span>
-                            <span className="text-xs text-slate-500">{session?.user?.email}</span>
+                <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-semibold text-slate-600">
+                            {session?.user?.name?.charAt(0)?.toUpperCase() || "U"}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-700 truncate">{session?.user?.name || "User"}</p>
+                            <p className="text-[11px] text-slate-400 truncate">{session?.user?.email}</p>
                         </div>
                     </div>
                     <Button
                         variant="outline"
-                        className="w-full flex items-center justify-center gap-2"
+                        size="sm"
+                        className="w-full flex items-center justify-center gap-2 text-xs h-8"
                         onClick={async () => {
                             setOpen(false);
                             await signOut({ callbackUrl: "/auth/login" });
                         }}
                     >
-                        <LogOut size={16} /> Logout
+                        <LogOut size={14} /> Sign Out
                     </Button>
-                    <div className="mt-4 text-center">
-                        <span className="text-xs text-gray-400 font-mono">Version: {pkg.version}</span>
-                    </div>
+                    <p className="text-[10px] text-slate-300 text-center mt-2 font-mono">v{pkg.version}</p>
                 </div>
             </SheetContent>
-        </Sheet >
+        </Sheet>
     );
 }
