@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     try {
         // @ts-ignore
         const user = await getAuthenticatedUser(req);
-        if (!user || (user.role !== "SUPERADMIN" && user.role !== "OWNER")) {
+        if (!user || user.role !== "SUPERADMIN") {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 

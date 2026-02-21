@@ -1,427 +1,239 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSession } from "@/components/dashboard/session-provider";
-import { SessionGuard } from "@/components/dashboard/session-guard";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { useSession as useSessionProvider } from "@/components/dashboard/session-provider";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { RefreshCw, Save, AlertCircle, Bot } from "lucide-react";
 import { toast } from "sonner";
-import { Loader2, Bot, Wand2, Shield, Activity, Image as ImageIcon, MessageSquare } from "lucide-react";
-
-interface BotConfig {
-    id?: string;
-    enabled: boolean;
-    botName: string;
-    botMode: 'ALL' | 'OWNER' | 'SPECIFIC' | 'BLACKLIST';
-    botAllowedJids: string[];
-    botBlockedJids: string[];
-    autoReplyMode: 'ALL' | 'OWNER' | 'SPECIFIC' | 'BLACKLIST';
-    autoReplyAllowedJids: string[];
-    autoReplyBlockedJids: string[];
-    enableSticker: boolean;
-    enableVideoSticker: boolean;
-    maxStickerDuration: number;
-    enablePing: boolean;
-    enableUptime: boolean;
-    removeBgApiKey: string | null;
-}
 
 export default function BotSettingsPage() {
-    const { sessionId: currentSessionId } = useSession();
-    const [config, setConfig] = useState<BotConfig>({
-        enabled: true,
+    const { sessionId } = useSessionProvider();
+
+    const [botConfig, setBotConfig] = useState({
         botName: "WA-AKG Bot",
-        botMode: 'OWNER',
-        botAllowedJids: [],
-        botBlockedJids: [],
-        autoReplyMode: 'ALL',
-        autoReplyAllowedJids: [],
-        autoReplyBlockedJids: [],
         enableSticker: true,
         enableVideoSticker: true,
         maxStickerDuration: 10,
         enablePing: true,
         enableUptime: true,
-        removeBgApiKey: ""
+        removeBgApiKey: "",
+        botMode: "OWNER",
+        autoReplyMode: "ALL"
     });
-    const [isLoading, setIsLoading] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
+    const [botLoading, setBotLoading] = useState(false);
 
-    // Helpers to manage JID text area
-    const [botJidsText, setBotJidsText] = useState("");
-    const [botBlockedJidsText, setBotBlockedJidsText] = useState("");
-    const [autoReplyJidsText, setAutoReplyJidsText] = useState("");
-    const [autoReplyBlockedJidsText, setAutoReplyBlockedJidsText] = useState("");
+    const [privacyConfig, setPrivacyConfig] = useState({
+        ghostMode: false,
+        antiDelete: false,
+        readReceipts: true,
+    });
+    const [privacyLoading, setPrivacyLoading] = useState(false);
 
     useEffect(() => {
-        if (currentSessionId) {
-            fetchConfig();
-        }
-    }, [currentSessionId]);
+        if (!sessionId) return;
 
-    const fetchConfig = async () => {
-        if (!currentSessionId) return;
-        setIsLoading(true);
+        fetch(`/api/sessions/${sessionId}/bot-config`)
+            .then(res => { if (!res.ok) throw new Error(); return res.json(); })
+            .then(data => {
+                if (data && !data.error) {
+                    setBotConfig(prev => ({ ...prev, ...data, removeBgApiKey: data.removeBgApiKey || "" }));
+                }
+            })
+            .catch(() => { });
+
+        fetch(`/api/sessions/${sessionId}/settings`)
+            .then(res => { if (!res.ok) throw new Error(); return res.json(); })
+            .then(data => {
+                if (data && !data.error) {
+                    setPrivacyConfig({
+                        ghostMode: data.config?.ghostMode || false,
+                        antiDelete: data.config?.antiDelete || false,
+                        readReceipts: data.config?.readReceipts ?? true
+                    });
+                }
+            })
+            .catch(() => { });
+    }, [sessionId]);
+
+    const handleSaveBot = async () => {
+        if (!sessionId) return;
+        setBotLoading(true);
         try {
-            const res = await fetch(`/api/sessions/${currentSessionId}/bot-config`);
-            if (res.ok) {
-                const data = await res.json();
-                setConfig({
-                    ...data,
-                    botName: data.botName || "WA-AKG Bot",
-                    botMode: data.botMode || 'OWNER',
-                    autoReplyMode: data.autoReplyMode || 'ALL',
-                    botAllowedJids: Array.isArray(data.botAllowedJids) ? data.botAllowedJids : [],
-                    botBlockedJids: Array.isArray(data.botBlockedJids) ? data.botBlockedJids : [],
-                    autoReplyAllowedJids: Array.isArray(data.autoReplyAllowedJids) ? data.autoReplyAllowedJids : [],
-                    autoReplyBlockedJids: Array.isArray(data.autoReplyBlockedJids) ? data.autoReplyBlockedJids : [],
-                    enableVideoSticker: data.enableVideoSticker !== undefined ? data.enableVideoSticker : true,
-                    maxStickerDuration: data.maxStickerDuration || 10,
-                    removeBgApiKey: data.removeBgApiKey || ""
-                });
-                // Init text areas
-                setBotJidsText((data.botAllowedJids || []).join('\n'));
-                setBotBlockedJidsText((data.botBlockedJids || []).join('\n'));
-                setAutoReplyJidsText((data.autoReplyAllowedJids || []).join('\n'));
-                setAutoReplyBlockedJidsText((data.autoReplyBlockedJids || []).join('\n'));
-            }
-        } catch (error) {
-            console.error("Failed to fetch config", error);
-            toast.error("Failed to load bot settings");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleSave = async () => {
-        if (!currentSessionId) return;
-        setIsSaving(true);
-
-        // Parse JIDs
-        const botJids = botJidsText.split('\n').map(s => s.trim()).filter(Boolean);
-        const botBlockedJids = botBlockedJidsText.split('\n').map(s => s.trim()).filter(Boolean);
-        const autoReplyJids = autoReplyJidsText.split('\n').map(s => s.trim()).filter(Boolean);
-        const autoReplyBlockedJids = autoReplyBlockedJidsText.split('\n').map(s => s.trim()).filter(Boolean);
-
-        const payload = {
-            ...config,
-            botAllowedJids: botJids,
-            botBlockedJids: botBlockedJids,
-            autoReplyAllowedJids: autoReplyJids,
-            autoReplyBlockedJids: autoReplyBlockedJids
-        };
-
-        try {
-            const res = await fetch(`/api/sessions/${currentSessionId}/bot-config`, {
+            const res = await fetch(`/api/sessions/${sessionId}/bot-config`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(botConfig)
             });
-
-            if (!res.ok) throw new Error("Failed to save");
-
-            toast.success("Bot settings saved successfully");
-        } catch (error) {
-            console.error(error);
-            toast.error("Failed to save settings");
+            if (res.ok) toast.success("Bot settings saved successfully");
+            else toast.error("Failed to save bot settings");
+        } catch (e) {
+            console.error(e);
+            toast.error("Error saving bot settings");
         } finally {
-            setIsSaving(false);
+            setBotLoading(false);
         }
     };
 
+    const handleSavePrivacy = async () => {
+        if (!sessionId) return;
+        setPrivacyLoading(true);
+        try {
+            const res = await fetch(`/api/sessions/${sessionId}/settings`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ config: privacyConfig })
+            });
+            if (res.ok) toast.success("Privacy settings saved");
+            else toast.error("Failed to save privacy settings");
+        } catch (e) {
+            console.error(e);
+            toast.error("Error saving privacy settings");
+        } finally {
+            setPrivacyLoading(false);
+        }
+    };
+
+    const inputClass = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+
     return (
-        <SessionGuard>
-            {/* Note: SessionGuard handles the no session state, so we can assume currentSessionId exists in logic, but TS might complain so we keep safe checks if needed or rely on guard blocking it */}
-            {isLoading ? (
-                <div className="flex items-center justify-center min-h-[60vh]">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="space-y-6">
+            <div className="flex justify-between items-center">
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight">Bot Settings</h2>
+                    <p className="text-muted-foreground text-sm mt-1">Configure bot features and session privacy for the active WhatsApp session.</p>
                 </div>
-            ) : (
-                <div className="container max-w-4xl py-6 space-y-8">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div>
-                            <h1 className="text-3xl font-bold tracking-tight">Bot Magic Settings 🪄</h1>
-                            <p className="text-muted-foreground">
-                                Configure your WhatsApp Bot features and "Magic Commands".
-                            </p>
+            </div>
+
+            {/* No Session Selected */}
+            {!sessionId ? (
+                <Card className="border-dashed border-2 bg-background/50">
+                    <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                        <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                            <Bot className="h-7 w-7 text-primary" />
                         </div>
-                        <Button onClick={handleSave} disabled={isSaving}>
-                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save Changes
-                        </Button>
-                    </div>
-
-                    <div className="grid gap-6">
-                        {/* Main Switch */}
-                        <Card className={config.enabled ? "border-primary/50 bg-primary/5" : ""}>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <div className="space-y-1">
-                                    <CardTitle className="text-xl">Enable Bot Features</CardTitle>
-                                    <CardDescription>
-                                        Turn on/off all magic commands for this session.
-                                    </CardDescription>
-                                </div>
-                                <Switch
-                                    checked={config.enabled}
-                                    onCheckedChange={(checked) => setConfig(prev => ({ ...prev, enabled: checked }))}
+                        <h3 className="text-lg font-semibold text-foreground">No Session Selected</h3>
+                        <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                            Please select an active WhatsApp session from the navigation bar above to configure its Bot and Privacy settings.
+                        </p>
+                    </CardContent>
+                </Card>
+            ) : (
+                <>
+                    {/* Bot & Auto Reply Configuration */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Bot & Auto Reply Configuration</CardTitle>
+                            <CardDescription>Manage automated features and commands for this session.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="grid gap-2">
+                                <Label>Bot Name</Label>
+                                <input
+                                    className={inputClass}
+                                    placeholder="WA-AKG Bot"
+                                    value={botConfig.botName}
+                                    onChange={(e) => setBotConfig(prev => ({ ...prev, botName: e.target.value }))}
                                 />
-                            </CardHeader>
-                        </Card>
+                                <p className="text-xs text-muted-foreground">The display name used by the bot in automated responses.</p>
+                            </div>
 
-                        {/* Bot Identity */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    <Bot className="h-5 w-5" /> Bot Identity
-                                </CardTitle>
-                                <CardDescription>
-                                    Customize how your bot identifies itself.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label>Bot Name</Label>
-                                    <Input
-                                        placeholder="e.g. WA-AKG Bot"
-                                        value={config.botName || ""}
-                                        onChange={(e) => setConfig(prev => ({ ...prev, botName: e.target.value }))}
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        Displayed in stickermaker watermarks and help menus.
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Access Control */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    <Shield className="h-5 w-5" /> Access Control
-                                </CardTitle>
-                                <CardDescription>
-                                    Who can use the bot and trigger auto-replies?
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-8">
-                                {/* Bot Commands */}
-                                <div className="space-y-4">
-                                    <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:items-center md:justify-between">
-                                        <Label className="text-base flex items-center gap-2">
-                                            <Bot className="h-4 w-4" /> Bot Commands Access
-                                        </Label>
-                                        <Select
-                                            value={config.botMode}
-                                            onValueChange={(val: any) => setConfig(prev => ({ ...prev, botMode: val }))}
-                                        >
-                                            <SelectTrigger className="w-full md:w-[200px]">
-                                                <SelectValue placeholder="Select Mode" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="OWNER">Owner Only (Me)</SelectItem>
-                                                <SelectItem value="ALL">Public (Everyone)</SelectItem>
-                                                <SelectItem value="SPECIFIC">Specific Contacts</SelectItem>
-                                                <SelectItem value="BLACKLIST">Block Specific Contacts</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">
-                                        Controls who can use commands like <code>#sticker</code>, <code>#ping</code>.
-                                    </p>
-
-                                    {config.botMode === 'SPECIFIC' && (
-                                        <div className="ml-1 pl-4 border-l-2 border-slate-200 space-y-2">
-                                            <Label>Allowed JIDs (one per line)</Label>
-                                            <Textarea
-                                                placeholder="628123456789@s.whatsapp.net"
-                                                value={botJidsText}
-                                                onChange={(e) => setBotJidsText(e.target.value)}
-                                                className="font-mono text-sm max-h-[150px]"
-                                            />
-                                            <p className="text-xs text-muted-foreground">Enter specific WhatsApp IDs (JIDs) allowed to use the bot.</p>
-                                        </div>
-                                    )}
-
-                                    {config.botMode === 'BLACKLIST' && (
-                                        <div className="ml-1 pl-4 border-l-2 border-slate-200 space-y-2">
-                                            <Label>Blocked JIDs (one per line)</Label>
-                                            <Textarea
-                                                placeholder="628123456789@s.whatsapp.net"
-                                                value={botBlockedJidsText}
-                                                onChange={(e) => setBotBlockedJidsText(e.target.value)}
-                                                className="font-mono text-sm max-h-[150px]"
-                                            />
-                                            <p className="text-xs text-muted-foreground">Enter WhatsApp IDs (JIDs) blocked from using the bot.</p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="border-t" />
-
-                                {/* Auto Reply */}
-                                <div className="space-y-4">
-                                    <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:items-center md:justify-between">
-                                        <Label className="text-base flex items-center gap-2">
-                                            <MessageSquare className="h-4 w-4" /> Auto Reply Access
-                                        </Label>
-                                        <Select
-                                            value={config.autoReplyMode}
-                                            onValueChange={(val: any) => setConfig(prev => ({ ...prev, autoReplyMode: val }))}
-                                        >
-                                            <SelectTrigger className="w-full md:w-[200px]">
-                                                <SelectValue placeholder="Select Mode" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="ALL">Everyone (Public)</SelectItem>
-                                                <SelectItem value="OWNER">Owner Only (Me)</SelectItem>
-                                                <SelectItem value="SPECIFIC">Specific Contacts</SelectItem>
-                                                <SelectItem value="BLACKLIST">Block Specific Contacts</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">
-                                        Controls whose messages trigger Auto Replies.
-                                    </p>
-
-                                    {config.autoReplyMode === 'SPECIFIC' && (
-                                        <div className="ml-1 pl-4 border-l-2 border-slate-200 space-y-2">
-                                            <Label>Allowed JIDs (one per line)</Label>
-                                            <Textarea
-                                                placeholder="628123456789@s.whatsapp.net"
-                                                value={autoReplyJidsText}
-                                                onChange={(e) => setAutoReplyJidsText(e.target.value)}
-                                                className="font-mono text-sm max-h-[150px]"
-                                            />
-                                        </div>
-                                    )}
-
-                                    {config.autoReplyMode === 'BLACKLIST' && (
-                                        <div className="ml-1 pl-4 border-l-2 border-slate-200 space-y-2">
-                                            <Label>Blocked JIDs (one per line)</Label>
-                                            <Textarea
-                                                placeholder="628123456789@s.whatsapp.net"
-                                                value={autoReplyBlockedJidsText}
-                                                onChange={(e) => setAutoReplyBlockedJidsText(e.target.value)}
-                                                className="font-mono text-sm max-h-[150px]"
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Features */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    <Wand2 className="h-5 w-5" /> Enabled Features
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="grid md:grid-cols-3 gap-6">
-                                <div className="flex items-center justify-between md:block md:space-y-2">
-                                    <Label className="flex items-center gap-2">
-                                        <ImageIcon className="h-4 w-4" /> Sticker (#sticker)
+                            <div className="grid sm:grid-cols-2 gap-4 pt-2">
+                                <div className="flex items-center justify-between space-x-2 border p-3 rounded-lg">
+                                    <Label htmlFor="enable-ping" className="flex flex-col space-y-1">
+                                        <span>Ping Command</span>
+                                        <span className="font-normal text-xs text-muted-foreground">Respond to /ping</span>
                                     </Label>
-                                    <Switch
-                                        checked={config.enableSticker}
-                                        onCheckedChange={(checked) => setConfig(prev => ({ ...prev, enableSticker: checked }))}
-                                    />
+                                    <Switch id="enable-ping" checked={botConfig.enablePing}
+                                        onCheckedChange={c => setBotConfig(prev => ({ ...prev, enablePing: c }))} />
                                 </div>
-
-                                <div className="space-y-3 p-3 border rounded-lg">
-                                    <div className="flex items-center justify-between">
-                                        <Label className="flex items-center gap-2 font-medium">
-                                            <ImageIcon className="h-4 w-4" /> Enable Video/GIF
-                                        </Label>
-                                        <Switch
-                                            checked={config.enableSticker && config.enableVideoSticker}
-                                            onCheckedChange={(checked) => setConfig(prev => ({ ...prev, enableVideoSticker: checked }))}
-                                            disabled={!config.enableSticker}
-                                        />
-                                    </div>
-                                    <div className="flex items-center justify-between gap-4">
-                                        <Label className="text-xs text-muted-foreground whitespace-nowrap">
-                                            Max Duration
-                                        </Label>
-                                        <div className="flex items-center gap-2">
-                                            <Input
-                                                type="number"
-                                                min={1}
-                                                max={60}
-                                                className="h-8 w-20 text-right"
-                                                value={config.maxStickerDuration || ""}
-                                                onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    setConfig(prev => ({
-                                                        ...prev,
-                                                        maxStickerDuration: val === "" ? 0 : parseInt(val)
-                                                    }));
-                                                }}
-                                                disabled={!config.enableVideoSticker}
-                                            />
-                                            <span className="text-xs text-muted-foreground">sec</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center justify-between md:block md:space-y-2">
-                                    <Label className="flex items-center gap-2">
-                                        <Activity className="h-4 w-4" /> Ping (#ping)
+                                <div className="flex items-center justify-between space-x-2 border p-3 rounded-lg">
+                                    <Label htmlFor="enable-uptime" className="flex flex-col space-y-1">
+                                        <span>Uptime Command</span>
+                                        <span className="font-normal text-xs text-muted-foreground">Respond to /uptime</span>
                                     </Label>
-                                    <Switch
-                                        checked={config.enablePing}
-                                        onCheckedChange={(checked) => setConfig(prev => ({ ...prev, enablePing: checked }))}
-                                    />
+                                    <Switch id="enable-uptime" checked={botConfig.enableUptime}
+                                        onCheckedChange={c => setBotConfig(prev => ({ ...prev, enableUptime: c }))} />
                                 </div>
+                            </div>
 
-                                <div className="flex items-center justify-between md:block md:space-y-2">
-                                    <Label className="flex items-center gap-2">
-                                        <Loader2 className="h-4 w-4" /> Uptime (#uptime)
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                <div className="flex items-center justify-between space-x-2 border p-3 rounded-lg">
+                                    <Label htmlFor="enable-sticker" className="flex flex-col space-y-1">
+                                        <span>Image to Sticker</span>
+                                        <span className="font-normal text-xs text-muted-foreground">Auto-convert images</span>
                                     </Label>
-                                    <Switch
-                                        checked={config.enableUptime}
-                                        onCheckedChange={(checked) => setConfig(prev => ({ ...prev, enableUptime: checked }))}
-                                    />
+                                    <Switch id="enable-sticker" checked={botConfig.enableSticker}
+                                        onCheckedChange={c => setBotConfig(prev => ({ ...prev, enableSticker: c }))} />
                                 </div>
-                            </CardContent>
-                        </Card>
+                                <div className="flex items-center justify-between space-x-2 border p-3 rounded-lg">
+                                    <Label htmlFor="enable-video-sticker" className="flex flex-col space-y-1">
+                                        <span>Video to Sticker</span>
+                                        <span className="font-normal text-xs text-muted-foreground">Auto-convert short videos</span>
+                                    </Label>
+                                    <Switch id="enable-video-sticker" checked={botConfig.enableVideoSticker}
+                                        onCheckedChange={c => setBotConfig(prev => ({ ...prev, enableVideoSticker: c }))} />
+                                </div>
+                            </div>
 
-                        {/* Integrations (RemoveBG) */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    <Shield className="h-5 w-5" /> Integrations
-                                </CardTitle>
-                                <CardDescription>
-                                    Configure external keys for enhanced features.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label>Remove.bg API Key</Label>
-                                    <div className="flex gap-2">
-                                        <Input
-                                            type="password"
-                                            placeholder="rb_xxxxxxxxxxxxxxxx"
-                                            value={config.removeBgApiKey || ""}
-                                            onChange={(e) => setConfig(prev => ({ ...prev, removeBgApiKey: e.target.value }))}
-                                        />
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">
-                                        Required for background removal features. Get one at <a href="https://www.remove.bg/api" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">remove.bg</a>.
-                                        <br />Command: <code>#sticker nobg</code>
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
+                            <div className="grid gap-2 border-t pt-4 border-border/50">
+                                <Label>Remove.bg API Key (Optional)</Label>
+                                <input
+                                    type="password"
+                                    className={inputClass}
+                                    placeholder="Enter your Remove.bg API Key"
+                                    value={botConfig.removeBgApiKey || ""}
+                                    onChange={(e) => setBotConfig(prev => ({ ...prev, removeBgApiKey: e.target.value }))}
+                                />
+                                <p className="text-xs text-muted-foreground">Enables background removal for stickers (e.g. /sticker nocrop).</p>
+                            </div>
+
+                            <div className="pt-2">
+                                <Button onClick={handleSaveBot} disabled={botLoading || !sessionId}>
+                                    {botLoading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                    Save Bot Configuration
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Privacy & Utility */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Privacy & Utility</CardTitle>
+                            <CardDescription>Configure ghost mode and other features for your active session.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="flex items-center justify-between space-x-2">
+                                <Label htmlFor="ghost-mode" className="flex flex-col space-y-1">
+                                    <span>Ghost Mode</span>
+                                    <span className="font-normal text-xs text-muted-foreground">View status and read messages without sending blue ticks.</span>
+                                </Label>
+                                <Switch id="ghost-mode" checked={privacyConfig.ghostMode}
+                                    onCheckedChange={c => setPrivacyConfig(prev => ({ ...prev, ghostMode: c }))} />
+                            </div>
+
+                            <div className="flex items-center justify-between space-x-2">
+                                <Label htmlFor="anti-delete" className="flex flex-col space-y-1">
+                                    <span>Anti-Delete</span>
+                                    <span className="font-normal text-xs text-muted-foreground">Keep messages even if the sender deletes them for everyone.</span>
+                                </Label>
+                                <Switch id="anti-delete" checked={privacyConfig.antiDelete}
+                                    onCheckedChange={c => setPrivacyConfig(prev => ({ ...prev, antiDelete: c }))} />
+                            </div>
+
+                            <div className="pt-4">
+                                <Button onClick={handleSavePrivacy} disabled={privacyLoading || !sessionId}>
+                                    {privacyLoading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                    Save Privacy Settings
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </>
             )}
-        </SessionGuard>
+        </div>
     );
 }

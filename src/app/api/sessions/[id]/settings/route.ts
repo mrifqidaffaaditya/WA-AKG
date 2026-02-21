@@ -3,13 +3,47 @@ import { NextResponse, NextRequest } from "next/server";
 import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession, isAdmin } from "@/lib/api-auth";
 
+// GET: Retrieve session settings
+export async function GET(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    const { id: sessionId } = await params;
+
+    try {
+        const user = await getAuthenticatedUser(request);
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const canAccess = await canAccessSession(user.id, user.role, sessionId);
+        if (!canAccess) {
+            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+        }
+
+        const session = await prisma.session.findUnique({
+            where: { sessionId },
+            select: { config: true }
+        });
+
+        if (!session) {
+            return NextResponse.json({ error: "Session not found" }, { status: 404 });
+        }
+
+        return NextResponse.json(session);
+    } catch (e) {
+        console.error("Get session settings error:", e);
+        return NextResponse.json({ error: "Failed to get settings" }, { status: 500 });
+    }
+}
+
 // PATCH: Update session settings
 export async function PATCH(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id: sessionId } = await params;
-    
+
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
@@ -33,7 +67,7 @@ export async function PATCH(
         // Update active instance if exists
         const instance = waManager.getInstance(sessionId);
         if (instance) {
-             // In a real app we might update internal instance state
+            // In a real app we might update internal instance state
         }
 
         return NextResponse.json(updated);
@@ -50,7 +84,7 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id: sessionId } = await params;
-    
+
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
