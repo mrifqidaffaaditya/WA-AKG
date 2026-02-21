@@ -16,7 +16,7 @@ export async function GET(
 
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         // @ts-ignore
@@ -65,7 +65,7 @@ export async function POST(
         if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
-        if (!canAccess) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        if (!canAccess) return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
 
         const body = await request.json();
 

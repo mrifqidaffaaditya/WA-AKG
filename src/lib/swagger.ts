@@ -1239,6 +1239,233 @@ All endpoints require authentication via:
                         }
                     }
                 },
+
+                "/messages/{sessionId}/{jid}/{messageId}/reply": {
+                    post: {
+                        tags: ["Messaging"],
+                        summary: "Reply to a message (quoted reply)",
+                        description: "Send a quoted reply to a specific message by its ID. Uses same request format as /send — pass a Baileys message object.",
+                        parameters: [
+                            { name: "sessionId", in: "path", required: true, schema: { type: "string" }, example: "sales-01" },
+                            { name: "jid", in: "path", required: true, schema: { type: "string" }, example: "628123456789@s.whatsapp.net" },
+                            { name: "messageId", in: "path", required: true, schema: { type: "string" }, description: "ID of message to reply to", example: "3EB0ABCD1234567890" }
+                        ],
+                        requestBody: {
+                            required: true,
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        required: ["message"],
+                                        properties: {
+                                            message: {
+                                                type: "object",
+                                                description: "Message content — same format as /send (text, image, video, etc.)",
+                                                example: { text: "Thanks for your message!" }
+                                            },
+                                            mentions: { type: "array", items: { type: "string" }, example: ["628123456789@s.whatsapp.net"], description: "JIDs to mention" },
+                                            fromMe: { type: "boolean", default: false, description: "Whether the quoted message was sent by you" }
+                                        }
+                                    },
+                                    examples: {
+                                        textReply: {
+                                            summary: "Text reply",
+                                            value: { message: { text: "Got it, thanks!" } }
+                                        },
+                                        imageReply: {
+                                            summary: "Image reply",
+                                            value: { message: { image: { url: "https://example.com/confirm.jpg" }, caption: "Confirmation image" } }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        responses: {
+                            200: {
+                                description: "Reply sent successfully",
+                                content: {
+                                    "application/json": {
+                                        schema: {
+                                            type: "object",
+                                            properties: {
+                                                success: { type: "boolean", example: true },
+                                                message: { type: "string", example: "Message sent successfully" }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            400: { description: "message is required" },
+                            401: { $ref: "#/components/responses/Unauthorized" },
+                            403: { $ref: "#/components/responses/Forbidden" },
+                            503: { $ref: "#/components/responses/SessionNotReady" },
+                            500: { description: "Failed to send reply" }
+                        }
+                    }
+                },
+
+                "/messages/{sessionId}/{jid}/reply": {
+                    post: {
+                        tags: ["Messaging"],
+                        summary: "Reply to a message (body-based)",
+                        description: "Send a quoted reply with messageId provided in the request body. Same request format as /send with added messageId.",
+                        parameters: [
+                            { name: "sessionId", in: "path", required: true, schema: { type: "string" }, example: "sales-01" },
+                            { name: "jid", in: "path", required: true, schema: { type: "string" }, example: "628123456789@s.whatsapp.net" }
+                        ],
+                        requestBody: {
+                            required: true,
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        required: ["messageId", "message"],
+                                        properties: {
+                                            messageId: { type: "string", example: "3EB0ABCD1234567890", description: "ID of the message to reply to" },
+                                            message: {
+                                                type: "object",
+                                                description: "Message content — same format as /send (text, image, video, etc.)",
+                                                example: { text: "Sure, let me help you!" }
+                                            },
+                                            mentions: { type: "array", items: { type: "string" }, description: "JIDs to mention" },
+                                            fromMe: { type: "boolean", default: false, description: "Whether the quoted message was sent by you" }
+                                        }
+                                    },
+                                    example: {
+                                        messageId: "3EB0ABCD1234567890",
+                                        message: { text: "Sure, let me check that for you!" }
+                                    }
+                                }
+                            }
+                        },
+                        responses: {
+                            200: {
+                                description: "Reply sent successfully",
+                                content: { "application/json": { schema: { $ref: "#/components/schemas/Success" } } }
+                            },
+                            400: { description: "messageId and message required" },
+                            401: { $ref: "#/components/responses/Unauthorized" },
+                            403: { $ref: "#/components/responses/Forbidden" },
+                            503: { $ref: "#/components/responses/SessionNotReady" },
+                            500: { description: "Failed to send reply" }
+                        }
+                    }
+                },
+
+                "/messages/{sessionId}/{jid}/{messageId}/star": {
+                    post: {
+                        tags: ["Messaging"],
+                        summary: "Star or unstar a message",
+                        description: "Mark a message as starred (saved) or remove the star. Starred messages appear in the Starred Messages section.",
+                        parameters: [
+                            { name: "sessionId", in: "path", required: true, schema: { type: "string" } },
+                            { name: "jid", in: "path", required: true, schema: { type: "string" } },
+                            { name: "messageId", in: "path", required: true, schema: { type: "string" } }
+                        ],
+                        requestBody: {
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            star: { type: "boolean", example: true, default: true, description: "true to star, false to unstar" },
+                                            fromMe: { type: "boolean", example: false, default: false, description: "Whether the message was sent by you" }
+                                        }
+                                    },
+                                    examples: {
+                                        star: { summary: "Star message", value: { star: true } },
+                                        unstar: { summary: "Unstar message", value: { star: false } }
+                                    }
+                                }
+                            }
+                        },
+                        responses: {
+                            200: {
+                                description: "Star status updated",
+                                content: {
+                                    "application/json": {
+                                        schema: {
+                                            type: "object",
+                                            properties: {
+                                                success: { type: "boolean", example: true },
+                                                message: { type: "string", example: "Message starred" }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            401: { $ref: "#/components/responses/Unauthorized" },
+                            403: { $ref: "#/components/responses/Forbidden" },
+                            503: { $ref: "#/components/responses/SessionNotReady" },
+                            500: { description: "Failed to star/unstar message" }
+                        }
+                    }
+                },
+
+                "/messages/{sessionId}/search": {
+                    get: {
+                        tags: ["Messaging"],
+                        summary: "Search messages",
+                        description: "Search messages stored in the database for a session. Supports full-text search, filtering by JID, type, and sender.",
+                        parameters: [
+                            { name: "sessionId", in: "path", required: true, schema: { type: "string" }, example: "sales-01" },
+                            { name: "q", in: "query", schema: { type: "string" }, example: "invoice", description: "Text to search for in message content" },
+                            { name: "jid", in: "query", schema: { type: "string" }, example: "628123456789@s.whatsapp.net", description: "Filter by chat JID" },
+                            { name: "type", in: "query", schema: { type: "string", enum: ["TEXT", "IMAGE", "VIDEO", "AUDIO", "DOCUMENT", "STICKER", "LOCATION", "CONTACT"] }, description: "Filter by message type" },
+                            { name: "fromMe", in: "query", schema: { type: "boolean" }, description: "Filter by sender (true=outgoing, false=incoming)" },
+                            { name: "page", in: "query", schema: { type: "integer", default: 1, minimum: 1 } },
+                            { name: "limit", in: "query", schema: { type: "integer", default: 20, maximum: 100 } }
+                        ],
+                        responses: {
+                            200: {
+                                description: "Search results",
+                                content: {
+                                    "application/json": {
+                                        schema: {
+                                            type: "object",
+                                            properties: {
+                                                success: { type: "boolean", example: true },
+                                                data: {
+                                                    type: "array",
+                                                    items: {
+                                                        type: "object",
+                                                        properties: {
+                                                            id: { type: "string" },
+                                                            remoteJid: { type: "string" },
+                                                            fromMe: { type: "boolean" },
+                                                            keyId: { type: "string" },
+                                                            pushName: { type: "string" },
+                                                            type: { type: "string" },
+                                                            content: { type: "string" },
+                                                            status: { type: "string" },
+                                                            timestamp: { type: "string", format: "date-time" },
+                                                            quoteId: { type: "string", nullable: true }
+                                                        }
+                                                    }
+                                                },
+                                                pagination: {
+                                                    type: "object",
+                                                    properties: {
+                                                        total: { type: "integer" },
+                                                        page: { type: "integer" },
+                                                        limit: { type: "integer" },
+                                                        pages: { type: "integer" }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            400: { description: "q or jid is required" },
+                            401: { $ref: "#/components/responses/Unauthorized" },
+                            403: { $ref: "#/components/responses/Forbidden" },
+                            404: { description: "Session not found" },
+                            500: { description: "Failed to search messages" }
+                        }
+                    }
+                },
+
                 "/messages/react": {
                     post: {
                         tags: ["Messaging"],

@@ -18,7 +18,7 @@ export async function GET(
         // Verify access
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-                return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+                return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         // Get internal ID

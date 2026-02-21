@@ -15,7 +15,7 @@ export async function PUT(
 
     const hasAccess = await canAccessSession(user.id, user.role, sessionId);
     if (!hasAccess) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
     }
 
     try {
@@ -64,7 +64,7 @@ export async function DELETE(
 
     const hasAccess = await canAccessSession(user.id, user.role, sessionId);
     if (!hasAccess) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
     }
 
     try {

@@ -8,17 +8,13 @@ export async function POST(
     { params }: { params: Promise<{ sessionId: string, jid: string }> }
 ) {
     try {
-        const { sessionId, jid } = await params;
         const user = await getAuthenticatedUser(request);
         if (!user) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        if (!sessionId || !jid) {
-            return NextResponse.json({ 
-                error: "sessionId and jid are required" 
-            }, { status: 400 });
-        }
+        const { sessionId, jid } = await params;
+        const decodedJid = decodeURIComponent(jid);
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
@@ -32,9 +28,9 @@ export async function POST(
         }
 
         // Block contact
-        await instance.socket.updateBlockStatus(jid, "block");
+        await instance.socket.updateBlockStatus(decodedJid, "block");
 
-        return NextResponse.json({ 
+        return NextResponse.json({
             success: true,
             message: "Contact blocked successfully"
         });

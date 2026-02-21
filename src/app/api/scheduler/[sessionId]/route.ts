@@ -18,7 +18,7 @@ export async function GET(
 
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const session = await prisma.session.findUnique({
@@ -64,7 +64,7 @@ export async function POST(
 
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const session = await prisma.session.findUnique({
@@ -132,7 +132,7 @@ export async function DELETE(
 
         const canAccess = await canAccessSession(user.id, user.role, msg.session.sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         await prisma.scheduledMessage.delete({ where: { id } });

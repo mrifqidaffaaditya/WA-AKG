@@ -3680,6 +3680,201 @@ curl -X POST https://your-domain.com/api/messages/react \
 
 ---
 
+### POST /api/messages/{sessionId}/{jid}/{messageId}/reply
+**Description**: Send a quoted reply to a specific message by its ID. Uses same request format as `/send`.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `jid` (string, required): Chat JID (URL-encoded)
+- `messageId` (string, required): ID of the message to reply to
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| message | object | Yes | Message content — same format as /send (text, image, video, etc.) |
+| mentions | string[] | No | JIDs to mention |
+| fromMe | boolean | No | Whether quoted message was sent by you (default: false) |
+
+**Request Example**:
+```bash
+# Text reply
+curl -X POST "https://your-domain.com/api/messages/sales-01/628123456789%40s.whatsapp.net/3EB0ABCD1234567890/reply" \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": { "text": "Thanks for your message!" }
+  }'
+
+# Image reply
+curl -X POST "https://your-domain.com/api/messages/sales-01/628123456789%40s.whatsapp.net/3EB0ABCD1234567890/reply" \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": { "image": { "url": "https://example.com/confirm.jpg" }, "caption": "Confirmation" }
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Message sent successfully"
+}
+```
+
+**Common Errors**:
+- `400`: `message` is required.
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `503`: Session not ready.
+- `500`: Failed to send reply.
+
+---
+
+### POST /api/messages/{sessionId}/{jid}/reply
+**Description**: Send a quoted reply with `messageId` in the request body. Same format as `/send` with added `messageId`.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `jid` (string, required): Chat JID (URL-encoded)
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| messageId | string | Yes | ID of the message to reply to |
+| message | object | Yes | Message content — same format as /send |
+| mentions | string[] | No | JIDs to mention |
+| fromMe | boolean | No | Whether quoted message was sent by you (default: false) |
+
+**Request Example**:
+```bash
+curl -X POST "https://your-domain.com/api/messages/sales-01/628123456789%40s.whatsapp.net/reply" \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messageId": "3EB0ABCD1234567890",
+    "message": { "text": "Sure, I can help with that!" }
+  }'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Message sent successfully"
+}
+```
+
+---
+
+### POST /api/messages/{sessionId}/{jid}/{messageId}/star
+**Description**: Star or unstar a specific message. Starred messages appear in the Starred Messages section of WhatsApp.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+- `jid` (string, required): Chat JID (URL-encoded)
+- `messageId` (string, required): Message ID to star/unstar
+
+**Request Body**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| star | boolean | No | `true` to star, `false` to unstar (default: true) |
+| fromMe | boolean | No | Whether the message was sent by you (default: false) |
+
+**Request Example**:
+```bash
+# Star a message
+curl -X POST "https://your-domain.com/api/messages/sales-01/628123456789%40s.whatsapp.net/3EB0ABCD1234567890/star" \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"star": true}'
+
+# Unstar a message
+curl -X POST "https://your-domain.com/api/messages/sales-01/628123456789%40s.whatsapp.net/3EB0ABCD1234567890/star" \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"star": false}'
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Message starred"
+}
+```
+
+**Common Errors**:
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `503`: Session not ready.
+- `500`: Failed to star/unstar message.
+
+---
+
+### GET /api/messages/{sessionId}/search
+**Description**: Search messages stored in the database for a session. Supports full-text search, filtering by JID, type, and sender.
+
+**Path Parameters**:
+- `sessionId` (string, required): Session ID
+
+**Query Parameters**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| q | string | Yes* | Text to search in message content (*required if jid not provided) |
+| jid | string | Yes* | Filter by chat JID (*required if q not provided) |
+| type | string | No | Filter by type: `TEXT`, `IMAGE`, `VIDEO`, `AUDIO`, `DOCUMENT`, `STICKER`, `LOCATION`, `CONTACT` |
+| fromMe | boolean | No | Filter by sender: `true`=outgoing, `false`=incoming |
+| page | integer | No | Page number (default: 1) |
+| limit | integer | No | Results per page (default: 20, max: 100) |
+
+**Request Example**:
+```bash
+# Search for "invoice" in all chats
+curl "https://your-domain.com/api/messages/sales-01/search?q=invoice&limit=10" \
+  -H "X-API-Key: your-api-key"
+
+# Search all messages in a specific chat
+curl "https://your-domain.com/api/messages/sales-01/search?jid=628123456789%40s.whatsapp.net&type=IMAGE&page=1&limit=20" \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "clx123abc",
+      "remoteJid": "628123456789@s.whatsapp.net",
+      "fromMe": false,
+      "keyId": "3EB0ABCD1234567890",
+      "pushName": "John Doe",
+      "type": "TEXT",
+      "content": "Please send the invoice",
+      "status": "READ",
+      "timestamp": "2024-01-17T10:00:00.000Z",
+      "quoteId": null
+    }
+  ],
+  "pagination": {
+    "total": 42,
+    "page": 1,
+    "limit": 20,
+    "pages": 3
+  }
+}
+```
+
+**Common Errors**:
+- `400`: At least one of `q` or `jid` is required.
+- `401`: Unauthorized.
+- `403`: Forbidden.
+- `404`: Session not found.
+- `500`: Failed to search messages.
+
+---
+
 ### POST /api/messages/{sessionId}/{jid}/list
 **Description**: Send a formatted numbered list message. Baileys has limited support for interactive lists, so this sends a beautifully formatted text message.
 

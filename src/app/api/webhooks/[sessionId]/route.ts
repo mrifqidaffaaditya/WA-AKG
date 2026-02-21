@@ -16,7 +16,7 @@ export async function GET(
     // Verify access to session
     const hasAccess = await canAccessSession(user.id, user.role, sessionId);
     if (!hasAccess) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
     }
 
     try {
@@ -62,7 +62,7 @@ export async function POST(
 
     const hasAccess = await canAccessSession(user.id, user.role, sessionId);
     if (!hasAccess) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
     }
 
     try {

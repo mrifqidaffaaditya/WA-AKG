@@ -2,10 +2,13 @@ import { NextResponse, NextRequest } from "next/server";
 import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 
-// POST: Unblock a contact
+/**
+ * POST /api/messages/{sessionId}/{jid}/{messageId}/star
+ * Star or unstar a specific message
+ */
 export async function POST(
     request: NextRequest,
-    { params }: { params: Promise<{ sessionId: string, jid: string }> }
+    { params }: { params: Promise<{ sessionId: string; jid: string; messageId: string }> }
 ) {
     try {
         const user = await getAuthenticatedUser(request);
@@ -13,8 +16,11 @@ export async function POST(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { sessionId, jid } = await params;
-        const decodedJid = decodeURIComponent(jid);
+        const { sessionId, jid: rawJid, messageId } = await params;
+        const jid = decodeURIComponent(rawJid);
+
+        const body = await request.json();
+        const { star = true, fromMe = false } = body;
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
@@ -27,16 +33,21 @@ export async function POST(
             return NextResponse.json({ error: "Session not ready" }, { status: 503 });
         }
 
-        // Unblock contact
-        await instance.socket.updateBlockStatus(decodedJid, "unblock");
+        // Star/unstar the message
+        await (instance.socket as any).chatModify({
+            star: {
+                messages: [{ id: messageId, fromMe }],
+                star
+            }
+        }, jid);
 
         return NextResponse.json({
             success: true,
-            message: "Contact unblocked successfully"
+            message: star ? "Message starred" : "Message unstarred"
         });
 
     } catch (error) {
-        console.error("Unblock contact error:", error);
-        return NextResponse.json({ error: "Failed to unblock contact" }, { status: 500 });
+        console.error("Star message error:", error);
+        return NextResponse.json({ error: "Failed to star/unstar message" }, { status: 500 });
     }
 }

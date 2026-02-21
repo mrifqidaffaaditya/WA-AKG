@@ -1,4 +1,29 @@
 
+## [v1.4.0] - 2026-02-21
+
+### Added
+- **Dashboard UI Overhaul**:
+    - **Grouped Sidebar Navigation**: Organizes features into logical sections (Messaging, Contacts, Automation, Developer, Administration).
+    - **Active Link Highlighting**: Sidebar now correctly highlights the current active page.
+    - **Collapsible Groups**: Sidebar sections can now be collapsed/expanded for a cleaner workspace.
+    - **Revamped Home Page**: Features 4 summary stat cards, a quick-actions grid, and improved session status cards with colored indicators.
+    - **Modernized Layout**: Added backdrop-blur to the navbar, refined spacing, and updated all loading skeletons.
+- **Star/Unstar Message**: `POST /api/messages/{sessionId}/{jid}/{messageId}/star` to star or unstar messages.
+- **Message Search**: `GET /api/messages/{sessionId}/search` with full-text search, JID/type/sender filters, and pagination.
+
+### Fixed
+- **API Consistency**: Refactored reply endpoints (`/api/messages/[sessionId]/[jid]/[messageId]/reply` and `/api/messages/[sessionId]/[jid]/reply`) to use the same `{ message: { text: ... }, mentions: [] }` format as the `/send` endpoint.
+- **Auto Reply Bug**: Fixed `matchType` default in PUT endpoint — was `"exact"` (lowercase) but handler expects `"EXACT"` (uppercase), causing updated rules to silently stop matching.
+- **Contacts Block/Unblock**: Added missing `decodeURIComponent(jid)` — JIDs with `%40` encoding were not being decoded.
+- **Contacts GET Auth**: Replaced `auth()` with `getAuthenticatedUser()` + `canAccessSession()` to enable API key authentication and session-level access control.
+- **Infrastructure**: Fixed Prisma binary target issues for better environment compatibility.
+
+### Changed
+- **Consistency**: Standardized `403` error messages to `"Forbidden - Cannot access this session"` across 11 route files.
+- **Consistency**: Standardized validation order (auth → params → body) across all routes.
+- **Cleanup**: Removed duplicate `messages/[jid]/read` route (use `chat/[jid]/read` instead).
+- **Styling**: Switched sidebar from a shadow-based design to a more modern border-based aesthetic.
+
 ## [v1.3.0] - 2026-02-01
 
 ### Added
