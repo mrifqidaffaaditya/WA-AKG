@@ -12,6 +12,11 @@
 - **Message Search**: `GET /api/messages/{sessionId}/search` with full-text search, JID/type/sender filters, and pagination.
 
 ### Fixed
+- **WhatsApp Web Group Replies**: Fixed an issue where quoted replies in group chats were silently dropped by WhatsApp Web's UI.
+    - Resolved user-facing `sessionId` directly to the db CUID to ensure robust database lookups for the original message.
+    - Mapped Linked Device IDs (`@lid`) back to standard phone number JIDs (`@s.whatsapp.net`) via the `Contact` table.
+    - Enforced strict WA Web quote validation by perfectly mirroring the original message's `fromMe`, `messageTimestamp`, and `pushName`.
+    - Always structured text quotes as `extendedTextMessage`.
 - **API Consistency**: Refactored reply endpoints (`/api/messages/[sessionId]/[jid]/[messageId]/reply` and `/api/messages/[sessionId]/[jid]/reply`) to use the same `{ message: { text: ... }, mentions: [] }` format as the `/send` endpoint.
 - **Auto Reply Bug**: Fixed `matchType` default in PUT endpoint — was `"exact"` (lowercase) but handler expects `"EXACT"` (uppercase), causing updated rules to silently stop matching.
 - **Contacts Block/Unblock**: Added missing `decodeURIComponent(jid)` — JIDs with `%40` encoding were not being decoded.
