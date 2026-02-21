@@ -5,6 +5,7 @@ import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 /**
  * POST /api/messages/{sessionId}/{jid}/reply
  * Reply to a message with messageId provided in the request body
+ * Uses same request format as /send: { message, mentions }
  */
 export async function POST(
     request: NextRequest,
@@ -20,17 +21,14 @@ export async function POST(
         const jid = decodeURIComponent(rawJid);
 
         const body = await request.json();
-        const { messageId, text, image, caption, fromMe, mentions } = body;
+        const { messageId, message, mentions, fromMe } = body;
 
         if (!messageId) {
             return NextResponse.json({ error: "messageId is required" }, { status: 400 });
         }
 
-        // At least one message content is required
-        if (!text && !image) {
-            return NextResponse.json({
-                error: "Either text or image is required for reply"
-            }, { status: 400 });
+        if (!message) {
+            return NextResponse.json({ error: "message is required" }, { status: 400 });
         }
 
         // Check if user can access this session
@@ -54,34 +52,19 @@ export async function POST(
             message: {}
         };
 
-        // Build message payload
-        let msgPayload: any;
+        // Process message payload (same as /send)
+        let msgPayload = message;
 
-        if (image) {
-            msgPayload = {
-                image: typeof image === "string" ? { url: image } : image,
-                caption: caption || undefined,
-            };
-            if (mentions && Array.isArray(mentions)) {
-                msgPayload.mentions = mentions;
-            }
-        } else {
-            msgPayload = { text };
-            if (mentions && Array.isArray(mentions)) {
-                msgPayload.mentions = mentions;
-            }
+        if (msgPayload.text && mentions && Array.isArray(mentions)) {
+            msgPayload.mentions = mentions;
         }
 
-        // Send the reply message with quoted reference
-        const sent = await instance.socket.sendMessage(jid, msgPayload, {
+        // Send the reply with quoted reference
+        await instance.socket.sendMessage(jid, msgPayload, {
             quoted: quotedMsg as any
         });
 
-        return NextResponse.json({
-            success: true,
-            message: "Reply sent successfully",
-            data: { id: sent?.key?.id }
-        });
+        return NextResponse.json({ success: true, message: "Message sent successfully" });
 
     } catch (error) {
         console.error("Reply message error:", error);

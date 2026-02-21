@@ -1244,7 +1244,7 @@ All endpoints require authentication via:
                     post: {
                         tags: ["Messaging"],
                         summary: "Reply to a message (quoted reply)",
-                        description: "Send a quoted reply to a specific message by its ID. Supports text and image replies.",
+                        description: "Send a quoted reply to a specific message by its ID. Uses same request format as /send — pass a Baileys message object.",
                         parameters: [
                             { name: "sessionId", in: "path", required: true, schema: { type: "string" }, example: "sales-01" },
                             { name: "jid", in: "path", required: true, schema: { type: "string" }, example: "628123456789@s.whatsapp.net" },
@@ -1256,22 +1256,25 @@ All endpoints require authentication via:
                                 "application/json": {
                                     schema: {
                                         type: "object",
+                                        required: ["message"],
                                         properties: {
-                                            text: { type: "string", example: "Thanks for your message!", description: "Reply text content (required if image not provided)" },
-                                            image: { type: "string", example: "https://example.com/image.jpg", description: "Image URL for image reply (required if text not provided)" },
-                                            caption: { type: "string", example: "Here is the image", description: "Caption for image reply" },
-                                            fromMe: { type: "boolean", default: false, description: "Whether the quoted message was sent by you" },
-                                            mentions: { type: "array", items: { type: "string" }, example: ["628123456789@s.whatsapp.net"], description: "JIDs to mention in reply" }
+                                            message: {
+                                                type: "object",
+                                                description: "Message content — same format as /send (text, image, video, etc.)",
+                                                example: { text: "Thanks for your message!" }
+                                            },
+                                            mentions: { type: "array", items: { type: "string" }, example: ["628123456789@s.whatsapp.net"], description: "JIDs to mention" },
+                                            fromMe: { type: "boolean", default: false, description: "Whether the quoted message was sent by you" }
                                         }
                                     },
                                     examples: {
                                         textReply: {
                                             summary: "Text reply",
-                                            value: { text: "Got it, thanks!" }
+                                            value: { message: { text: "Got it, thanks!" } }
                                         },
                                         imageReply: {
                                             summary: "Image reply",
-                                            value: { image: "https://example.com/confirm.jpg", caption: "Confirmation image" }
+                                            value: { message: { image: { url: "https://example.com/confirm.jpg" }, caption: "Confirmation image" } }
                                         }
                                     }
                                 }
@@ -1286,14 +1289,13 @@ All endpoints require authentication via:
                                             type: "object",
                                             properties: {
                                                 success: { type: "boolean", example: true },
-                                                message: { type: "string", example: "Reply sent successfully" },
-                                                data: { type: "object", properties: { id: { type: "string" } } }
+                                                message: { type: "string", example: "Message sent successfully" }
                                             }
                                         }
                                     }
                                 }
                             },
-                            400: { description: "text or image is required" },
+                            400: { description: "message is required" },
                             401: { $ref: "#/components/responses/Unauthorized" },
                             403: { $ref: "#/components/responses/Forbidden" },
                             503: { $ref: "#/components/responses/SessionNotReady" },
@@ -1306,7 +1308,7 @@ All endpoints require authentication via:
                     post: {
                         tags: ["Messaging"],
                         summary: "Reply to a message (body-based)",
-                        description: "Send a quoted reply with messageId provided in the request body. Convenient for simple integrations.",
+                        description: "Send a quoted reply with messageId provided in the request body. Same request format as /send with added messageId.",
                         parameters: [
                             { name: "sessionId", in: "path", required: true, schema: { type: "string" }, example: "sales-01" },
                             { name: "jid", in: "path", required: true, schema: { type: "string" }, example: "628123456789@s.whatsapp.net" }
@@ -1317,29 +1319,31 @@ All endpoints require authentication via:
                                 "application/json": {
                                     schema: {
                                         type: "object",
-                                        required: ["messageId"],
+                                        required: ["messageId", "message"],
                                         properties: {
                                             messageId: { type: "string", example: "3EB0ABCD1234567890", description: "ID of the message to reply to" },
-                                            text: { type: "string", example: "Sure, let me help you!" },
-                                            image: { type: "string", example: "https://example.com/image.jpg" },
-                                            caption: { type: "string" },
-                                            fromMe: { type: "boolean", default: false, description: "Whether the quoted message was sent by you" },
-                                            mentions: { type: "array", items: { type: "string" } }
+                                            message: {
+                                                type: "object",
+                                                description: "Message content — same format as /send (text, image, video, etc.)",
+                                                example: { text: "Sure, let me help you!" }
+                                            },
+                                            mentions: { type: "array", items: { type: "string" }, description: "JIDs to mention" },
+                                            fromMe: { type: "boolean", default: false, description: "Whether the quoted message was sent by you" }
                                         }
                                     },
                                     example: {
                                         messageId: "3EB0ABCD1234567890",
-                                        text: "Sure, let me check that for you!"
+                                        message: { text: "Sure, let me check that for you!" }
                                     }
                                 }
                             }
                         },
                         responses: {
                             200: {
-                                description: "Reply sent",
+                                description: "Reply sent successfully",
                                 content: { "application/json": { schema: { $ref: "#/components/schemas/Success" } } }
                             },
-                            400: { description: "messageId and text/image required" },
+                            400: { description: "messageId and message required" },
                             401: { $ref: "#/components/responses/Unauthorized" },
                             403: { $ref: "#/components/responses/Forbidden" },
                             503: { $ref: "#/components/responses/SessionNotReady" },

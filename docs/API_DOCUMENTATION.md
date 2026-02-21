@@ -3681,7 +3681,7 @@ curl -X POST https://your-domain.com/api/messages/react \
 ---
 
 ### POST /api/messages/{sessionId}/{jid}/{messageId}/reply
-**Description**: Send a quoted reply to a specific message by its ID.
+**Description**: Send a quoted reply to a specific message by its ID. Uses same request format as `/send`.
 
 **Path Parameters**:
 - `sessionId` (string, required): Session ID
@@ -3691,19 +3691,26 @@ curl -X POST https://your-domain.com/api/messages/react \
 **Request Body**:
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| text | string | Yes* | Reply text (*required if image not provided) |
-| image | string | No | Image URL for image reply |
-| caption | string | No | Caption for image reply |
+| message | object | Yes | Message content — same format as /send (text, image, video, etc.) |
+| mentions | string[] | No | JIDs to mention |
 | fromMe | boolean | No | Whether quoted message was sent by you (default: false) |
-| mentions | string[] | No | JIDs to mention in the reply |
 
 **Request Example**:
 ```bash
+# Text reply
 curl -X POST "https://your-domain.com/api/messages/sales-01/628123456789%40s.whatsapp.net/3EB0ABCD1234567890/reply" \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
-    "text": "Thanks for your message! Let me check that for you."
+    "message": { "text": "Thanks for your message!" }
+  }'
+
+# Image reply
+curl -X POST "https://your-domain.com/api/messages/sales-01/628123456789%40s.whatsapp.net/3EB0ABCD1234567890/reply" \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": { "image": { "url": "https://example.com/confirm.jpg" }, "caption": "Confirmation" }
   }'
 ```
 
@@ -3711,13 +3718,12 @@ curl -X POST "https://your-domain.com/api/messages/sales-01/628123456789%40s.wha
 ```json
 {
   "success": true,
-  "message": "Reply sent successfully",
-  "data": { "id": "3EB0ABCD9876543210" }
+  "message": "Message sent successfully"
 }
 ```
 
 **Common Errors**:
-- `400`: `text` or `image` is required.
+- `400`: `message` is required.
 - `401`: Unauthorized.
 - `403`: Forbidden.
 - `503`: Session not ready.
@@ -3726,7 +3732,7 @@ curl -X POST "https://your-domain.com/api/messages/sales-01/628123456789%40s.wha
 ---
 
 ### POST /api/messages/{sessionId}/{jid}/reply
-**Description**: Send a quoted reply with `messageId` in the request body (convenient for simple integrations).
+**Description**: Send a quoted reply with `messageId` in the request body. Same format as `/send` with added `messageId`.
 
 **Path Parameters**:
 - `sessionId` (string, required): Session ID
@@ -3736,11 +3742,9 @@ curl -X POST "https://your-domain.com/api/messages/sales-01/628123456789%40s.wha
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | messageId | string | Yes | ID of the message to reply to |
-| text | string | Yes* | Reply text (*required if image not provided) |
-| image | string | No | Image URL |
-| caption | string | No | Caption for image |
-| fromMe | boolean | No | Whether quoted message was sent by you (default: false) |
+| message | object | Yes | Message content — same format as /send |
 | mentions | string[] | No | JIDs to mention |
+| fromMe | boolean | No | Whether quoted message was sent by you (default: false) |
 
 **Request Example**:
 ```bash
@@ -3749,7 +3753,7 @@ curl -X POST "https://your-domain.com/api/messages/sales-01/628123456789%40s.wha
   -H "Content-Type: application/json" \
   -d '{
     "messageId": "3EB0ABCD1234567890",
-    "text": "Sure, I can help with that!"
+    "message": { "text": "Sure, I can help with that!" }
   }'
 ```
 
@@ -3757,7 +3761,7 @@ curl -X POST "https://your-domain.com/api/messages/sales-01/628123456789%40s.wha
 ```json
 {
   "success": true,
-  "message": "Reply sent"
+  "message": "Message sent successfully"
 }
 ```
 
