@@ -6,11 +6,11 @@ export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Public routes that don't require authentication
-    const publicRoutes = ["/login", "/register", "/api/auth", "/api/test"];
-    
+    const publicRoutes = ["/auth/login", "/auth/register", "/api/auth", "/api/test", "/terms", "/privacy"];
+
     // Check if it's a public route
     const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
-    
+
     // Allow static files and Next.js internals
     if (
         pathname.startsWith("/_next") ||
@@ -48,10 +48,10 @@ export async function middleware(request: NextRequest) {
     // Dashboard routes: Require login
     if (pathname.startsWith("/dashboard")) {
         const session = await auth();
-        
+
         if (!session?.user) {
             // Redirect to login page
-            const loginUrl = new URL("/login", request.url);
+            const loginUrl = new URL("/auth/login", request.url);
             loginUrl.searchParams.set("callbackUrl", pathname);
             return NextResponse.redirect(loginUrl);
         }
@@ -59,20 +59,27 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next();
     }
 
-    // Root path: redirect to dashboard if logged in, login if not
+    // Root path (Landing Page) is public, but if logged in, they can stay or navigate themselves.
+    // The previous logic redirected to dashboard if logged in, let's keep it that way for UX.
     if (pathname === "/") {
         const session = await auth();
         if (session?.user) {
             return NextResponse.redirect(new URL("/dashboard", request.url));
         }
-        return NextResponse.redirect(new URL("/login", request.url));
+        return NextResponse.next(); // Root path is public if not logged in
     }
 
     // Public routes
     if (isPublicRoute) {
+        const session = await auth();
+        // If logged in and trying to go to auth pages, redirect to dashboard
+        if (session?.user && (pathname.startsWith("/auth/login") || pathname.startsWith("/auth/register"))) {
+            return NextResponse.redirect(new URL("/dashboard", request.url));
+        }
         return NextResponse.next();
     }
 
+    // Default catch-all
     return NextResponse.next();
 }
 

@@ -110,15 +110,15 @@ export default async function DashboardPage() {
                 {stats.map((stat) => {
                     const Icon = stat.icon;
                     return (
-                        <Card key={stat.title} className="border-slate-200 shadow-none hover:shadow-sm transition-shadow">
+                        <Card key={stat.title} className="glass-panel border-border/50 shadow-sm hover:shadow-md hover:shadow-primary/5 transition-all duration-300">
                             <CardContent className="p-4 sm:p-5">
                                 <div className="flex items-start justify-between">
                                     <div className="space-y-1">
-                                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{stat.title}</p>
-                                        <p className="text-2xl sm:text-3xl font-bold text-slate-900">{stat.value}</p>
-                                        <p className="text-[11px] text-slate-400">{stat.description}</p>
+                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{stat.title}</p>
+                                        <p className="text-2xl sm:text-3xl font-extrabold text-foreground">{stat.value}</p>
+                                        <p className="text-xs text-muted-foreground/70">{stat.description}</p>
                                     </div>
-                                    <div className={`${stat.bg} p-2 rounded-lg`}>
+                                    <div className={`${stat.bg} p-2.5 rounded-xl border object-contain border-white/20 dark:border-white/10 shadow-sm`}>
                                         <Icon className={`h-5 w-5 ${stat.color}`} />
                                     </div>
                                 </div>
@@ -136,14 +136,14 @@ export default async function DashboardPage() {
                         const Icon = action.icon;
                         return (
                             <Link key={action.href} href={action.href}>
-                                <Card className="border-slate-200 shadow-none hover:shadow-sm hover:border-slate-300 transition-all group cursor-pointer h-full">
+                                <Card className="glass-panel border-border/50 shadow-sm hover:shadow-md hover:shadow-primary/10 hover:-translate-y-0.5 transition-all duration-300 group cursor-pointer h-full">
                                     <CardContent className="p-4 flex items-center gap-3">
-                                        <div className="bg-slate-100 p-2 rounded-lg group-hover:bg-slate-900 transition-colors">
-                                            <Icon className="h-4 w-4 text-slate-600 group-hover:text-white transition-colors" />
+                                        <div className="bg-muted/50 p-2.5 rounded-xl group-hover:bg-primary transition-colors border border-border/50 shadow-sm">
+                                            <Icon className="h-5 w-5 text-muted-foreground group-hover:text-primary-foreground transition-colors" />
                                         </div>
                                         <div className="min-w-0">
-                                            <p className="text-sm font-medium text-slate-800 truncate">{action.label}</p>
-                                            <p className="text-[11px] text-slate-400 truncate">{action.description}</p>
+                                            <p className="text-sm font-semibold text-foreground truncate">{action.label}</p>
+                                            <p className="text-xs text-muted-foreground/80 truncate">{action.description}</p>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -156,9 +156,9 @@ export default async function DashboardPage() {
             {/* Sessions List */}
             <div>
                 <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Sessions</h3>
-                    <Link href="/dashboard/sessions" className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1 transition-colors">
-                        View all <ArrowRight size={12} />
+                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Sessions</h3>
+                    <Link href="/dashboard/sessions" className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors">
+                        View all <ArrowRight size={14} />
                     </Link>
                 </div>
 
@@ -185,12 +185,12 @@ export default async function DashboardPage() {
 
                             return (
                                 <Link key={s.id} href={`/dashboard/sessions/${s.id}`}>
-                                    <Card className="border-slate-200 shadow-none hover:shadow-sm hover:border-slate-300 transition-all cursor-pointer h-full">
+                                    <Card className="glass-panel border-border/50 shadow-sm hover:shadow-md hover:shadow-primary/5 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer h-full">
                                         <CardContent className="p-4">
                                             <div className="flex items-start justify-between mb-2">
                                                 <div className="min-w-0 flex-1">
-                                                    <p className="text-sm font-semibold text-slate-800 truncate">{s.name}</p>
-                                                    <p className="text-[11px] text-slate-400 font-mono truncate mt-0.5">{s.sessionId}</p>
+                                                    <p className="text-sm font-bold text-foreground truncate">{s.name}</p>
+                                                    <p className="text-xs text-muted-foreground font-mono truncate mt-1">{s.sessionId}</p>
                                                 </div>
                                                 <div className={`flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full flex-shrink-0
                                                     ${isConnected ? 'bg-emerald-50 text-emerald-700' : isDisconnected ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'}
