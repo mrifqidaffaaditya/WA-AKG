@@ -46,12 +46,14 @@ export async function POST(
         // Construct the quoted message key
         const quotedMsgKey: any = {
             remoteJid: jid,
-            fromMe: fromMe === true,
+            fromMe: false, // Default fallback, overridden by DB
             id: messageId
         };
 
         let quotedMessageContent: any = { extendedTextMessage: { text: "" } }; // Default fallback
         let resolvedParticipant: string | undefined = undefined;
+        let originalMsgTimestamp: number | undefined = undefined;
+        let originalMsgPushName: string | undefined = undefined;
 
         try {
             // Always fetch original message to build a proper quoted context for WA Web
@@ -65,6 +67,15 @@ export async function POST(
             });
 
             if (originalMsg) {
+                // CRITICAL: WA Web drops the quote if fromMe does not match the actual sender
+                quotedMsgKey.fromMe = originalMsg.fromMe;
+
+                if (originalMsg.timestamp) {
+                    originalMsgTimestamp = Math.floor(new Date(originalMsg.timestamp).getTime() / 1000);
+                }
+                if (originalMsg.pushName) {
+                    originalMsgPushName = originalMsg.pushName;
+                }
                 // WA Web requires participant field for group chats
                 if (jid.endsWith("@g.us") && originalMsg.senderJid) {
                     resolvedParticipant = originalMsg.senderJid;
@@ -123,7 +134,9 @@ export async function POST(
         const quotedMsg = {
             key: quotedMsgKey,
             message: quotedMessageContent,
-            participant: resolvedParticipant
+            participant: resolvedParticipant,
+            messageTimestamp: originalMsgTimestamp,
+            pushName: originalMsgPushName
         };
 
         // Process message payload (same as /send)
