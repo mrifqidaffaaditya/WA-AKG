@@ -50,7 +50,8 @@ export async function POST(
             id: messageId
         };
 
-        let quotedMessageContent: any = { conversation: "" }; // Default fallback
+        let quotedMessageContent: any = { extendedTextMessage: { text: "" } }; // Default fallback
+        let resolvedParticipant: string | undefined = undefined;
 
         try {
             // Always fetch original message to build a proper quoted context for WA Web
@@ -66,13 +67,31 @@ export async function POST(
             if (originalMsg) {
                 // WA Web requires participant field for group chats
                 if (jid.endsWith("@g.us") && originalMsg.senderJid) {
-                    quotedMsgKey.participant = originalMsg.senderJid;
+                    resolvedParticipant = originalMsg.senderJid;
+
+                    // Attempt to resolve @lid to @s.whatsapp.net (Standard WA Phone Number)
+                    // WA Web often fails to render quotes if the participant is purely a Linked Device ID
+                    if (resolvedParticipant.includes("@lid")) {
+                        const contact = await prisma.contact.findUnique({
+                            where: {
+                                sessionId_jid: { sessionId: sessionId, jid: resolvedParticipant }
+                            },
+                            select: { remoteJidAlt: true }
+                        });
+
+                        // Use the real phone number JID if available
+                        if (contact?.remoteJidAlt) {
+                            resolvedParticipant = contact.remoteJidAlt;
+                        }
+                    }
+
+                    quotedMsgKey.participant = resolvedParticipant;
                 }
 
                 // Mock the quoted message content based on DB so WA Web displays the snippet
                 switch (originalMsg.type) {
                     case 'TEXT':
-                        quotedMessageContent = { conversation: originalMsg.content || "" };
+                        quotedMessageContent = { extendedTextMessage: { text: originalMsg.content || "" } };
                         break;
                     case 'IMAGE':
                         quotedMessageContent = { imageMessage: { caption: originalMsg.content || "" } };
@@ -103,7 +122,8 @@ export async function POST(
 
         const quotedMsg = {
             key: quotedMsgKey,
-            message: quotedMessageContent
+            message: quotedMessageContent,
+            participant: resolvedParticipant
         };
 
         // Process message payload (same as /send)
