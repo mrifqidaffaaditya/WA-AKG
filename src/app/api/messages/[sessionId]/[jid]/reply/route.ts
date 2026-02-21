@@ -56,17 +56,27 @@ export async function POST(
         let originalMsgPushName: string | undefined = undefined;
 
         try {
-            // Always fetch original message to build a proper quoted context for WA Web
-            const originalMsg = await prisma.message.findUnique({
-                where: {
-                    sessionId_keyId: {
-                        sessionId: sessionId,
-                        keyId: messageId
-                    }
-                }
+            // First resolve the user-friendly sessionId to the db session CUID
+            const sessionData = await prisma.session.findUnique({
+                where: { sessionId: sessionId },
+                select: { id: true }
             });
+            const dbSessionId = sessionData?.id;
 
-            if (originalMsg) {
+            let originalMsg = null;
+            if (dbSessionId) {
+                // Always fetch original message to build a proper quoted context for WA Web
+                originalMsg = await prisma.message.findUnique({
+                    where: {
+                        sessionId_keyId: {
+                            sessionId: dbSessionId,
+                            keyId: messageId
+                        }
+                    }
+                });
+            }
+
+            if (originalMsg && dbSessionId) {
                 // CRITICAL: WA Web drops the quote if fromMe does not match the actual sender
                 quotedMsgKey.fromMe = originalMsg.fromMe;
 
@@ -85,7 +95,7 @@ export async function POST(
                     if (resolvedParticipant.includes("@lid")) {
                         const contact = await prisma.contact.findUnique({
                             where: {
-                                sessionId_jid: { sessionId: sessionId, jid: resolvedParticipant }
+                                sessionId_jid: { sessionId: dbSessionId, jid: resolvedParticipant }
                             },
                             select: { remoteJidAlt: true }
                         });
