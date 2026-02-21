@@ -137,7 +137,7 @@ export function Navbar({ appName }: NavbarProps) {
     };
 
     return (
-        <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200/80 h-14 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-10 w-full">
+        <header className="bg-background/40 backdrop-blur-2xl border-b border-border/50 h-16 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30 w-full shadow-sm">
             <div className="flex items-center gap-3">
                 <MobileNav appName={appName} />
             </div>
@@ -145,21 +145,21 @@ export function Navbar({ appName }: NavbarProps) {
             <div className="flex items-center gap-4">
                 <RealtimeClock />
                 <SessionSelector />
-                <div className="h-6 w-px bg-gray-200 mx-2" />
+                <div className="h-6 w-px bg-border/50 mx-2" />
 
                 <Popover open={isOpen} onOpenChange={setIsOpen}>
                     <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="relative">
-                            <Bell className={`h-5 w-5 ${unreadCount > 0 ? 'text-primary' : 'text-gray-500'}`} />
+                        <Button variant="ghost" size="icon" className="relative hover:bg-muted/50 rounded-full h-10 w-10">
+                            <Bell className={`h-5 w-5 transition-colors ${unreadCount > 0 ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`} />
                             {unreadCount > 0 && (
-                                <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-red-500 rounded-full animate-pulse" />
+                                <span className="absolute top-1.5 right-2.5 h-2.5 w-2.5 bg-red-500 rounded-full animate-pulse border-2 border-background" />
                             )}
                         </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-80 p-0" align="end">
-                        <div className="p-4 border-b flex justify-between items-center bg-slate-50/50">
+                    <PopoverContent className="w-80 p-0 rounded-2xl border border-border/50 shadow-2xl glass-panel" align="end">
+                        <div className="p-4 border-b border-border/50 flex justify-between items-center bg-background/50">
                             <div>
-                                <h4 className="font-semibold leading-none">Notifications</h4>
+                                <h4 className="font-semibold leading-none text-foreground">Notifications</h4>
                                 <p className="text-xs text-muted-foreground mt-1">
                                     {unreadCount > 0 ? `You have ${unreadCount} unread updates.` : "No new notifications."}
                                 </p>

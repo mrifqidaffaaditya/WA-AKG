@@ -129,19 +129,19 @@ export function SidebarNav() {
                 }
 
                 return (
-                    <div key={group.label} className="mb-1">
+                    <div key={group.label} className="mb-2">
                         <button
                             onClick={() => toggleGroup(group.label)}
-                            className="flex items-center justify-between w-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-600 transition-colors"
+                            className="flex items-center justify-between w-full px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground/70 hover:text-foreground transition-colors group"
                         >
                             {group.label}
                             <ChevronDown
                                 size={14}
-                                className={`transition-transform duration-200 ${isCollapsed ? "-rotate-90" : ""}`}
+                                className={`transition-transform duration-300 ease-out group-hover:text-primary ${isCollapsed ? "-rotate-90" : ""}`}
                             />
                         </button>
                         {!isCollapsed && (
-                            <div className="space-y-0.5 mt-0.5">
+                            <div className="space-y-1 mt-1">
                                 {visibleItems.map((item) => (
                                     <NavLink
                                         key={item.href}
@@ -165,17 +165,20 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
             href={item.href}
             target={item.external ? "_blank" : undefined}
             className={`
-                flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium
-                transition-all duration-150 group
+                flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium
+                transition-all duration-300 ease-out group relative overflow-hidden
                 ${active
-                    ? "bg-slate-900 text-white shadow-sm"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    ? "text-primary bg-primary/10 shadow-sm border border-primary/20"
+                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground border border-transparent"
                 }
             `}
         >
+            {active && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full shadow-[0_0_10px_rgba(var(--color-primary),0.5)]" />
+            )}
             <Icon
                 size={18}
-                className={`flex-shrink-0 transition-colors ${active ? "text-white" : "text-slate-400 group-hover:text-slate-600"}`}
+                className={`flex-shrink-0 transition-all duration-300 ${active ? "text-primary scale-110" : "text-muted-foreground/70 group-hover:text-foreground group-hover:scale-110"}`}
             />
             <span className="truncate">{item.label}</span>
         </Link>
