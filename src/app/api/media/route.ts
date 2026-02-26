@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { readdir, stat, unlink } from "fs/promises";
 import path from "path";
 import { existsSync } from "fs";
-import { getAuthenticatedUser, canAccessSession, getAccessibleSessions } from "@/lib/api-auth";
+import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 
 // Media directory — private, NOT in public/
@@ -11,7 +11,6 @@ const MEDIA_DIR = path.join(process.cwd(), "data", "media");
 /**
  * Extract sessionId and messageKeyId from media filename.
  * Format: {sessionId}-{messageKeyId}.{ext}
- * e.g. "marketing-1-ABCDEF123456.jpg" → { sessionId: "marketing-1", keyId: "ABCDEF123456" }
  */
 function parseFilename(filename: string): { sessionId: string; keyId: string } | null {
     const base = filename.replace(/\.[^.]+$/, "");
@@ -24,7 +23,7 @@ function parseFilename(filename: string): { sessionId: string; keyId: string } |
 }
 
 /**
- * GET /api/media — List media files the user has access to, enriched with sender info
+ * GET /api/media — List media files with full hierarchy: User > Session > Sender
  */
 export async function GET(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
@@ -37,10 +36,26 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ files: [], totalSize: 0, totalCount: 0 });
         }
 
-        // Get sessions this user can access
-        const accessibleSessions = await getAccessibleSessions(user.id, user.role);
-        const sessionMap = new Map(accessibleSessions.map(s => [s.sessionId, s.name]));
         const isSuperAdmin = user.role === "SUPERADMIN";
+
+        // Get sessions with owner info
+        const sessions = isSuperAdmin
+            ? await prisma.session.findMany({
+                include: { user: { select: { id: true, name: true, email: true } } },
+                orderBy: { createdAt: "desc" },
+            })
+            : await prisma.session.findMany({
+                where: { userId: user.id },
+                include: { user: { select: { id: true, name: true, email: true } } },
+                orderBy: { createdAt: "desc" },
+            });
+
+        // Map sessionId -> session with owner
+        const sessionMap = new Map(sessions.map(s => [s.sessionId, {
+            name: s.name,
+            ownerName: s.user.name || s.user.email,
+            ownerId: s.user.id,
+        }]));
 
         const filenames = (await readdir(MEDIA_DIR)).filter(n => n !== ".gitkeep");
 
@@ -62,10 +77,10 @@ export async function GET(request: NextRequest) {
         const messages = keyIds.length > 0
             ? await prisma.message.findMany({
                 where: { keyId: { in: keyIds } },
-                select: { keyId: true, remoteJid: true, senderJid: true, pushName: true, fromMe: true },
+                select: { keyId: true, remoteJid: true, senderJid: true, pushName: true, fromMe: true, session: { select: { sessionId: true } } },
             })
             : [];
-        const messageMap = new Map(messages.map(m => [m.keyId, m]));
+        const messageMap = new Map(messages.map(m => [`${m.session.sessionId}-${m.keyId}`, m]));
 
         // Build response
         const files = await Promise.all(
@@ -80,10 +95,9 @@ export async function GET(request: NextRequest) {
                 else if ([".mp3", ".wav", ".ogg", ".opus", ".m4a"].includes(ext)) type = "audio";
 
                 const sessionId = parsed?.sessionId || "unknown";
-                const sessionName = sessionMap.get(sessionId) || sessionId;
+                const sessionInfo = sessionMap.get(sessionId);
 
-                // Sender info from DB
-                const msgInfo = parsed ? messageMap.get(parsed.keyId) : null;
+                const msgInfo = parsed ? messageMap.get(`${parsed.sessionId}-${parsed.keyId}`) : null;
                 const from = msgInfo?.fromMe
                     ? "Me"
                     : msgInfo?.senderJid || msgInfo?.remoteJid || "Unknown";
@@ -95,7 +109,9 @@ export async function GET(request: NextRequest) {
                     type,
                     ext,
                     sessionId,
-                    sessionName,
+                    sessionName: sessionInfo?.name || sessionId,
+                    ownerName: sessionInfo?.ownerName || "Unknown",
+                    ownerId: sessionInfo?.ownerId || "unknown",
                     from,
                     fromName,
                     fromMe: msgInfo?.fromMe ?? false,
