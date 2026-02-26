@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, PanelLeftClose, PanelLeft } from "lucide-react";
 import {
     LayoutDashboard,
     MessageSquare,
@@ -22,6 +22,13 @@ import {
     UserCheck,
     Megaphone,
 } from "lucide-react";
+import { useSidebar } from "./sidebar-context";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface NavGroup {
     label: string;
@@ -88,14 +95,15 @@ const navGroups: NavGroup[] = [
 export function SidebarNav() {
     const pathname = usePathname();
     const { data: session } = useSession();
+    const { isCollapsed, toggleCollapse } = useSidebar();
     // @ts-ignore
     const userRole = session?.user?.role;
 
     // Track collapsed groups — all expanded by default
-    const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+    const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
     const toggleGroup = (label: string) => {
-        setCollapsed(prev => ({ ...prev, [label]: !prev[label] }));
+        setCollapsedGroups(prev => ({ ...prev, [label]: !prev[label] }));
     };
 
     const isActive = (href: string) => {
@@ -104,83 +112,130 @@ export function SidebarNav() {
     };
 
     return (
-        <nav className="flex-1 px-3 py-2 overflow-y-auto space-y-1">
-            {navGroups.map((group) => {
-                const visibleItems = group.items.filter(
-                    (item) => !item.superadminOnly || userRole === "SUPERADMIN"
-                );
-                if (visibleItems.length === 0) return null;
-
-                const isCollapsed = collapsed[group.label] ?? false;
-
-                // "Main" group doesn't show a collapsible header
-                if (group.label === "Main") {
-                    return (
-                        <div key={group.label} className="mb-1">
-                            {visibleItems.map((item) => (
-                                <NavLink
-                                    key={item.href}
-                                    item={item}
-                                    active={isActive(item.href)}
-                                />
-                            ))}
-                        </div>
+        <TooltipProvider delayDuration={0}>
+            <nav className="flex-1 px-2 py-2 overflow-y-auto overflow-x-hidden space-y-0.5 styled-scrollbar">
+                {navGroups.map((group) => {
+                    const visibleItems = group.items.filter(
+                        (item) => !item.superadminOnly || userRole === "SUPERADMIN"
                     );
-                }
+                    if (visibleItems.length === 0) return null;
 
-                return (
-                    <div key={group.label} className="mb-2">
-                        <button
-                            onClick={() => toggleGroup(group.label)}
-                            className="flex items-center justify-between w-full px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground/70 hover:text-foreground transition-colors group"
-                        >
-                            {group.label}
-                            <ChevronDown
-                                size={14}
-                                className={`transition-transform duration-300 ease-out group-hover:text-primary ${isCollapsed ? "-rotate-90" : ""}`}
-                            />
-                        </button>
-                        {!isCollapsed && (
-                            <div className="space-y-1 mt-1">
+                    const isGroupCollapsed = collapsedGroups[group.label] ?? false;
+
+                    // "Main" group doesn't show a collapsible header
+                    if (group.label === "Main") {
+                        return (
+                            <div key={group.label} className="mb-1">
                                 {visibleItems.map((item) => (
                                     <NavLink
                                         key={item.href}
                                         item={item}
                                         active={isActive(item.href)}
+                                        isCollapsed={isCollapsed}
                                     />
                                 ))}
                             </div>
-                        )}
-                    </div>
-                );
-            })}
-        </nav>
+                        );
+                    }
+
+                    return (
+                        <div key={group.label} className="mb-1">
+                            {/* Group header — hidden when sidebar collapsed */}
+                            {!isCollapsed && (
+                                <button
+                                    onClick={() => toggleGroup(group.label)}
+                                    className="flex items-center justify-between w-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 hover:text-foreground/80 transition-colors group"
+                                >
+                                    {group.label}
+                                    <ChevronDown
+                                        size={12}
+                                        className={`transition-transform duration-200 ${isGroupCollapsed ? "-rotate-90" : ""}`}
+                                    />
+                                </button>
+                            )}
+
+                            {/* Collapsed sidebar: show a thin divider between groups */}
+                            {isCollapsed && (
+                                <div className="mx-3 my-2 border-t border-border/30" />
+                            )}
+
+                            {(!isGroupCollapsed || isCollapsed) && (
+                                <div className="space-y-0.5">
+                                    {visibleItems.map((item) => (
+                                        <NavLink
+                                            key={item.href}
+                                            item={item}
+                                            active={isActive(item.href)}
+                                            isCollapsed={isCollapsed}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </nav>
+
+            {/* Collapse Toggle Button */}
+            <div className="px-2 py-2 border-t border-border/30">
+                <button
+                    onClick={toggleCollapse}
+                    className="flex items-center justify-center w-full gap-2 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+                >
+                    {isCollapsed ? (
+                        <PanelLeft size={18} />
+                    ) : (
+                        <>
+                            <PanelLeftClose size={16} />
+                            <span>Collapse</span>
+                        </>
+                    )}
+                </button>
+            </div>
+        </TooltipProvider>
     );
 }
 
-function NavLink({ item, active }: { item: NavItem; active: boolean }) {
+function NavLink({ item, active, isCollapsed }: { item: NavItem; active: boolean; isCollapsed: boolean }) {
     const Icon = item.icon;
-    return (
+
+    const linkContent = (
         <Link
             href={item.href}
             target={item.external ? "_blank" : undefined}
             className={`
-                flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium
-                transition-all duration-300 ease-out group relative overflow-hidden
+                flex items-center rounded-lg text-sm font-medium
+                transition-all duration-200 group relative
+                ${isCollapsed ? "justify-center px-2 py-2.5 mx-1" : "gap-3 px-3 py-2"}
                 ${active
-                    ? "text-primary bg-primary/10 shadow-sm border border-primary/20"
-                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground border border-transparent"
+                    ? "text-primary bg-primary/10 shadow-sm"
+                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                 }
             `}
         >
-            {active && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full shadow-[0_0_10px_rgba(var(--color-primary),0.5)]" />
+            {active && !isCollapsed && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-primary rounded-r-full" />
             )}
             <Icon
-                size={18}
-                className={`flex-shrink-0 transition-all duration-300 ${active ? "text-primary scale-110" : "text-muted-foreground/70 group-hover:text-foreground group-hover:scale-110"}`}
+                size={isCollapsed ? 20 : 17}
+                className={`flex-shrink-0 transition-colors duration-200 ${active ? "text-primary" : "text-muted-foreground/70 group-hover:text-foreground"}`}
             />
-            <span className="truncate">{item.label}</span>
+            {!isCollapsed && <span className="truncate">{item.label}</span>}
         </Link>
     );
+
+    if (isCollapsed) {
+        return (
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    {linkContent}
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={8}>
+                    <p className="text-xs font-medium">{item.label}</p>
+                </TooltipContent>
+            </Tooltip>
+        );
+    }
+
+    return linkContent;
 }
