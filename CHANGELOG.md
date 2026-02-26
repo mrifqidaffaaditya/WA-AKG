@@ -43,6 +43,8 @@
 - **Default Catch-All**: Middleware now requires authentication for all unmatched routes instead of passing through.
 
 ### Fixed
+- **Media Sender Collision**: Fixed an issue where WhatsApp `keyId` collisions across different sessions caused media files to be grouped under the wrong sender ("Unknown"). The grouping API now requires an exact match on both `sessionId` and `keyId`.
+- **Media Grouping UI**: Cleaned up the 3-level media grouping UI (User > Session > Sender) to use distinct cards with better padding and clear visual hierarchy, replacing the messy nested indents.
 - **JID Consistency (Webhooks)**: Webhook payloads (`from`, `sender`, `participant`) now always use `@s.whatsapp.net` format instead of `@lid`. Uses a three-tier resolution: inline `remoteJidAlt` → DB Contact lookup → fallback.
 - **JID Consistency (Web UI)**: Chat list API now batch-resolves `@lid` JIDs to phone numbers before responding, ensuring the UI always displays `@s.whatsapp.net` format.
 - **JID Consistency (Message Store)**: `processAndSaveMessage` now normalizes `remoteJid` and `senderJid` before writing to the database, preventing `@lid` from being stored.
