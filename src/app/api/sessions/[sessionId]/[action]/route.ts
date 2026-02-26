@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(
     request: NextRequest,
-    { params }: { params: Promise<{ id: string, action: string }> }
+    { params }: { params: Promise<{ sessionId: string, action: string }> }
 ) {
     try {
         const user = await getAuthenticatedUser(request);
@@ -14,7 +14,7 @@ export async function POST(
         }
 
         const resolvedParams = await params;
-        const sessionId = resolvedParams.id; // Renamed to id
+        const sessionId = resolvedParams.sessionId;
         const action = resolvedParams.action;
 
         // Verify access

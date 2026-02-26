@@ -4,9 +4,10 @@ import { normalizeMessageContent, downloadMediaMessage, WAMessage } from "@whisk
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import pino from "pino";
+import { resolveToPhoneJidBySessionId as resolveToPhoneJid, isLidJid } from "./jid-utils";
 
 // Event types that can trigger webhooks
-export type WebhookEventType = 
+export type WebhookEventType =
     | "message.received"
     | "message.sent"
     | "message.status"
@@ -26,8 +27,8 @@ interface WebhookPayload {
  * Dispatch webhook to all matching endpoints
  */
 export async function dispatchWebhook(
-    sessionId: string, 
-    event: WebhookEventType, 
+    sessionId: string,
+    event: WebhookEventType,
     data: any
 ) {
     try {
@@ -92,7 +93,7 @@ function normalizePayloadData(event: WebhookEventType, data: any): any {
         // If data is raw Baileys message (which we shouldn't be passing raw anymore, but just in case)
         // Ideally the caller (onMessageReceived) should have already simplified it.
         // But let's handle the specific fields passed by onMessageReceived below.
-        return data; 
+        return data;
     }
     return data;
 }
@@ -113,7 +114,7 @@ function jsonReplacer(key: string, value: any) {
 async function sendWebhookRequest(url: string, payload: WebhookPayload, secret?: string | null) {
     // Use custom replacer for BigInt support
     const body = JSON.stringify(payload, jsonReplacer);
-    
+
     const headers: Record<string, string> = {
         "Content-Type": "application/json",
         "User-Agent": "WA-AKG-Webhook/1.0"
@@ -157,10 +158,10 @@ export async function downloadAndSaveMedia(message: WAMessage, sessionId: string
         console.log(`MediaDownload: Types checking... Found: ${messageType}`);
 
         if (!['imageMessage', 'videoMessage', 'audioMessage', 'documentMessage', 'stickerMessage'].includes(messageType)) {
-             console.log(`MediaDownload: Message type ${messageType} is not a downloadable media.`);
+            console.log(`MediaDownload: Message type ${messageType} is not a downloadable media.`);
             return null;
         }
-        
+
         console.log(`MediaDownload: Attempting to download ${messageType}...`);
 
         const buffer = await downloadMediaMessage(
@@ -170,10 +171,10 @@ export async function downloadAndSaveMedia(message: WAMessage, sessionId: string
         ) as Buffer;
 
         if (!buffer) {
-             console.log("MediaDownload: Buffer is empty/null");
-             return null;
+            console.log("MediaDownload: Buffer is empty/null");
+            return null;
         }
-        
+
         console.log(`MediaDownload: Downloaded ${buffer.length} bytes.`);
 
         // Generate filename
@@ -184,9 +185,9 @@ export async function downloadAndSaveMedia(message: WAMessage, sessionId: string
             documentMessage: 'bin',
             stickerMessage: 'webp'
         };
-        
+
         let ext = extMap[messageType] || 'bin';
-        
+
         // Try to get extension from mimetype if available
         const mime = (messageContent as any)[messageType]?.mimetype;
         if (mime) {
@@ -201,9 +202,9 @@ export async function downloadAndSaveMedia(message: WAMessage, sessionId: string
 
         // Ensure directory exists (redundant if handled by OS, but safe)
         await mkdir(path.dirname(filePath), { recursive: true });
-        
+
         await writeFile(filePath, buffer);
-        
+
         // Return URL path using API route for reliable serving
         const fileUrl = `/api/media/${filename}`;
         console.log(`MediaDownload: Success. URL: ${fileUrl}`);
@@ -225,45 +226,43 @@ export async function onMessageReceived(sessionId: string, message: any, existin
     const fromMe = message.key?.fromMe || false;
     const isGroup = remoteJid.endsWith("@g.us");
     const participant = isGroup ? (message.key?.participant || message.participant) : undefined;
-    
+
     // Extract Alt JID (e.g. Phone Number JID when remoteJid is LID)
-    // Note: Baileys puts this in key sometimes
     const remoteJidAlt = message.key?.remoteJidAlt || null;
 
-    // "from" is usually the chat JID (remoteJid)
+    // --- Consistent JID Normalization ---
+    // Always prefer @s.whatsapp.net format over @lid
+    const normalizedFrom = await resolveToPhoneJid(remoteJid, sessionId, remoteJidAlt);
+
     // "sender" is who sent it. In DM: remoteJid. In Group: participant.
-    // If DM and remoteJidAlt exists (Phone JID), user prefers that as sender.
-    let sender: any = isGroup ? participant : remoteJid;
-    if (!isGroup && remoteJidAlt) {
-        sender = remoteJidAlt;
-    }
-    
+    let senderJid: string = isGroup ? (participant || "") : remoteJid;
+    const normalizedSender = await resolveToPhoneJid(senderJid, sessionId);
+    let sender: any = normalizedSender;
+
     // Enrich Participant Data if Group
-    let participantDetail: any = participant;
-    
+    let participantDetail: any = await resolveToPhoneJid(participant || "", sessionId);
+
     if (isGroup && typeof sender === 'string') {
         try {
-            // Need dbSessionId
-            const session = await prisma.session.findUnique({ 
+            const session = await prisma.session.findUnique({
                 where: { sessionId },
                 select: { id: true }
             });
-            
+
             if (session) {
                 const group = await prisma.group.findUnique({
-                    where: { 
-                        sessionId_jid: { 
-                            sessionId: session.id, 
-                            jid: remoteJid 
-                        } 
+                    where: {
+                        sessionId_jid: {
+                            sessionId: session.id,
+                            jid: remoteJid
+                        }
                     },
                     select: { participants: true }
                 });
-                
+
                 if (group && group.participants) {
                     const parts = group.participants as any[];
-                    // Try to match sender or participant JID
-                    const found = parts.find(p => p.id === sender || p.id === participant);
+                    const found = parts.find(p => p.id === senderJid || p.id === participant || p.id === normalizedSender);
                     if (found) {
                         sender = found;
                         participantDetail = found;
@@ -281,37 +280,37 @@ export async function onMessageReceived(sessionId: string, message: any, existin
         try {
             fileUrl = await downloadAndSaveMedia(message, sessionId);
         } catch (e) {
-             console.error("Error handling media download", e);
+            console.error("Error handling media download", e);
         }
     }
 
     const normalized = extractMessageContent(message);
-    const quoted = await extractQuotedMessageAsync(message, sessionId); // Extract quoted message (async now)
-    
+    const quoted = await extractQuotedMessageAsync(message, sessionId);
+
     dispatchWebhook(sessionId, "message.received", {
         key: {
             id: message.key?.id,
-            remoteJid: remoteJid,
+            remoteJid: normalizedFrom,
             fromMe: fromMe,
             participant: participantDetail
         },
         pushName: message.pushName,
         messageTimestamp: message.messageTimestamp,
-        
-        // Simplified Fields
-        from: remoteJid,            // Chat ID
-        sender: sender,             // Who Sent It (Preferred JID or Object)
-        remoteJidAlt: remoteJidAlt, // Explicit Alt Field
+
+        // Simplified Fields — always @s.whatsapp.net format
+        from: normalizedFrom,       // Chat ID (normalized)
+        sender: sender,             // Who Sent It (normalized JID or enriched Object)
         isGroup: isGroup,           // Boolean
-        
+        chatType: getChatType(remoteJid), // PERSONAL | GROUP | STATUS | NEWSLETTER
+
         // Message Content
         type: normalized.type,
         content: normalized.content,
-        fileUrl: fileUrl,           // Link to file if media
-        caption: normalized.caption, // Separate caption
-        quoted: quoted,             // Quoted Message Details
-        
-        // Raw Data (Requested by User)
+        fileUrl: fileUrl,
+        caption: normalized.caption,
+        quoted: quoted,
+
+        // Raw Data
         raw: message
     });
 }
@@ -321,37 +320,47 @@ export async function onMessageReceived(sessionId: string, message: any, existin
  */
 export async function onMessageSent(sessionId: string, message: any, existingFileUrl?: string | null) {
     const normalized = extractMessageContent(message);
-    const quoted = await extractQuotedMessageAsync(message, sessionId); // Extract quoted message
+    const quoted = await extractQuotedMessageAsync(message, sessionId);
     const remoteJid = message.key?.remoteJid || "";
-    
-    // Download media for sent messages too (optional but good)
+    const isGroup = remoteJid.endsWith("@g.us");
+    const remoteJidAlt = message.key?.remoteJidAlt || null;
+
+    // Download media for sent messages too
     let fileUrl: string | null = existingFileUrl || null;
     if (!fileUrl) {
         try {
             fileUrl = await downloadAndSaveMedia(message, sessionId);
         } catch (e) { /* ignore */ }
     }
-    
-    // For sent messages, sender is always ME (or represented by the bot)
-    // If it's a group, the participant might be undefined in the key if sent by us, 
-    // but typically we are the sender.
-    const sender = message.key?.participant || (message.key?.fromMe ? "ME" : remoteJid);
-    const remoteJidAlt = message.key?.remoteJidAlt || null;
+
+    // --- Consistent JID Normalization (same as onMessageReceived) ---
+    const normalizedFrom = await resolveToPhoneJid(remoteJid, sessionId, remoteJidAlt);
+
+    // For sent messages, sender is "ME" (self)
+    // But we still normalize the participant JID if in a group
+    const rawSender = message.key?.participant || (message.key?.fromMe ? "ME" : remoteJid);
+    const sender = rawSender === "ME" ? "ME" : await resolveToPhoneJid(rawSender, sessionId);
 
     dispatchWebhook(sessionId, "message.sent", {
-        key: message.key,
-        
-        from: remoteJid,
-        sender: sender,
-        remoteJidAlt: remoteJidAlt, 
-        isGroup: remoteJid.endsWith("@g.us"),
-        
+        key: {
+            id: message.key?.id,
+            remoteJid: normalizedFrom,
+            fromMe: message.key?.fromMe || true,
+            participant: isGroup ? sender : undefined
+        },
+
+        // Simplified Fields — always @s.whatsapp.net format
+        from: normalizedFrom,       // Chat ID (normalized)
+        sender: sender,             // "ME" or normalized JID
+        isGroup: isGroup,           // Boolean
+        chatType: getChatType(remoteJid), // PERSONAL | GROUP | STATUS | NEWSLETTER
+
         type: normalized.type,
         content: normalized.content,
         fileUrl: fileUrl,
         caption: normalized.caption,
         quoted: quoted,
-        
+
         timestamp: Date.now(),
         raw: message
     });
@@ -364,10 +373,12 @@ function getChatType(jid: string): "PERSONAL" | "GROUP" | "STATUS" | "NEWSLETTER
     if (!jid) return "UNKNOWN";
     if (jid.endsWith("@g.us")) return "GROUP";
     if (jid.endsWith("@s.whatsapp.net")) return "PERSONAL";
+    if (jid.endsWith("@lid")) return "PERSONAL"; // LID is also a personal chat
     if (jid === "status@broadcast") return "STATUS";
     if (jid.endsWith("@newsletter")) return "NEWSLETTER";
     return "UNKNOWN";
 }
+
 
 /**
  * Helper to dispatch connection update event
@@ -429,10 +440,10 @@ function extractMessageContent(msg: any): { type: string, content: string, capti
 async function extractQuotedMessageAsync(msg: any, sessionId: string): Promise<any> {
     const messageContent = normalizeMessageContent(msg.message);
     if (!messageContent) return null;
-    
+
     // Check for contextInfo in common message types
     let contextInfo: any = null;
-    
+
     if (messageContent.extendedTextMessage) {
         contextInfo = messageContent.extendedTextMessage.contextInfo;
     } else if (messageContent.imageMessage) {
@@ -446,30 +457,30 @@ async function extractQuotedMessageAsync(msg: any, sessionId: string): Promise<a
     } else if (messageContent.documentMessage) {
         contextInfo = messageContent.documentMessage.contextInfo;
     } else if (messageContent.contactMessage) {
-         contextInfo = messageContent.contactMessage.contextInfo;
+        contextInfo = messageContent.contactMessage.contextInfo;
     } else if (messageContent.locationMessage) {
-         contextInfo = messageContent.locationMessage.contextInfo;
+        contextInfo = messageContent.locationMessage.contextInfo;
     }
 
     if (contextInfo && contextInfo.quotedMessage) {
         const quotedMsg = contextInfo.quotedMessage;
         const normalized = extractMessageContent({ message: quotedMsg });
-        
+
         let fileUrl = null;
-        
+
         // Lookup Media URL in DB if possible
         if (contextInfo.stanzaId) {
             try {
                 // We need the dbSessionId... this is tricky without fetching session again.
                 // But we can try to look up by sessionId (baileys ID) and keyId
                 // Message table has @@unique([sessionId, keyId]). BUT sessionId there is the CUID, not the string.
-                
+
                 // Fetch CUID First
-                 const session = await prisma.session.findUnique({
+                const session = await prisma.session.findUnique({
                     where: { sessionId },
                     select: { id: true }
                 });
-                
+
                 if (session) {
                     const savedMsg = await prisma.message.findUnique({
                         where: {
@@ -480,7 +491,7 @@ async function extractQuotedMessageAsync(msg: any, sessionId: string): Promise<a
                         },
                         select: { mediaUrl: true }
                     });
-                    
+
                     if (savedMsg?.mediaUrl) {
                         fileUrl = savedMsg.mediaUrl;
                     }
@@ -489,7 +500,7 @@ async function extractQuotedMessageAsync(msg: any, sessionId: string): Promise<a
                 console.error("Failed to lookup quoted media url", e);
             }
         }
-        
+
         return {
             key: {
                 remoteJid: contextInfo.remoteJid || null, // Group JID
@@ -505,7 +516,7 @@ async function extractQuotedMessageAsync(msg: any, sessionId: string): Promise<a
             // raw: quotedMsg 
         };
     }
-    
+
     return null;
 }
 

@@ -21,13 +21,13 @@ export default function ApiDocsPage() {
         // Sessions
         { category: "Sessions", method: "GET", path: "/api/sessions", description: "List all sessions", params: "-" },
         { category: "Sessions", method: "POST", path: "/api/sessions", description: "Create new session", params: "Body: { name, sessionId }" },
-        { category: "Sessions", method: "GET", path: "/api/sessions/[id]", description: "Get session details", params: "Path: id" },
-        { category: "Sessions", method: "GET", path: "/api/sessions/[id]/qr", description: "Get QR code", params: "Path: id" },
-        { category: "Sessions", method: "GET", path: "/api/sessions/[id]/bot-config", description: "Get bot config", params: "Path: id" },
-        { category: "Sessions", method: "POST", path: "/api/sessions/[id]/bot-config", description: "Update bot config", params: "Path: id, Body: { enabled, botMode, ... }" },
-        { category: "Sessions", method: "PATCH", path: "/api/sessions/[id]/settings", description: "Update settings", params: "Path: id, Body: { config }" },
-        { category: "Sessions", method: "DELETE", path: "/api/sessions/[id]/settings", description: "Delete session", params: "Path: id" },
-        { category: "Sessions", method: "POST", path: "/api/sessions/[id]/[action]", description: "Control session", params: "Path: id, action (start|stop|restart|logout)" },
+        { category: "Sessions", method: "GET", path: "/api/sessions/[sessionId]", description: "Get session details", params: "Path: sessionId" },
+        { category: "Sessions", method: "GET", path: "/api/sessions/[sessionId]/qr", description: "Get QR code", params: "Path: sessionId" },
+        { category: "Sessions", method: "GET", path: "/api/sessions/[sessionId]/bot-config", description: "Get bot config", params: "Path: sessionId" },
+        { category: "Sessions", method: "POST", path: "/api/sessions/[sessionId]/bot-config", description: "Update bot config", params: "Path: sessionId, Body: { enabled, botMode, ... }" },
+        { category: "Sessions", method: "PATCH", path: "/api/sessions/[sessionId]/settings", description: "Update settings", params: "Path: sessionId, Body: { config }" },
+        { category: "Sessions", method: "DELETE", path: "/api/sessions/[sessionId]/settings", description: "Delete session", params: "Path: sessionId" },
+        { category: "Sessions", method: "POST", path: "/api/sessions/[sessionId]/[action]", description: "Control session", params: "Path: sessionId, action (start|stop|restart|logout)" },
 
         // Groups
         { category: "Groups", method: "GET", path: "/api/groups/[sessionId]", description: "List groups", params: "Path: sessionId" },

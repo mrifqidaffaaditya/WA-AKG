@@ -3,6 +3,7 @@ import type { WASocket, WAMessage, Contact } from "@whiskeysockets/baileys";
 import { normalizeMessageContent } from "@whiskeysockets/baileys";
 import { onMessageReceived, onMessageSent, dispatchWebhook, downloadAndSaveMedia } from "@/lib/webhook";
 import { handleBotCommand, setSessionStartTime } from "../bot/command-handler";
+import { resolveToPhoneJid, isLidJid } from "@/lib/jid-utils";
 
 import { Server } from "socket.io";
 
@@ -12,7 +13,7 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server |
 
     // First, get the database Session ID (cuid)
     let dbSessionId: string | null = null;
-    
+
     // Initialize by fetching the session ID
     (async () => {
         const session = await prisma.session.findUnique({
@@ -26,7 +27,7 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server |
             console.error(`Session ${sessionId} not found for message store`);
         }
     })();
-    
+
     // Handle Messages
     sock.ev.on('messages.upsert', async ({ messages, type }) => {
         // Process all message types: notify, append, and history sync
@@ -55,11 +56,11 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server |
                 if (savedMessage) {
                     processedMessages.push(savedMessage);
                 }
-                
+
                 // Execute Bot Commands (Only for Notify / New Messages)
                 if (type === 'notify' && savedMessage) {
-                   // Run in background, don't await strictly to not block saving
-                   handleBotCommand(sock, sessionId, msg).catch(e => console.error("Bot Handler Error", e));
+                    // Run in background, don't await strictly to not block saving
+                    handleBotCommand(sock, sessionId, msg).catch(e => console.error("Bot Handler Error", e));
                 }
             } catch (error) {
                 console.error("Error saving message", error);
@@ -75,7 +76,7 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server |
     // Handle Message History Sync (when connecting for the first time or syncing)
     sock.ev.on('messaging-history.set', async ({ messages, chats, contacts, isLatest }) => {
         console.log(`History sync: ${messages?.length || 0} messages, ${chats?.length || 0} chats, ${contacts?.length || 0} contacts, latest: ${isLatest}`);
-        
+
         // Ensure we have the database session ID
         if (!dbSessionId) {
             const session = await prisma.session.findUnique({ where: { sessionId }, select: { id: true } });
@@ -112,7 +113,7 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server |
         }
 
         for (const c of contacts) {
-             try {
+            try {
                 if (!c.id) continue;
                 await prisma.contact.upsert({
                     where: { sessionId_jid: { sessionId: dbSessionId, jid: c.id } },
@@ -139,19 +140,19 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server |
                         data: c as any
                     }
                 });
-                
+
                 // Dispatch webhook for contact update
                 dispatchWebhook(sessionId, "contact.update", { jid: c.id, name: c.name, notify: c.notify });
-             } catch (e) {
-                 console.error("Error saving contact", e);
-             }
+            } catch (e) {
+                console.error("Error saving contact", e);
+            }
         }
     });
 
     // Handle Message Status Updates
     sock.ev.on('messages.update', async (updates) => {
         if (!dbSessionId) return;
-        
+
         for (const update of updates) {
             try {
                 const keyId = update.key?.id;
@@ -190,23 +191,23 @@ async function processAndSaveMessage(msg: WAMessage, dbSessionId: string, sessio
     const remoteJid = msg.key.remoteJid;
     const fromMe = msg.key.fromMe;
     const pushName = msg.pushName;
-    const timestamp = msg.messageTimestamp 
+    const timestamp = msg.messageTimestamp
         ? new Date((typeof msg.messageTimestamp === 'number' ? msg.messageTimestamp : Number(msg.messageTimestamp)) * 1000)
         : new Date();
-    
+
     // Filter out Protocol & Empty Messages
     if (!msg.message) return false;
     if (!keyId || !remoteJid) return false;
-    
+
     // Ignore specific technical message types
     const messageKeys = Object.keys(msg.message);
     const ignoredTypes = [
-        'protocolMessage', 
-        'senderKeyDistributionMessage', 
+        'protocolMessage',
+        'senderKeyDistributionMessage',
         'reactionMessage', // Optional: User might want reactions, but usually "kosong" means junk
-        'keepInChatMessage' 
+        'keepInChatMessage'
     ];
-    
+
     // If message only contains ignored types, skip
     if (messageKeys.every(k => ignoredTypes.includes(k))) {
         console.log(`Skipping technical message: ${keyId} (${messageKeys.join(', ')})`);
@@ -224,7 +225,7 @@ async function processAndSaveMessage(msg: WAMessage, dbSessionId: string, sessio
     if (existingMessage) {
         // Message exists! Update status if changed, but DO NOT re-trigger webhooks/bot
         if (fromMe && existingMessage.status !== 'SENT') {
-             await prisma.message.update({
+            await prisma.message.update({
                 where: { id: existingMessage.id },
                 data: { status: 'SENT' }
             });
@@ -273,10 +274,19 @@ async function processAndSaveMessage(msg: WAMessage, dbSessionId: string, sessio
     const isGroup = remoteJid.endsWith("@g.us");
     const remoteJidAlt = msg.key.remoteJidAlt; // LID/Phone JID handling
     let senderJid = fromMe ? undefined : (isGroup ? (msg.key.participant || msg.participant) : remoteJid);
-    
+
     // Prefer remoteJidAlt for DMs if available (matches webhook logic)
     if (!fromMe && !isGroup && remoteJidAlt) {
         senderJid = remoteJidAlt;
+    }
+
+    // --- Normalize LID JIDs to @s.whatsapp.net ---
+    let normalizedRemoteJid = remoteJid;
+    if (isLidJid(remoteJid)) {
+        normalizedRemoteJid = await resolveToPhoneJid(remoteJid, dbSessionId, remoteJidAlt);
+    }
+    if (senderJid && isLidJid(senderJid)) {
+        senderJid = await resolveToPhoneJid(senderJid, dbSessionId, remoteJidAlt);
     }
 
 
@@ -291,7 +301,7 @@ async function processAndSaveMessage(msg: WAMessage, dbSessionId: string, sessio
     const newMessage = await prisma.message.create({
         data: {
             sessionId: dbSessionId,
-            remoteJid,
+            remoteJid: normalizedRemoteJid,
             senderJid,
             fromMe: fromMe || false,
             keyId,
@@ -306,22 +316,23 @@ async function processAndSaveMessage(msg: WAMessage, dbSessionId: string, sessio
 
     // Ensure contact exists (Upsert Contact)
     if (remoteJid && !remoteJid.includes('@g.us') && !remoteJid.includes('status@broadcast')) {
-         const contactData: any = {
-             sessionId: dbSessionId,
-             jid: remoteJid
-         };
+        const contactJid = normalizedRemoteJid; // Use normalized JID
+        const contactData: any = {
+            sessionId: dbSessionId,
+            jid: contactJid
+        };
 
-         // Only update name/notify if message is FROM the contact (not from me)
-         if (!fromMe) {
-             if (pushName) contactData.notify = pushName;
-             if (pushName) contactData.name = pushName;
-         }
+        // Only update name/notify if message is FROM the contact (not from me)
+        if (!fromMe) {
+            if (pushName) contactData.notify = pushName;
+            if (pushName) contactData.name = pushName;
+        }
 
-         await prisma.contact.upsert({
-            where: { sessionId_jid: { sessionId: dbSessionId, jid: remoteJid } },
+        await prisma.contact.upsert({
+            where: { sessionId_jid: { sessionId: dbSessionId, jid: contactJid } },
             create: {
                 sessionId: dbSessionId,
-                jid: remoteJid,
+                jid: contactJid,
                 notify: !fromMe ? pushName : undefined,
                 name: !fromMe ? pushName : undefined,
                 // @ts-ignore
@@ -329,10 +340,8 @@ async function processAndSaveMessage(msg: WAMessage, dbSessionId: string, sessio
             },
             update: !fromMe ? {
                 notify: pushName,
-                // Only update name if it was null? Or always? Let's just update notify usually.
-                // But Baileys often sends name in pushName.
                 // @ts-ignore
-                remoteJidAlt: remoteJidAlt || undefined // Update Alt JID if we see it
+                remoteJidAlt: remoteJidAlt || undefined
             } : {}
         });
     }

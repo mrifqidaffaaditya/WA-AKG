@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { batchResolveToPhoneJid, isLidJid } from "@/lib/jid-utils";
 import { NextResponse, NextRequest } from "next/server";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 
@@ -44,20 +45,28 @@ export async function GET(
             }
         });
 
-        // Attach the last message for each contact
+        // Build LID -> Phone JID lookup map for batch resolution
+        const allJids = contacts.map(c => c.jid);
+        const jidMap = await batchResolveToPhoneJid(allJids, dbSessionId);
+
+        // Attach the last message for each contact and normalize JIDs
         const chatList = await Promise.all(contacts.map(async (c) => {
+            const normalizedJid = jidMap.get(c.jid) || c.jid;
             const lastMessage = await prisma.message.findFirst({
-                where: { sessionId: dbSessionId, remoteJid: c.jid },
+                where: {
+                    sessionId: dbSessionId,
+                    OR: [{ remoteJid: c.jid }, { remoteJid: normalizedJid }]
+                },
                 orderBy: { timestamp: 'desc' },
                 select: { content: true, timestamp: true, type: true }
             });
             return {
                 ...c,
+                jid: normalizedJid, // Always return @s.whatsapp.net format
                 lastMessage
             };
         }));
-        
-        // Sort by last message timestamp
+
         chatList.sort((a, b) => {
             const tA = a.lastMessage?.timestamp.getTime() || 0;
             const tB = b.lastMessage?.timestamp.getTime() || 0;

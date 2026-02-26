@@ -184,7 +184,7 @@ export default async function DashboardPage() {
                             const isDisconnected = s.status === 'DISCONNECTED' || s.status === 'CLOSE';
 
                             return (
-                                <Link key={s.id} href={`/dashboard/sessions/${s.id}`}>
+                                <Link key={s.id} href={`/dashboard/sessions/${s.sessionId}`}>
                                     <Card className="glass-panel border-border/50 shadow-sm hover:shadow-md hover:shadow-primary/5 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer h-full">
                                         <CardContent className="p-4">
                                             <div className="flex items-start justify-between mb-2">

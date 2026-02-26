@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ sessionId: string }> }
 ) {
     try {
         const user = await getAuthenticatedUser(request);
@@ -14,7 +14,7 @@ export async function GET(
         }
 
         const resolvedParams = await params;
-        const sessionId = resolvedParams.id; // Renamed to id to match folder
+        const sessionId = resolvedParams.sessionId;
 
         // Verify access
         const canAccess = await canAccessSession(user.id, user.role, sessionId);

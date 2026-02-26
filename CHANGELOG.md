@@ -1,3 +1,39 @@
+## [v1.5.0] - 2026-02-26
+
+### Added
+- **Collapsible Sidebar**:
+    - Desktop sidebar can now be minimized to icon-only mode (260px ↔ 72px).
+    - Tooltips on each menu item when collapsed for quick identification.
+    - Collapse state persisted in `localStorage` across page navigations.
+    - Smooth CSS transitions on width, brand logo, and user footer.
+    - New `SidebarProvider` context and `SidebarShell` client component architecture.
+- **Chat UI Overhaul**:
+    - **Search Bar**: Filter chats by name or phone number in real-time.
+    - **WhatsApp-style List**: Borderless items with hover states, left accent on selected chat.
+    - **Smart Previews**: Message preview up to 45 characters, media type icons (📎 Image, Video, etc.).
+    - **Relative Time Labels**: Shows "Yesterday", "Mon", "Feb 12" instead of raw timestamps.
+    - **Date Separators**: "Today", "Yesterday", or full date between message groups.
+    - **Rounded Bubbles**: WhatsApp-style message bubbles with tail shape and inline timestamps.
+    - **Dotted Background**: Subtle dot pattern in chat window for visual depth.
+    - **Mobile Back Button**: Integrated back button in chat header for mobile navigation.
+    - **Colored Attachment Menu**: Each media type has a distinct color icon.
+- **Shared JID Utilities**: New `src/lib/jid-utils.ts` module with `resolveToPhoneJid()`, `batchResolveToPhoneJid()`, and `isLidJid()` for consistent JID handling across the entire codebase.
+- **Tooltip UI Component**: Added `@radix-ui/react-tooltip` dependency and `src/components/ui/tooltip.tsx`.
+
+### Fixed
+- **JID Consistency (Webhooks)**: Webhook payloads (`from`, `sender`, `participant`) now always use `@s.whatsapp.net` format instead of `@lid`. Uses a three-tier resolution: inline `remoteJidAlt` → DB Contact lookup → fallback.
+- **JID Consistency (Web UI)**: Chat list API now batch-resolves `@lid` JIDs to phone numbers before responding, ensuring the UI always displays `@s.whatsapp.net` format.
+- **JID Consistency (Message Store)**: `processAndSaveMessage` now normalizes `remoteJid` and `senderJid` before writing to the database, preventing `@lid` from being stored.
+- **Chat List Overflow**: Fixed long text in chat list items expanding horizontally; now properly truncated with ellipsis.
+- **Session Path Parameter**: Renamed API route folder from `sessions/[id]` to `sessions/[sessionId]` for consistency with all other endpoints. Updated all 5 route handlers and API docs page.
+
+### Changed
+- **Dashboard Layout**: Lighter ambient background gradients, tighter padding on mobile (`p-3`), cleaner overall feel.
+- **Webhook Refactor**: Removed duplicated `resolveToPhoneJid` and `isLidJid` from `webhook.ts` — now imports from shared `jid-utils.ts`.
+- **API Docs Page**: Session endpoints now correctly show `[sessionId]` instead of `[id]` in path and parameter descriptions.
+
+---
+
 ## [v1.4.1] - 2026-02-21
 
 ### Added

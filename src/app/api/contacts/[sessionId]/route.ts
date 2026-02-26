@@ -1,6 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { batchResolveToPhoneJid } from "@/lib/jid-utils";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 
 export async function GET(

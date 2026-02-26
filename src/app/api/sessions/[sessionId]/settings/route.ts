@@ -6,9 +6,9 @@ import { getAuthenticatedUser, canAccessSession, isAdmin } from "@/lib/api-auth"
 // GET: Retrieve session settings
 export async function GET(
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ sessionId: string }> }
 ) {
-    const { id: sessionId } = await params;
+    const { sessionId } = await params;
 
     try {
         const user = await getAuthenticatedUser(request);
@@ -40,9 +40,9 @@ export async function GET(
 // PATCH: Update session settings
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ sessionId: string }> }
 ) {
-    const { id: sessionId } = await params;
+    const { sessionId } = await params;
 
     try {
         const user = await getAuthenticatedUser(request);
@@ -81,9 +81,9 @@ export async function PATCH(
 // DELETE: Delete a session
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ sessionId: string }> }
 ) {
-    const { id: sessionId } = await params;
+    const { sessionId } = await params;
 
     try {
         const user = await getAuthenticatedUser(request);

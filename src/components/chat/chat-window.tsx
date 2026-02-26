@@ -4,10 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Paperclip } from "lucide-react";
+import { Send, Paperclip, ArrowLeft, Phone, MoreVertical } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Image as ImageIcon, FileText, Music, Sticker as StickerIcon, Video, AlertCircle } from "lucide-react";
+import { Image as ImageIcon, FileText, Music, Sticker as StickerIcon, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
@@ -28,9 +27,10 @@ interface ChatWindowProps {
     sessionId: string;
     jid: string;
     name?: string;
+    onBack?: () => void;
 }
 
-export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
+export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -38,14 +38,12 @@ export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploadType, setUploadType] = useState<string>("image");
 
-    // Scroll to bottom helper
     const scrollToBottom = (smooth = true) => {
         if (scrollRef.current) {
             scrollRef.current.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "end" });
         }
     };
 
-    // Auto-scroll on messages change
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
@@ -56,7 +54,6 @@ export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
             if (res.ok) {
                 const data = await res.json();
                 setMessages(data);
-                // Force scroll buffer
                 setTimeout(() => scrollToBottom(false), 100);
             }
         } catch (error) {
@@ -64,31 +61,24 @@ export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
         }
     }
 
-
-
     useEffect(() => {
-        // Initial Fetch
         fetchMessages();
 
-        // Socket Connection
         const newSocket = io({
             path: "/api/socket/io",
             addTrailingSlash: false,
         });
 
         newSocket.on("connect", () => {
-            console.log("Connected to socket");
             newSocket.emit("join-session", sessionId);
         });
 
         newSocket.on("message.update", (newMessages: Message[]) => {
             setMessages((prev) => {
-                // De-duplicate and sort
                 const combined = [...prev, ...newMessages.filter(m => m.remoteJid === jid)];
                 const unique = Array.from(new Map(combined.map(m => [m.keyId, m])).values());
                 return unique.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
             });
-            // Scroll will happen via the [messages] dependency
         });
 
         setSocket(newSocket);
@@ -112,7 +102,7 @@ export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
                 })
             });
             setNewMessage("");
-            fetchMessages(); // Refresh immediately
+            fetchMessages();
         } catch (e) {
             console.error(e);
         }
@@ -125,7 +115,6 @@ export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("type", uploadType);
-        // formData.append("caption", newMessage); // Optional: Send current text as caption
 
         try {
             toast.info("Sending...");
@@ -136,7 +125,6 @@ export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
 
             if (!res.ok) throw new Error("Failed to send media");
             toast.success("Sent!");
-            // Socket will handle update
         } catch (error) {
             console.error(error);
             toast.error("Failed to send media");
@@ -149,112 +137,164 @@ export function ChatWindow({ sessionId, jid, name }: ChatWindowProps) {
         setUploadType(type);
         if (fileInputRef.current) {
             fileInputRef.current.accept = type === 'image' ? "image/*" : type === 'video' ? "video/*" : type === 'audio' ? "audio/*" : type === 'sticker' ? "image/*" : "*/*";
-            // For sticker, we accept image to convert
             fileInputRef.current.click();
         }
     };
 
+    // Group messages by date
+    const getDateLabel = (timestamp: string) => {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays === 0) return "Today";
+        if (diffDays === 1) return "Yesterday";
+        return date.toLocaleDateString([], { year: 'numeric', month: 'long', day: 'numeric' });
+    };
+
+    const displayName = name || jid.split('@')[0];
+
     return (
-        <div className="flex flex-col h-full bg-slate-50">
+        <div className="flex flex-col h-full bg-muted/20">
             {/* Header */}
-            <div className="p-4 border-b bg-white flex items-center space-x-3 shadow-sm">
-                <Avatar>
-                    <AvatarFallback>{(name || jid).slice(0, 2).toUpperCase()}</AvatarFallback>
+            <div className="px-3 py-2.5 border-b bg-background/80 backdrop-blur-sm flex items-center gap-3 flex-shrink-0">
+                {onBack && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden flex-shrink-0" onClick={onBack}>
+                        <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                )}
+                <Avatar className="h-9 w-9 flex-shrink-0">
+                    <AvatarFallback className="text-xs font-medium bg-gradient-to-br from-primary/20 to-blue-500/20 text-primary">
+                        {displayName.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
                 </Avatar>
-                <div>
-                    <h3 className="font-semibold">{name || jid}</h3>
-                    <span className="text-xs text-muted-foreground">{jid}</span>
+                <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-semibold text-foreground truncate">{displayName}</h3>
+                    <p className="text-[10px] text-muted-foreground truncate">{jid}</p>
                 </div>
             </div>
 
             {/* Messages Area */}
-            <ScrollArea className="flex-1 min-h-0 p-4">
-                <div className="space-y-4 pb-4">
-                    {messages.map((msg) => (
-                        <div
-                            key={msg.keyId}
-                            className={cn(
-                                "flex w-fit max-w-[75%] flex-col gap-1 rounded-lg px-3 py-2 text-sm shadow-sm break-words whitespace-pre-wrap",
-                                msg.fromMe
-                                    ? "ml-auto bg-primary text-primary-foreground"
-                                    : "bg-white border"
-                            )}
-                        >
-                            {/* Sender Name (for received messages in groups) */}
-                            {!msg.fromMe && msg.pushName && (
-                                <span className="text-[10px] font-bold text-orange-600 mb-0.5">
-                                    {msg.pushName}
-                                </span>
-                            )}
+            <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 styled-scrollbar" style={{
+                backgroundImage: `radial-gradient(circle at 1px 1px, hsl(var(--muted-foreground) / 0.04) 1px, transparent 0)`,
+                backgroundSize: '24px 24px'
+            }}>
+                <div className="space-y-1.5 max-w-3xl mx-auto">
+                    {messages.map((msg, idx) => {
+                        // Show date separator
+                        const showDate = idx === 0 || getDateLabel(msg.timestamp) !== getDateLabel(messages[idx - 1].timestamp);
 
-                            {msg.type === 'IMAGE' && msg.mediaUrl && (
-                                <img src={msg.mediaUrl} alt="Image" className="rounded-md max-h-64 object-cover mb-1" />
-                            )}
-                            {msg.type === 'STICKER' && msg.mediaUrl && (
-                                <img src={msg.mediaUrl} alt="Sticker" className="rounded-md max-h-32 object-contain mb-1" />
-                            )}
-                            {/* Simple fallback for other media */}
-                            {msg.type !== 'TEXT' && msg.type !== 'IMAGE' && msg.type !== 'STICKER' && (
-                                <div className="flex items-center gap-2 p-2 bg-black/10 rounded">
-                                    <FileText className="h-4 w-4" />
-                                    <span className="text-xs italic">{msg.type} Message</span>
+                        return (
+                            <div key={msg.keyId}>
+                                {showDate && (
+                                    <div className="flex justify-center my-3">
+                                        <span className="text-[10px] font-medium text-muted-foreground bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm border border-border/30">
+                                            {getDateLabel(msg.timestamp)}
+                                        </span>
+                                    </div>
+                                )}
+                                <div className={cn("flex", msg.fromMe ? "justify-end" : "justify-start")}>
+                                    <div
+                                        className={cn(
+                                            "max-w-[80%] sm:max-w-[70%] rounded-2xl px-3 py-2 text-sm break-words whitespace-pre-wrap shadow-sm",
+                                            msg.fromMe
+                                                ? "bg-primary text-primary-foreground rounded-br-md"
+                                                : "bg-background border border-border/40 rounded-bl-md"
+                                        )}
+                                    >
+                                        {/* Sender Name (group messages) */}
+                                        {!msg.fromMe && msg.pushName && (
+                                            <span className="text-[10px] font-semibold text-primary block mb-0.5">
+                                                {msg.pushName}
+                                            </span>
+                                        )}
+
+                                        {/* Media */}
+                                        {msg.type === 'IMAGE' && msg.mediaUrl && (
+                                            <img src={msg.mediaUrl} alt="Image" className="rounded-lg max-h-60 object-cover mb-1.5 w-full" />
+                                        )}
+                                        {msg.type === 'STICKER' && msg.mediaUrl && (
+                                            <img src={msg.mediaUrl} alt="Sticker" className="rounded-lg max-h-32 object-contain mb-1" />
+                                        )}
+                                        {msg.type !== 'TEXT' && msg.type !== 'IMAGE' && msg.type !== 'STICKER' && (
+                                            <div className={cn(
+                                                "flex items-center gap-2 py-1.5 px-2 rounded-lg mb-1 text-xs",
+                                                msg.fromMe ? "bg-white/15" : "bg-muted/50"
+                                            )}>
+                                                <FileText className="h-3.5 w-3.5" />
+                                                <span className="font-medium">{msg.type}</span>
+                                            </div>
+                                        )}
+
+                                        {/* Content + Time */}
+                                        <div className="flex items-end gap-2">
+                                            <span className="flex-1">{msg.content}</span>
+                                            <span className={cn(
+                                                "text-[9px] flex-shrink-0 leading-none translate-y-0.5",
+                                                msg.fromMe ? "text-primary-foreground/60" : "text-muted-foreground"
+                                            )}>
+                                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
-                            )}
-
-                            {msg.content}
-                            <span className={cn("text-[10px] self-end opacity-70", msg.fromMe ? "text-primary-foreground" : "text-muted-foreground")}>
-                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                        </div>
-                    ))}
+                            </div>
+                        );
+                    })}
                     <div ref={scrollRef} />
                 </div>
-            </ScrollArea>
+            </div>
 
             {/* Input Area */}
-            <div className="p-4 bg-white border-t flex items-center gap-2">
-                <input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    onChange={handleFileUpload}
-                />
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                            <Paperclip className="h-5 w-5 text-muted-foreground" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-48 p-2" side="top" align="start">
-                        <div className="flex flex-col gap-1">
-                            <Button variant="ghost" size="sm" className="justify-start gap-2" onClick={() => triggerUpload('image')}>
-                                <ImageIcon className="h-4 w-4" /> Image
+            <div className="px-3 py-2.5 bg-background/80 backdrop-blur-sm border-t flex-shrink-0">
+                <div className="flex items-center gap-2 max-w-3xl mx-auto">
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        onChange={handleFileUpload}
+                    />
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full flex-shrink-0 text-muted-foreground hover:text-foreground">
+                                <Paperclip className="h-4.5 w-4.5" />
                             </Button>
-                            <Button variant="ghost" size="sm" className="justify-start gap-2" onClick={() => triggerUpload('video')}>
-                                <Video className="h-4 w-4" /> Video
-                            </Button>
-                            <Button variant="ghost" size="sm" className="justify-start gap-2" onClick={() => triggerUpload('audio')}>
-                                <Music className="h-4 w-4" /> Audio
-                            </Button>
-                            <Button variant="ghost" size="sm" className="justify-start gap-2" onClick={() => triggerUpload('document')}>
-                                <FileText className="h-4 w-4" /> Document
-                            </Button>
-                            <Button variant="ghost" size="sm" className="justify-start gap-2" onClick={() => triggerUpload('sticker')}>
-                                <StickerIcon className="h-4 w-4" /> Sticker
-                            </Button>
-                        </div>
-                    </PopoverContent>
-                </Popover>
-                <Input
-                    placeholder="Type a message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                    className="flex-1"
-                />
-                <Button onClick={handleSend} disabled={!newMessage.trim()}>
-                    <Send className="h-4 w-4" />
-                </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-44 p-1.5" side="top" align="start">
+                            <div className="flex flex-col gap-0.5">
+                                <Button variant="ghost" size="sm" className="justify-start gap-2 h-8 text-xs" onClick={() => triggerUpload('image')}>
+                                    <ImageIcon className="h-3.5 w-3.5 text-blue-500" /> Image
+                                </Button>
+                                <Button variant="ghost" size="sm" className="justify-start gap-2 h-8 text-xs" onClick={() => triggerUpload('video')}>
+                                    <Video className="h-3.5 w-3.5 text-purple-500" /> Video
+                                </Button>
+                                <Button variant="ghost" size="sm" className="justify-start gap-2 h-8 text-xs" onClick={() => triggerUpload('audio')}>
+                                    <Music className="h-3.5 w-3.5 text-orange-500" /> Audio
+                                </Button>
+                                <Button variant="ghost" size="sm" className="justify-start gap-2 h-8 text-xs" onClick={() => triggerUpload('document')}>
+                                    <FileText className="h-3.5 w-3.5 text-emerald-500" /> Document
+                                </Button>
+                                <Button variant="ghost" size="sm" className="justify-start gap-2 h-8 text-xs" onClick={() => triggerUpload('sticker')}>
+                                    <StickerIcon className="h-3.5 w-3.5 text-pink-500" /> Sticker
+                                </Button>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                    <Input
+                        placeholder="Type a message..."
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+                        className="flex-1 h-9 rounded-full bg-muted/40 border-border/30 text-sm focus-visible:ring-1"
+                    />
+                    <Button
+                        onClick={handleSend}
+                        disabled={!newMessage.trim()}
+                        size="icon"
+                        className="h-9 w-9 rounded-full flex-shrink-0"
+                    >
+                        <Send className="h-4 w-4" />
+                    </Button>
+                </div>
             </div>
         </div>
     )

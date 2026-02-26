@@ -92,6 +92,69 @@ All endpoints require authentication via:
                             notify: { type: "string" },
                             profilePic: { type: "string", nullable: true }
                         }
+                    },
+                    ScheduledMessage: {
+                        type: "object",
+                        properties: {
+                            id: { type: "string" },
+                            sessionId: { type: "string" },
+                            jid: { type: "string" },
+                            content: { type: "string" },
+                            sendAt: { type: "string", format: "date-time" },
+                            status: { type: "string", example: "PENDING" }
+                        }
+                    },
+                    Webhook: {
+                        type: "object",
+                        properties: {
+                            id: { type: "string" },
+                            sessionId: { type: "string" },
+                            url: { type: "string" },
+                            events: { type: "array", items: { type: "string" } },
+                            secret: { type: "string" }
+                        }
+                    },
+                    Group: {
+                        type: "object",
+                        properties: {
+                            id: { type: "string" },
+                            subject: { type: "string" },
+                            desc: { type: "string" },
+                            owner: { type: "string" },
+                            size: { type: "number" },
+                            participants: {
+                                type: "array",
+                                items: {
+                                    type: "object",
+                                    properties: {
+                                        id: { type: "string" },
+                                        admin: { type: "string", nullable: true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    Label: {
+                        type: "object",
+                        properties: {
+                            id: { type: "string" },
+                            name: { type: "string" },
+                            color: { type: "number", nullable: true },
+                            predefinedId: { type: "string", nullable: true }
+                        }
+                    },
+                    GroupDetails: {
+                        type: "object",
+                        properties: {
+                            id: { type: "string" },
+                            subject: { type: "string" },
+                            subjectOwner: { type: "string" },
+                            subjectTime: { type: "number" },
+                            desc: { type: "string" },
+                            descOwner: { type: "string" },
+                            descId: { type: "string" },
+                            owner: { type: "string" }
+                        }
                     }
                 },
                 responses: {
@@ -128,6 +191,15 @@ All endpoints require authentication via:
                             "application/json": {
                                 schema: { $ref: "#/components/schemas/Error" },
                                 example: { error: "Session not ready" }
+                            }
+                        }
+                    },
+                    BadRequest: {
+                        description: "Bad Request - Invalid parameters",
+                        content: {
+                            "application/json": {
+                                schema: { $ref: "#/components/schemas/Error" },
+                                example: { error: "Invalid request parameters" }
                             }
                         }
                     },

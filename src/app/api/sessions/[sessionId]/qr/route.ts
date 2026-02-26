@@ -6,9 +6,9 @@ import QRCode from "qrcode";
 // GET: Get QR code for session
 export async function GET(
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ sessionId: string }> }
 ) {
-    const { id } = await params;
+    const { sessionId } = await params;
 
     try {
         const user = await getAuthenticatedUser(request);
@@ -17,12 +17,12 @@ export async function GET(
         }
 
         // Check if user can access this session
-        const canAccess = await canAccessSession(user.id, user.role, id);
+        const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
             return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
-        const instance = waManager.getInstance(id);
+        const instance = waManager.getInstance(sessionId);
         if (!instance) {
             return NextResponse.json({ error: "Session not found" }, { status: 404 });
         }

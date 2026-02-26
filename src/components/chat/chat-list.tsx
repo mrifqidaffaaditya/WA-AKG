@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MessageSquarePlus } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { MessageSquarePlus, Search, MessageCircle, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { cn } from "@/lib/utils";
@@ -33,6 +32,9 @@ interface ChatListProps {
 export function ChatList({ sessionId, onSelectChat, selectedJid }: ChatListProps) {
     const [chats, setChats] = useState<ChatContact[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+    const [newChatNumber, setNewChatNumber] = useState("");
 
     useEffect(() => {
         const fetchChats = async () => {
@@ -62,9 +64,6 @@ export function ChatList({ sessionId, onSelectChat, selectedJid }: ChatListProps
             });
 
             socket.on("message.update", (newMessages: any[]) => {
-                // We could optimise this by only updating the specific chat
-                // But simplified: Update last message for existing chat OR Refetch if new chat
-
                 setChats((prevChats) => {
                     let updatedChats = [...prevChats];
                     let needsReorder = false;
@@ -72,7 +71,6 @@ export function ChatList({ sessionId, onSelectChat, selectedJid }: ChatListProps
                     newMessages.forEach(msg => {
                         const chatIndex = updatedChats.findIndex(c => c.jid === msg.remoteJid);
                         if (chatIndex !== -1) {
-                            // Update existing
                             updatedChats[chatIndex] = {
                                 ...updatedChats[chatIndex],
                                 lastMessage: {
@@ -83,9 +81,6 @@ export function ChatList({ sessionId, onSelectChat, selectedJid }: ChatListProps
                             };
                             needsReorder = true;
                         } else {
-                            // New chat - fetch all again to get profile pic etc? 
-                            // Or just optimistic add? 
-                            // Let's refetch to be safe for now, or just ignore until user refresh 
                             fetchChats();
                         }
                     });
@@ -108,98 +103,176 @@ export function ChatList({ sessionId, onSelectChat, selectedJid }: ChatListProps
         }
     }, [sessionId]);
 
-    const [isNewChatOpen, setIsNewChatOpen] = useState(false);
-    const [newChatNumber, setNewChatNumber] = useState("");
+    // Filter chats based on search query
+    const filteredChats = useMemo(() => {
+        if (!searchQuery.trim()) return chats;
+        const q = searchQuery.toLowerCase();
+        return chats.filter(chat => {
+            const name = (chat.name || chat.notify || "").toLowerCase();
+            const jid = chat.jid.toLowerCase();
+            return name.includes(q) || jid.includes(q);
+        });
+    }, [chats, searchQuery]);
 
-    if (loading) {
-        return <div className="space-y-4">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
-        </div>;
-    }
-
-    const handleStartNewChat = () => {
-        if (!newChatNumber) return;
-        // Basic cleaning
-        let clean = newChatNumber.replace(/\D/g, '');
-        if (clean.startsWith('0')) clean = '62' + clean.substring(1); // ID Auto-fix
-        const jid = `${clean}@s.whatsapp.net`;
-        onSelectChat(jid); // No name for new chats
-        setIsNewChatOpen(false);
-        setNewChatNumber("");
-    };
-
-    // Helper to get display name from contact
     const getContactDisplayName = (chat: ChatContact): string => {
         return chat.name || chat.notify || chat.jid.split('@')[0];
     };
 
-    return (
-        <div className="flex flex-col space-y-2">
-            <div className="flex justify-between items-center mb-2 px-1">
-                <h3 className="font-semibold text-lg">Chats</h3>
-                <Button variant="outline" size="sm" onClick={() => setIsNewChatOpen(!isNewChatOpen)}>
-                    <MessageSquarePlus className="h-4 w-4 mr-1" /> New
-                </Button>
-            </div>
+    const getMessagePreview = (chat: ChatContact): string => {
+        if (!chat.lastMessage?.content) return "No messages yet";
+        const content = chat.lastMessage.content;
+        if (chat.lastMessage.type !== "TEXT") {
+            return `📎 ${chat.lastMessage.type.charAt(0) + chat.lastMessage.type.slice(1).toLowerCase()}`;
+        }
+        return content.length > 45 ? content.slice(0, 45) + "…" : content;
+    };
 
-            {isNewChatOpen && (
-                <div className="p-3 bg-white border rounded-md shadow-sm mb-2 space-y-2">
-                    <Label className="text-xs">Phone Number (e.g. 628...)</Label>
-                    <div className="flex gap-2">
-                        <Input
-                            placeholder="628123456789"
-                            value={newChatNumber}
-                            onChange={(e) => setNewChatNumber(e.target.value)}
-                            className="h-8"
-                        />
-                        <Button size="sm" onClick={handleStartNewChat}>Go</Button>
+    const getTimeLabel = (timestamp: string): string => {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else if (diffDays === 1) {
+            return "Yesterday";
+        } else if (diffDays < 7) {
+            return date.toLocaleDateString([], { weekday: 'short' });
+        }
+        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    };
+
+    const handleStartNewChat = () => {
+        if (!newChatNumber) return;
+        let clean = newChatNumber.replace(/\D/g, '');
+        if (clean.startsWith('0')) clean = '62' + clean.substring(1);
+        const jid = `${clean}@s.whatsapp.net`;
+        onSelectChat(jid);
+        setIsNewChatOpen(false);
+        setNewChatNumber("");
+    };
+
+    if (loading) {
+        return (
+            <div className="p-3 space-y-3">
+                <Skeleton className="h-9 w-full rounded-lg" />
+                {[1, 2, 3, 4, 5].map(i => (
+                    <div key={i} className="flex items-center gap-3 p-2">
+                        <Skeleton className="h-10 w-10 rounded-full flex-shrink-0" />
+                        <div className="flex-1 space-y-1.5">
+                            <Skeleton className="h-3.5 w-28" />
+                            <Skeleton className="h-3 w-40" />
+                        </div>
                     </div>
-                </div>
-            )}
-
-            <div className="overflow-y-auto h-[calc(100vh-200px)] space-y-2">
-                {chats.map((chat) => {
-                    const displayName = getContactDisplayName(chat);
-                    return (
-                        <Card
-                            key={chat.jid}
-                            className={cn(
-                                "p-3 cursor-pointer hover:bg-slate-50 transition-colors flex items-center gap-3",
-                                selectedJid === chat.jid && "bg-slate-100 border-primary"
-                            )}
-                            onClick={() => onSelectChat(chat.jid, displayName)}
-                        >
-                            <Avatar>
-                                <AvatarImage src={chat.profilePic || ""} />
-                                <AvatarFallback>{displayName.slice(0, 2).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex justify-between items-center mb-1">
-                                    <h4 className="font-semibold text-sm truncate">{displayName}</h4>
-                                    {chat.lastMessage && (
-                                        <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
-                                            {new Date(chat.lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                    )}
-                                </div>
-                                <p className="text-xs text-muted-foreground block w-full truncate">
-                                    {chat.lastMessage?.content
-                                        ? chat.lastMessage.content.length > 15
-                                            ? chat.lastMessage.content.slice(0, 15) + "..."
-                                            : chat.lastMessage.content
-                                        : "No messages"}
-
-                                </p>
-                            </div>
-                        </Card>
-                    );
-                })}
+                ))}
             </div>
-            {chats.length === 0 && (
-                <div className="text-center text-muted-foreground py-8">
-                    No chats found.
+        );
+    }
+
+    return (
+        <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="px-3 pt-3 pb-2 space-y-2 flex-shrink-0">
+                <div className="flex justify-between items-center">
+                    <h3 className="font-semibold text-base text-foreground">Chats</h3>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg"
+                        onClick={() => setIsNewChatOpen(!isNewChatOpen)}
+                    >
+                        {isNewChatOpen ? (
+                            <X className="h-4 w-4" />
+                        ) : (
+                            <MessageSquarePlus className="h-4 w-4" />
+                        )}
+                    </Button>
                 </div>
-            )}
+
+                {/* Search */}
+                <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                        placeholder="Search chats..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="h-8 pl-8 text-sm bg-muted/50 border-0 rounded-lg focus-visible:ring-1"
+                    />
+                </div>
+
+                {/* New Chat Form */}
+                {isNewChatOpen && (
+                    <div className="p-2.5 bg-muted/30 rounded-lg space-y-2 border border-border/40">
+                        <Label className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Phone Number</Label>
+                        <div className="flex gap-1.5">
+                            <Input
+                                placeholder="628123456789"
+                                value={newChatNumber}
+                                onChange={(e) => setNewChatNumber(e.target.value)}
+                                onKeyDown={(e) => e.key === "Enter" && handleStartNewChat()}
+                                className="h-8 text-sm"
+                            />
+                            <Button size="sm" className="h-8 px-3" onClick={handleStartNewChat}>Go</Button>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Chat List */}
+            <div className="flex-1 overflow-y-auto styled-scrollbar">
+                {filteredChats.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                        <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mb-3">
+                            <MessageCircle className="h-6 w-6 text-muted-foreground/50" />
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                            {searchQuery ? "No chats match your search" : "No chats yet"}
+                        </p>
+                    </div>
+                ) : (
+                    filteredChats.map((chat) => {
+                        const displayName = getContactDisplayName(chat);
+                        const isSelected = selectedJid === chat.jid;
+                        return (
+                            <button
+                                key={chat.jid}
+                                className={cn(
+                                    "w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors duration-150 border-b border-border/20 overflow-hidden",
+                                    isSelected
+                                        ? "bg-primary/8 border-l-2 border-l-primary"
+                                        : "hover:bg-muted/40 border-l-2 border-l-transparent"
+                                )}
+                                onClick={() => onSelectChat(chat.jid, displayName)}
+                            >
+                                <Avatar className="h-10 w-10 flex-shrink-0">
+                                    <AvatarImage src={chat.profilePic || ""} />
+                                    <AvatarFallback className="text-xs font-medium bg-gradient-to-br from-primary/20 to-blue-500/20 text-primary">
+                                        {displayName.slice(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0 overflow-hidden">
+                                    <div className="flex justify-between items-baseline gap-2 overflow-hidden">
+                                        <h4 className={cn(
+                                            "text-sm truncate",
+                                            isSelected ? "font-semibold text-primary" : "font-medium text-foreground"
+                                        )}>
+                                            {displayName}
+                                        </h4>
+                                        {chat.lastMessage && (
+                                            <span className="text-[10px] text-muted-foreground flex-shrink-0">
+                                                {getTimeLabel(chat.lastMessage.timestamp)}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                        {getMessagePreview(chat)}
+                                    </p>
+                                </div>
+                            </button>
+                        );
+                    })
+                )}
+            </div>
         </div>
     );
 }
