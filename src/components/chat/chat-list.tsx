@@ -237,7 +237,7 @@ export function ChatList({ sessionId, onSelectChat, selectedJid }: ChatListProps
                             <button
                                 key={chat.jid}
                                 className={cn(
-                                    "w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors duration-150 border-b border-border/20",
+                                    "w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors duration-150 border-b border-border/20 overflow-hidden",
                                     isSelected
                                         ? "bg-primary/8 border-l-2 border-l-primary"
                                         : "hover:bg-muted/40 border-l-2 border-l-transparent"
@@ -250,8 +250,8 @@ export function ChatList({ sessionId, onSelectChat, selectedJid }: ChatListProps
                                         {displayName.slice(0, 2).toUpperCase()}
                                     </AvatarFallback>
                                 </Avatar>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex justify-between items-baseline gap-2">
+                                <div className="flex-1 min-w-0 overflow-hidden">
+                                    <div className="flex justify-between items-baseline gap-2 overflow-hidden">
                                         <h4 className={cn(
                                             "text-sm truncate",
                                             isSelected ? "font-semibold text-primary" : "font-medium text-foreground"
