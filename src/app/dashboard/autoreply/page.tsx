@@ -70,7 +70,7 @@ export default function AutoReplyPage() {
             const res = await fetch(`/api/autoreplies/${sessionId}`);
             if (res.ok) {
                 const data = await res.json();
-                setRules(data);
+                setRules(data?.data || []);
             } else {
                 setRules([]); // or error
             }
@@ -160,30 +160,30 @@ export default function AutoReplyPage() {
     return (
         <SessionGuard>
             <div className="space-y-6">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
-                        <h1 className="text-2xl font-bold flex items-center gap-2">
-                            <MessageSquare className="h-6 w-6" /> Auto Reply
+                        <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                            <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6" /> Auto Reply
                         </h1>
-                        <p className="text-muted-foreground">Automatically reply to incoming messages based on keywords.</p>
+                        <p className="text-sm text-muted-foreground">Automatically reply to incoming messages based on keywords.</p>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" onClick={() => selectedSessionId && fetchRules(selectedSessionId)} disabled={loading || !selectedSessionId}>
-                            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => selectedSessionId && fetchRules(selectedSessionId)} disabled={loading || !selectedSessionId}>
+                            <RefreshCw className={`h-4 w-4 mr-1 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
                             Refresh
                         </Button>
-                        <Button onClick={() => {
+                        <Button size="sm" className="flex-1 sm:flex-none" onClick={() => {
                             setEditingId(null);
                             setNewKeyword("");
                             setNewResponse("");
                             setNewMatchType("EXACT");
                             setNewIsMedia(false);
                             setNewMediaUrl("");
-                            setNewTriggerType("ALL"); // Reset newTriggerType
+                            setNewTriggerType("ALL");
                             setShowForm(!showForm);
                         }} disabled={!selectedSessionId}>
-                            <Plus className="h-4 w-4 mr-2" /> Add Rule
+                            <Plus className="h-4 w-4 mr-1 sm:mr-2" /> Add Rule
                         </Button>
                     </div>
                 </div>
@@ -208,7 +208,7 @@ export default function AutoReplyPage() {
                                     placeholder="e.g. !hello"
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <div className="space-y-2">
                                     <Label>Match Type</Label>
                                     <Select value={newMatchType} onValueChange={setNewMatchType}>
@@ -297,7 +297,7 @@ export default function AutoReplyPage() {
                     <div className="grid gap-4">
                         {filteredRules.map(rule => (
                             <Card key={rule.id}>
-                                <CardContent className="flex justify-between items-center p-4">
+                                <CardContent className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-3 sm:p-4">
                                     <div>
                                         <div className="font-bold flex items-center gap-2">
                                             {rule.keyword}

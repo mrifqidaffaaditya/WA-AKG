@@ -10,7 +10,7 @@ export async function POST(
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const { sessionId } = await params;
@@ -18,36 +18,32 @@ export async function POST(
         const { inviteCode } = body;
 
         if (!inviteCode) {
-            return NextResponse.json({ error: "inviteCode is required" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "inviteCode is required", error: "inviteCode is required" }, { status: 400 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
         if (!instance?.socket) {
-            return NextResponse.json({ error: "Session not ready" }, { status: 503 });
+            return NextResponse.json({ status: false, message: "Session not ready", error: "Session not ready" }, { status: 503 });
         }
 
         // Accept group invite
         const result = await instance.socket.groupAcceptInvite(inviteCode);
 
-        return NextResponse.json({  
-            success: true,
-            message: "Group invite accepted successfully",
-            groupJid: result
-        });
+        return NextResponse.json({ status: true, message: "Group invite accepted successfully", data: { groupJid: result } });
 
     } catch (error: any) {
         console.error("Accept group invite error:", error);
         
         if (error.message?.includes("invalid") || error.message?.includes("expired")) {
-            return NextResponse.json({ error: "Invalid or expired invite code" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "Invalid or expired invite code", error: "Invalid or expired invite code" }, { status: 400 });
         }
         
-        return NextResponse.json({ error: "Failed to accept group invite" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to accept group invite", error: "Failed to accept group invite" }, { status: 500 });
     }
 }

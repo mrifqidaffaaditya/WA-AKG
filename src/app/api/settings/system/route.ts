@@ -9,9 +9,9 @@ export async function GET() {
             where: { id: "default" }
         });
 
-        return NextResponse.json(config || { appName: "WA-AKG" });
+        return NextResponse.json({ status: true, message: "System config fetched", data: config || { appName: "WA-AKG" } });
     } catch (error) {
-        return NextResponse.json({ error: "Failed to fetch settings" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to fetch settings", error: "Failed to fetch settings" }, { status: 500 });
     }
 }
 
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
         // @ts-ignore
         const user = await getAuthenticatedUser(req);
         if (!user || user.role !== "SUPERADMIN") {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const body = await req.json();
@@ -33,8 +33,8 @@ export async function POST(req: Request) {
             create: { id: "default", appName, logoUrl: logoUrl || "", timezone: timezone || "Asia/Jakarta", enableRegistration: enableRegistration ?? true }
         });
 
-        return NextResponse.json(config);
+        return NextResponse.json({ status: true, message: "System settings updated", data: config });
     } catch (error) {
-        return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to update settings", error: "Failed to update settings" }, { status: 500 });
     }
 }

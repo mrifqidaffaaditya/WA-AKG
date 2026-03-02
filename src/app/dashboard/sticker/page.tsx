@@ -73,8 +73,8 @@ export default function StickerPage() {
     return (
         <SessionGuard>
             <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                    <h2 className="text-3xl font-bold tracking-tight">Sticker Maker</h2>
+                <div>
+                    <h2 className="text-xl sm:text-3xl font-bold tracking-tight">Sticker Maker</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -114,7 +114,7 @@ export default function StickerPage() {
 
                             {showAdvanced && (
                                 <div className="space-y-4 border p-4 rounded-md bg-slate-50">
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                         <div className="space-y-2">
                                             <Label>Pack Name</Label>
                                             <Input value={pack} onChange={e => setPack(e.target.value)} />

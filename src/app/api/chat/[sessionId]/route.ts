@@ -12,13 +12,13 @@ export async function GET(
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden" }, { status: 403 });
         }
 
         // Get the database Session ID (cuid) from the sessionId string
@@ -28,7 +28,7 @@ export async function GET(
         });
 
         if (!session) {
-            return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Session not found", error: 'Session not found' }, { status: 404 });
         }
 
         const dbSessionId = session.id;
@@ -73,9 +73,9 @@ export async function GET(
             return tB - tA;
         });
 
-        return NextResponse.json(chatList);
+        return NextResponse.json({ status: true, message: "Chats fetched successfully", data: chatList });
     } catch (error) {
         console.error("Chat API error:", error);
-        return NextResponse.json({ error: 'Failed to fetch chats' }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to fetch chats", error: 'Failed to fetch chats' }, { status: 500 });
     }
 }

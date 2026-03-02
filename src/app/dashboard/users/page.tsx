@@ -11,14 +11,14 @@ import { Trash2, Plus, Edit, User, Shield, ShieldAlert, ShieldCheck } from "luci
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
 interface UserProfile {
@@ -55,8 +55,8 @@ export default function UsersPage() {
         try {
             const res = await fetch("/api/users");
             if (res.ok) {
-                const data = await res.json();
-                setUsers(data);
+                const responseData = await res.json();
+                setUsers(responseData?.data || []);
             } else if (res.status === 403) {
                 toast.error("Unauthorized. Only Super Admin can view users.");
             }
@@ -69,7 +69,7 @@ export default function UsersPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         try {
             const url = editingUser ? `/api/users/${editingUser.id}` : "/api/users";
             const method = editingUser ? "PATCH" : "POST";
@@ -103,7 +103,7 @@ export default function UsersPage() {
 
     const confirmDelete = async () => {
         if (!deleteId) return;
-        
+
         try {
             const res = await fetch(`/api/users/${deleteId}`, { method: "DELETE" });
             if (res.ok) {
@@ -135,19 +135,19 @@ export default function UsersPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div>
-                    <h1 className="text-2xl font-bold flex items-center gap-2">
-                        <UsersIcon className="h-6 w-6" /> User Management
+                    <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                        <UsersIcon className="h-5 w-5 sm:h-6 sm:w-6" /> User Management
                     </h1>
-                    <p className="text-muted-foreground">Manage users and roles</p>
+                    <p className="text-sm text-muted-foreground">Manage users and roles</p>
                 </div>
-                <Button onClick={() => {
+                <Button size="sm" onClick={() => {
                     setEditingUser(null);
                     setFormData({ name: "", email: "", password: "", role: "OWNER" });
                     setShowForm(true);
                 }}>
-                    <Plus className="h-4 w-4 mr-2" /> Add User
+                    <Plus className="h-4 w-4 mr-1 sm:mr-2" /> Add User
                 </Button>
             </div>
 
@@ -159,40 +159,40 @@ export default function UsersPage() {
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <div className="space-y-2">
                                     <Label>Name</Label>
-                                    <Input 
+                                    <Input
                                         value={formData.name}
-                                        onChange={e => setFormData({...formData, name: e.target.value})}
+                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
                                         required
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Email</Label>
-                                    <Input 
+                                    <Input
                                         type="email"
                                         value={formData.email}
-                                        onChange={e => setFormData({...formData, email: e.target.value})}
+                                        onChange={e => setFormData({ ...formData, email: e.target.value })}
                                         required
                                     />
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <div className="space-y-2">
                                     <Label>{editingUser ? "New Password (leave blank to keep)" : "Password"}</Label>
-                                    <Input 
+                                    <Input
                                         type="password"
                                         value={formData.password}
-                                        onChange={e => setFormData({...formData, password: e.target.value})}
+                                        onChange={e => setFormData({ ...formData, password: e.target.value })}
                                         required={!editingUser}
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Role</Label>
-                                    <Select 
-                                        value={formData.role} 
-                                        onValueChange={(v: string) => setFormData({...formData, role: v})}
+                                    <Select
+                                        value={formData.role}
+                                        onValueChange={(v: string) => setFormData({ ...formData, role: v })}
                                     >
                                         <SelectTrigger>
                                             <SelectValue />
@@ -215,7 +215,7 @@ export default function UsersPage() {
             )}
 
             {/* Users Table */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {users.map(user => (
                     <Card key={user.id} className="overflow-hidden">
                         <CardContent className="p-0">
@@ -235,7 +235,7 @@ export default function UsersPage() {
                                         {user.role}
                                     </Badge>
                                 </div>
-                                
+
                                 <div className="flex justify-between items-center text-sm text-muted-foreground">
                                     <span>{user._count?.sessions || 0} Sessions</span>
                                     <span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
@@ -282,23 +282,23 @@ export default function UsersPage() {
 }
 
 function UsersIcon(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  )
+    return (
+        <svg
+            {...props}
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+    )
 }

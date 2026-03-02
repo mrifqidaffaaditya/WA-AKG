@@ -29,14 +29,14 @@ export async function GET(
         // Authentication check — require session or API key
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const { filename } = await params;
 
         // Security: Prevent directory traversal
         if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
-            return NextResponse.json({ error: "Invalid filename" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "Invalid filename", error: "Invalid filename" }, { status: 400 });
         }
 
         // Session ownership check — extract sessionId from filename
@@ -44,7 +44,7 @@ export async function GET(
         if (sessionId) {
             const canAccess = await canAccessSession(user.id, user.role, sessionId);
             if (!canAccess) {
-                return NextResponse.json({ error: "Forbidden - Cannot access this session's media" }, { status: 403 });
+                return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session's media", error: "Forbidden - Cannot access this session's media" }, { status: 403 });
             }
         }
 
@@ -53,11 +53,11 @@ export async function GET(
         // Ensure resolved path is still within MEDIA_DIR
         const resolvedPath = path.resolve(filePath);
         if (!resolvedPath.startsWith(path.resolve(MEDIA_DIR))) {
-            return NextResponse.json({ error: "Access denied" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Access denied", error: "Access denied" }, { status: 403 });
         }
 
         if (!existsSync(filePath)) {
-            return NextResponse.json({ error: "File not found" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "File not found", error: "File not found" }, { status: 404 });
         }
 
         const fileBuffer = await readFile(filePath);
@@ -94,6 +94,6 @@ export async function GET(
 
     } catch (error: any) {
         console.error("Media serve error:", error);
-        return NextResponse.json({ error: "Failed to serve media" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to serve media", error: "Failed to serve media" }, { status: 500 });
     }
 }

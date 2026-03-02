@@ -10,7 +10,7 @@ export async function POST(
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const { sessionId, jid: rawJid } = await params;
@@ -20,23 +20,23 @@ export async function POST(
         const { message, mentions } = body;
 
         if (!message) {
-            return NextResponse.json({ error: "message is required" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "message is required", error: "message is required" }, { status: 400 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
         if (!instance) {
-            return NextResponse.json({ error: "Session not found or disconnected" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Session not found or disconnected", error: "Session not found or disconnected" }, { status: 404 });
         }
 
         const socket = instance.socket;
         if (!socket) {
-             return NextResponse.json({ error: "Socket not ready" }, { status: 503 });
+             return NextResponse.json({ status: false, message: "Socket not ready", error: "Socket not ready" }, { status: 503 });
         }
 
         // Process Message
@@ -75,9 +75,9 @@ export async function POST(
 
         await socket.sendMessage(jid, msgPayload, { mentions: mentions || [] } as any);
 
-        return NextResponse.json({ success: true, message: "Message sent successfully" });
+        return NextResponse.json({ status: true, message: "Message sent successfully" });
     } catch (error) {
         console.error("Send message error:", error);
-        return NextResponse.json({ error: "Failed to send message" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to send message", error: "Failed to send message" }, { status: 500 });
     }
 }

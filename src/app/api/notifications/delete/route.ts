@@ -4,14 +4,14 @@ import { NextResponse } from "next/server";
 
 export async function DELETE(req: Request) {
     const session = await auth();
-    if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+    if (!session?.user?.id) return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
 
     try {
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
 
         if (!id) {
-            return new Response("Notification ID required", { status: 400 });
+            return NextResponse.json({ status: false, message: "Notification ID required", error: "Notification ID required" }, { status: 400 });
         }
 
         // Delete notification only if it belongs to the user
@@ -22,9 +22,9 @@ export async function DELETE(req: Request) {
             }
         });
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ status: true, message: "Notification deleted" });
     } catch (e) {
         console.error(e);
-        return new Response("Error deleting notification", { status: 500 });
+        return NextResponse.json({ status: false, message: "Error deleting notification", error: "Error deleting notification" }, { status: 500 });
     }
 }

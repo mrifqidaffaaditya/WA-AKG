@@ -32,7 +32,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         try {
             const res = await fetch('/api/sessions');
             if (res.ok) {
-                const data = await res.json();
+                const responseData = await res.json();
+                const data = responseData?.data || [];
                 // Filter connected only? Or showing all but disabled?
                 // Logic: Only show CONNECTED in selector for "Active" operations.
                 // Show all sessions so users can manage disconnected ones (e.g. webhooks, settings)

@@ -10,7 +10,7 @@ export async function PUT(
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const { sessionId, jid } = await params;
@@ -20,12 +20,12 @@ export async function PUT(
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
         if (!instance?.socket) {
-            return NextResponse.json({ error: "Session not ready" }, { status: 503 });
+            return NextResponse.json({ status: false, message: "Session not ready", error: "Session not ready" }, { status: 503 });
         }
 
         // Decode JID from URL parameter
@@ -50,13 +50,10 @@ export async function PUT(
             );
         }
 
-        return NextResponse.json({ 
-            success: true,
-            message: "Messages marked as read"
-        });
+        return NextResponse.json({ status: true, message: "Messages marked as read" });
 
     } catch (error) {
         console.error("Mark as read error:", error);
-        return NextResponse.json({ error: "Failed to mark messages as read" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to mark messages as read", error: "Failed to mark messages as read" }, { status: 500 });
     }
 }

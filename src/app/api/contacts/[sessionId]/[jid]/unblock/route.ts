@@ -10,7 +10,7 @@ export async function POST(
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const { sessionId, jid } = await params;
@@ -19,24 +19,21 @@ export async function POST(
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
         if (!instance?.socket) {
-            return NextResponse.json({ error: "Session not ready" }, { status: 503 });
+            return NextResponse.json({ status: false, message: "Session not ready", error: "Session not ready" }, { status: 503 });
         }
 
         // Unblock contact
         await instance.socket.updateBlockStatus(decodedJid, "unblock");
 
-        return NextResponse.json({
-            success: true,
-            message: "Contact unblocked successfully"
-        });
+        return NextResponse.json({ status: true, message: "Contact unblocked successfully" });
 
     } catch (error) {
         console.error("Unblock contact error:", error);
-        return NextResponse.json({ error: "Failed to unblock contact" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to unblock contact", error: "Failed to unblock contact" }, { status: 500 });
     }
 }

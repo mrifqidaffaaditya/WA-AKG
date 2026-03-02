@@ -12,31 +12,31 @@ export async function GET(request: NextRequest) {
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const { searchParams } = new URL(request.url);
         const sessionId = searchParams.get("sessionId");
 
         if (!sessionId) {
-            return NextResponse.json({ error: "sessionId is required" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "sessionId is required", error: "sessionId is required" }, { status: 400 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
         if (!instance?.socket) {
-            return NextResponse.json({ error: "Session not ready" }, { status: 503 });
+            return NextResponse.json({ status: false, message: "Session not ready", error: "Session not ready" }, { status: 503 });
         }
 
         // Get own JID
         const meJid = instance.socket.user?.id;
         if (!meJid) {
-            return NextResponse.json({ error: "Unable to get own JID" }, { status: 500 });
+            return NextResponse.json({ status: false, message: "Unable to get own JID", error: "Unable to get own JID" }, { status: 500 });
         }
 
         // Fetch profile status
@@ -59,6 +59,6 @@ export async function GET(request: NextRequest) {
 
     } catch (error) {
         console.error("Fetch profile error:", error);
-        return NextResponse.json({ error: "Failed to fetch profile" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to fetch profile", error: "Failed to fetch profile" }, { status: 500 });
     }
 }

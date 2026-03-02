@@ -12,27 +12,25 @@ export async function PUT(request: NextRequest) {
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const body = await request.json();
         const { sessionId, jid, archive } = body;
 
         if (!sessionId || !jid || archive === undefined) {
-            return NextResponse.json({ 
-                error: "sessionId, jid, and archive (boolean) are required" 
-            }, { status: 400 });
+            return NextResponse.json({ status: false, message: "sessionId, jid, and archive (boolean) are required", error: "sessionId, jid, and archive (boolean) are required" }, { status: 400 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
         if (!instance?.socket) {
-            return NextResponse.json({ error: "Session not ready" }, { status: 503 });
+            return NextResponse.json({ status: false, message: "Session not ready", error: "Session not ready" }, { status: 503 });
         }
 
         // Archive or unarchive chat
@@ -49,6 +47,6 @@ export async function PUT(request: NextRequest) {
 
     } catch (error) {
         console.error("Archive chat error:", error);
-        return NextResponse.json({ error: "Failed to archive/unarchive chat" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to archive/unarchive chat", error: "Failed to archive/unarchive chat" }, { status: 500 });
     }
 }

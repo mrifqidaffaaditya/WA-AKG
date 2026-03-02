@@ -8,7 +8,7 @@ export async function GET(
 ) {
     const user = await getAuthenticatedUser(request);
     if (!user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
     }
 
     const { sessionId } = await params;
@@ -16,7 +16,7 @@ export async function GET(
     // Verify access to session
     const hasAccess = await canAccessSession(user.id, user.role, sessionId);
     if (!hasAccess) {
-        return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+        return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
     }
 
     try {
@@ -28,7 +28,7 @@ export async function GET(
         });
 
         if (!session) {
-             return NextResponse.json({ error: "Session not found" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Session not found", error: "Session not found" }, { status: 404 });
         }
 
         const webhooks = await prisma.webhook.findMany({
@@ -39,13 +39,16 @@ export async function GET(
                     { sessionId: null }        // Global webhooks
                 ]
             },
+            include: {
+                session: true
+            },
             orderBy: { createdAt: 'desc' }
         });
 
-        return NextResponse.json(webhooks);
+        return NextResponse.json({ status: true, message: "Webhooks retrieved successfully", data: webhooks });
     } catch (error) {
         console.error("Fetch webhooks error:", error);
-        return NextResponse.json({ error: "Failed to fetch webhooks" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to fetch webhooks", error: "Failed to fetch webhooks" }, { status: 500 });
     }
 }
 
@@ -55,14 +58,14 @@ export async function POST(
 ) {
     const user = await getAuthenticatedUser(request);
     if (!user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
     }
 
     const { sessionId } = await params;
 
     const hasAccess = await canAccessSession(user.id, user.role, sessionId);
     if (!hasAccess) {
-        return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+        return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
     }
 
     try {
@@ -70,7 +73,7 @@ export async function POST(
         const { name, url, secret, events } = body;
 
         if (!name || !url || !events || events.length === 0) {
-            return NextResponse.json({ error: "Name, URL, and at least one event are required" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "Name, URL, and at least one event are required", error: "Name, URL, and at least one event are required" }, { status: 400 });
         }
 
         const session = await prisma.session.findUnique({
@@ -79,7 +82,7 @@ export async function POST(
         });
 
         if (!session) {
-            return NextResponse.json({ error: "Session not found" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Session not found", error: "Session not found" }, { status: 404 });
         }
 
         const webhook = await prisma.webhook.create({
@@ -94,9 +97,9 @@ export async function POST(
             }
         });
 
-        return NextResponse.json(webhook);
+        return NextResponse.json({ status: true, message: "Webhook created successfully", data: webhook });
     } catch (error: any) {
         console.error("Create webhook error detailed:", error);
-        return NextResponse.json({ error: "Failed to create webhook", details: error.message }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to create webhook", error: "Failed to create webhook", details: error.message }, { status: 500 });
     }
 }

@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import { RefreshCw, Save, AlertCircle, Bot } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,6 +16,7 @@ export default function BotSettingsPage() {
 
     const [botConfig, setBotConfig] = useState({
         botName: "WA-AKG Bot",
+        prefix: "#",
         enableSticker: true,
         enableVideoSticker: true,
         maxStickerDuration: 10,
@@ -37,17 +40,19 @@ export default function BotSettingsPage() {
 
         fetch(`/api/sessions/${sessionId}/bot-config`)
             .then(res => { if (!res.ok) throw new Error(); return res.json(); })
-            .then(data => {
-                if (data && !data.error) {
-                    setBotConfig(prev => ({ ...prev, ...data, removeBgApiKey: data.removeBgApiKey || "" }));
+            .then(responseData => {
+                const data = responseData?.data;
+                if (data && !responseData.error) {
+                    setBotConfig(prev => ({ ...prev, ...data, removeBgApiKey: data.removeBgApiKey || "", prefix: data.prefix || "#" }));
                 }
             })
             .catch(() => { });
 
         fetch(`/api/sessions/${sessionId}/settings`)
             .then(res => { if (!res.ok) throw new Error(); return res.json(); })
-            .then(data => {
-                if (data && !data.error) {
+            .then(responseData => {
+                const data = responseData?.data;
+                if (data && !responseData.error) {
                     setPrivacyConfig({
                         ghostMode: data.config?.ghostMode || false,
                         antiDelete: data.config?.antiDelete || false,
@@ -100,11 +105,9 @@ export default function BotSettingsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Bot Settings</h2>
-                    <p className="text-muted-foreground text-sm mt-1">Configure bot features and session privacy for the active WhatsApp session.</p>
-                </div>
+            <div>
+                <h2 className="text-xl sm:text-3xl font-bold tracking-tight">Bot Settings</h2>
+                <p className="text-muted-foreground text-sm mt-1">Configure bot features and session privacy for the active WhatsApp session.</p>
             </div>
 
             {/* No Session Selected */}
@@ -138,6 +141,18 @@ export default function BotSettingsPage() {
                                     onChange={(e) => setBotConfig(prev => ({ ...prev, botName: e.target.value }))}
                                 />
                                 <p className="text-xs text-muted-foreground">The display name used by the bot in automated responses.</p>
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label>Command Prefix</Label>
+                                <Input
+                                    className="max-w-[100px]"
+                                    placeholder="#"
+                                    maxLength={3}
+                                    value={botConfig.prefix}
+                                    onChange={(e) => setBotConfig(prev => ({ ...prev, prefix: e.target.value }))}
+                                />
+                                <p className="text-xs text-muted-foreground">The prefix character for bot commands (e.g. <code className="bg-muted px-1 rounded">#sticker</code>, <code className="bg-muted px-1 rounded">#ping</code>). Default: <code className="bg-muted px-1 rounded">#</code></p>
                             </div>
 
                             <div className="grid sm:grid-cols-2 gap-4 pt-2">
@@ -176,6 +191,18 @@ export default function BotSettingsPage() {
                                     <Switch id="enable-video-sticker" checked={botConfig.enableVideoSticker}
                                         onCheckedChange={c => setBotConfig(prev => ({ ...prev, enableVideoSticker: c }))} />
                                 </div>
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label>Max Sticker Video Duration: <strong>{botConfig.maxStickerDuration}s</strong></Label>
+                                <Slider
+                                    value={[botConfig.maxStickerDuration]}
+                                    onValueChange={([v]) => setBotConfig(prev => ({ ...prev, maxStickerDuration: v }))}
+                                    min={3}
+                                    max={30}
+                                    step={1}
+                                />
+                                <p className="text-xs text-muted-foreground">Maximum video duration (in seconds) allowed for sticker conversion. Longer videos = larger file sizes.</p>
                             </div>
 
                             <div className="grid gap-2 border-t pt-4 border-border/50">

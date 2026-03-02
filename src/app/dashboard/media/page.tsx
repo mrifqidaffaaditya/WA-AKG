@@ -7,6 +7,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
     ImageIcon,
     Video,
     Music,
@@ -124,10 +134,11 @@ export default function MediaPage() {
         try {
             const res = await fetch("/api/media");
             if (!res.ok) throw new Error("Failed to fetch");
-            const data: MediaListResponse = await res.json();
-            setFiles(data.files);
-            setTotalSize(data.totalSize);
-            setTotalCount(data.totalCount);
+            const responseData = await res.json();
+            const mediaData = responseData?.data || {};
+            setFiles(mediaData.files || []);
+            setTotalSize(mediaData.totalSize || 0);
+            setTotalCount(mediaData.totalCount || 0);
         } catch (error) {
             console.error("Failed to load media:", error);
             toast.error("Failed to load media files");
@@ -233,9 +244,11 @@ export default function MediaPage() {
         });
     };
 
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
     const handleDelete = async () => {
         if (selected.size === 0) return;
-        if (!confirm(`Delete ${selected.size} file(s)? This cannot be undone.`)) return;
+        setShowDeleteConfirm(false);
         setDeleting(true);
         try {
             const res = await fetch("/api/media", {
@@ -244,9 +257,10 @@ export default function MediaPage() {
                 body: JSON.stringify({ filenames: Array.from(selected) }),
             });
             if (!res.ok) throw new Error("Failed to delete");
-            const data = await res.json();
-            toast.success(`Deleted ${data.deleted} file(s)`);
-            if (data.failed > 0) toast.warning(`Failed to delete ${data.failed} file(s)`);
+            const responseData = await res.json();
+            const data = responseData?.data;
+            toast.success(`Deleted ${data?.deleted || 0} file(s)`);
+            if (data?.failed > 0) toast.warning(`Failed to delete ${data.failed} file(s)`);
             setSelected(new Set());
             fetchMedia();
         } catch { toast.error("Failed to delete files"); }
@@ -312,7 +326,7 @@ export default function MediaPage() {
             {selected.size > 0 && (
                 <div className="flex items-center gap-3 p-2.5 bg-destructive/5 border border-destructive/20 rounded-lg">
                     <span className="text-sm font-medium">{selected.size} selected</span>
-                    <Button variant="destructive" size="sm" className="gap-1.5 h-8" onClick={handleDelete} disabled={deleting}>
+                    <Button variant="destructive" size="sm" className="gap-1.5 h-8" onClick={() => setShowDeleteConfirm(true)} disabled={deleting}>
                         <Trash2 className="h-3.5 w-3.5" /> {deleting ? "Deleting..." : "Delete"}
                     </Button>
                     <Button variant="ghost" size="sm" className="h-8" onClick={() => setSelected(new Set())}><X className="h-3.5 w-3.5 mr-1" /> Clear</Button>
@@ -499,6 +513,22 @@ export default function MediaPage() {
                     </div>
                 </div>
             )}
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete {selected.size} file(s)?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. The selected files will be permanently removed from the server.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

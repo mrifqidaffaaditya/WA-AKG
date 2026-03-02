@@ -237,6 +237,7 @@ model BotConfig {
   enablePing    Boolean  @default(true)
   enableUptime  Boolean  @default(true)
   removeBgApiKey String?
+  prefix        String   @default("#")
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

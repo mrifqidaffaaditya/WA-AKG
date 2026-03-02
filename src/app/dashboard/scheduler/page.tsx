@@ -71,7 +71,7 @@ export default function SchedulerPage() {
             const res = await fetch(`/api/scheduler/${sessionId}`);
             if (res.ok) {
                 const data = await res.json();
-                setMessages(data);
+                setMessages(data?.data || []);
             } else {
                 setMessages([]);
             }
@@ -171,22 +171,22 @@ export default function SchedulerPage() {
     return (
         <SessionGuard>
             <div className="space-y-6">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
-                        <h1 className="text-2xl font-bold flex items-center gap-2">
-                            <CalendarClock className="h-6 w-6" /> Scheduler
+                        <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                            <CalendarClock className="h-5 w-5 sm:h-6 sm:w-6" /> Scheduler
                         </h1>
-                        <p className="text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                             {selectedSessionId ? "Schedule messages for active session." : "Select a session from the top bar."}
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" onClick={() => selectedSessionId && fetchMessages(selectedSessionId)} disabled={loading || !selectedSessionId}>
-                            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => selectedSessionId && fetchMessages(selectedSessionId)} disabled={loading || !selectedSessionId}>
+                            <RefreshCw className={`h-4 w-4 mr-1 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
                             Refresh
                         </Button>
-                        <Button onClick={() => {
+                        <Button size="sm" className="flex-1 sm:flex-none" onClick={() => {
                             setEditingId(null);
                             setNewJid("");
                             setNewContent("");
@@ -195,7 +195,7 @@ export default function SchedulerPage() {
                             setNewMediaType("image");
                             setShowForm(!showForm);
                         }} disabled={!selectedSessionId}>
-                            <Plus className="h-4 w-4 mr-2" /> Schedule Message
+                            <Plus className="h-4 w-4 mr-1 sm:mr-2" /> Schedule
                         </Button>
                     </div>
                 </div>
@@ -212,7 +212,7 @@ export default function SchedulerPage() {
                             <CardTitle>{editingId ? "Edit Scheduled Message" : "Schedule New Message"}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <div className="space-y-2">
                                     <Label>Recipient JID</Label>
                                     <div className="flex gap-2">
@@ -308,7 +308,7 @@ export default function SchedulerPage() {
                     <div className="grid gap-4">
                         {filteredMessages.map(msg => (
                             <Card key={msg.id} className={msg.status === 'SENT' ? 'opacity-70' : ''}>
-                                <CardContent className="flex justify-between items-center p-4">
+                                <CardContent className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-3 sm:p-4">
                                     <div>
                                         <div className="font-bold flex items-center gap-2">
                                             {msg.jid.split('@')[0]}

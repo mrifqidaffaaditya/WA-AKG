@@ -8,14 +8,14 @@ export async function PUT(
 ) {
     const user = await getAuthenticatedUser(request);
     if (!user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
     }
     
     const { sessionId, id } = await params;
 
     const hasAccess = await canAccessSession(user.id, user.role, sessionId);
     if (!hasAccess) {
-        return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+        return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
     }
 
     try {
@@ -28,7 +28,7 @@ export async function PUT(
         });
 
         if (!existing) {
-            return NextResponse.json({ error: "Webhook not found" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Webhook not found", error: "Webhook not found" }, { status: 404 });
         }
 
         const webhook = await prisma.webhook.update({
@@ -47,7 +47,7 @@ export async function PUT(
         return NextResponse.json(webhook);
     } catch (error) {
         console.error("Update webhook error:", error);
-        return NextResponse.json({ error: "Failed to update webhook" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to update webhook", error: "Failed to update webhook" }, { status: 500 });
     }
 }
 
@@ -57,14 +57,14 @@ export async function DELETE(
 ) {
     const user = await getAuthenticatedUser(request);
     if (!user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
     }
     
     const { sessionId, id } = await params;
 
     const hasAccess = await canAccessSession(user.id, user.role, sessionId);
     if (!hasAccess) {
-        return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+        return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
     }
 
     try {
@@ -73,14 +73,14 @@ export async function DELETE(
         });
 
         if (!existing) {
-            return NextResponse.json({ error: "Webhook not found" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Webhook not found", error: "Webhook not found" }, { status: 404 });
         }
 
         await prisma.webhook.delete({ where: { id } });
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ status: true, message: "Operation successful" });
     } catch (error) {
         console.error("Delete webhook error:", error);
-        return NextResponse.json({ error: "Failed to delete webhook" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to delete webhook", error: "Failed to delete webhook" }, { status: 500 });
     }
 }

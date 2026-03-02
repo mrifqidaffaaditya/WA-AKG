@@ -10,19 +10,19 @@ export async function PUT(
         const { sessionId, replyId } = await params;
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const body = await request.json();
         const { keyword, response, matchType } = body;
 
         if (!keyword || !response) {
-            return NextResponse.json({ error: "Keyword and response are required" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "Keyword and response are required", error: "Keyword and response are required" }, { status: 400 });
         }
 
         const updated = await prisma.autoReply.update({
@@ -37,7 +37,7 @@ export async function PUT(
         return NextResponse.json(updated);
     } catch (error) {
         console.error("Update auto reply error:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Internal Server Error", error: "Internal Server Error" }, { status: 500 });
     }
 }
 
@@ -50,12 +50,12 @@ export async function DELETE(
 
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const rule = await prisma.autoReply.findUnique({
@@ -64,19 +64,19 @@ export async function DELETE(
         });
 
         if (!rule) {
-            return NextResponse.json({ error: "Rule not found" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Rule not found", error: "Rule not found" }, { status: 404 });
         }
 
         // Verify the rule belongs to this session
         if (rule.session.sessionId !== sessionId) {
-            return NextResponse.json({ error: "Rule not found in this session" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Rule not found in this session", error: "Rule not found in this session" }, { status: 404 });
         }
 
         await prisma.autoReply.delete({ where: { id: replyId } });
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ status: true, message: "Operation successful" });
 
     } catch (error) {
         console.error("Delete auto reply error:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Internal Server Error", error: "Internal Server Error" }, { status: 500 });
     }
 }

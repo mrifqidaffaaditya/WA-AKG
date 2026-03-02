@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const body = await request.json();
@@ -27,20 +27,20 @@ export async function POST(request: NextRequest) {
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
         if (!instance?.socket) {
-            return NextResponse.json({ error: "Session not ready" }, { status: 503 });
+            return NextResponse.json({ status: false, message: "Session not ready", error: "Session not ready" }, { status: 503 });
         }
 
         const group = await instance.socket.groupCreate(subject, participants);
         
-        return NextResponse.json({ success: true, group });
+        return NextResponse.json({ status: true, message: "Operation successful", data: { group } });
 
     } catch (e) {
         console.error("Create group error", e);
-        return NextResponse.json({ error: "Failed to create group" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to create group", error: "Failed to create group" }, { status: 500 });
     }
 }

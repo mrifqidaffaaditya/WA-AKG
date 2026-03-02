@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const body = await request.json();
@@ -21,23 +21,23 @@ export async function POST(request: NextRequest) {
         console.warn('[DEPRECATED] POST /api/chat/send is deprecated. Use POST /api/messages/[sessionId]/[jid]/send instead.');
 
         if (!sessionId || !jid || !message) {
-            return NextResponse.json({ error: "sessionId, jid, and message are required" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "Invalid payload", error: "sessionId, jid, and message are required" }, { status: 400 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
         if (!instance) {
-            return NextResponse.json({ error: "Session not found or disconnected" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Session not found", error: "Session not found or disconnected" }, { status: 404 });
         }
 
         const socket = instance.socket;
         if (!socket) {
-             return NextResponse.json({ error: "Socket not ready" }, { status: 503 });
+            return NextResponse.json({ status: false, message: "Socket not ready", error: "Socket not ready" }, { status: 503 });
         }
 
         // Process Message
@@ -46,12 +46,12 @@ export async function POST(request: NextRequest) {
         // Custom Handler for Sticker URL
         if (msgPayload.sticker && (msgPayload.sticker.url || typeof msgPayload.sticker === 'string')) {
             const url = msgPayload.sticker.url || msgPayload.sticker;
-            
+
             try {
                 const res = await fetch(url);
                 if (!res.ok) throw new Error(`Failed to fetch sticker media: ${res.statusText}`);
                 const buffer = await res.arrayBuffer();
-                
+
                 const sticker = new Sticker(Buffer.from(buffer), {
                     pack: msgPayload.sticker.pack || "WA-AKG Bot",
                     author: msgPayload.sticker.author || "WA-AKG",
@@ -64,21 +64,21 @@ export async function POST(request: NextRequest) {
 
             } catch (e) {
                 console.error("Sticker generation from URL failed:", e);
-                return NextResponse.json({ error: `Failed to generate sticker from URL: ${(e as any).message}` }, { status: 400 });
+                return NextResponse.json({ status: false, message: "Failed to generate sticker", error: `Failed to generate sticker from URL: ${(e as any).message}` }, { status: 400 });
             }
         }
 
         // Send Message
         // Ensure mentions are passed in options and also in message content if it's a text message
         if (msgPayload.text && mentions && Array.isArray(mentions)) {
-             msgPayload.mentions = mentions;
+            msgPayload.mentions = mentions;
         }
 
         await socket.sendMessage(jid, msgPayload, { mentions: mentions || [] } as any);
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ status: true, message: "Message sent successfully" });
     } catch (error) {
         console.error("Send message error:", error);
-        return NextResponse.json({ error: "Failed to send message" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to send message", error: "Failed to send message" }, { status: 500 });
     }
 }

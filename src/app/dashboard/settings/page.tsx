@@ -24,8 +24,9 @@ export default function SettingsPage() {
     useEffect(() => {
         fetch('/api/settings/system')
             .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-            .then(data => {
-                if (data && !data.error) {
+            .then(responseData => {
+                const data = responseData?.data;
+                if (data && !responseData.error) {
                     setSystemConfig({
                         appName: data.appName || "WA-AKG",
                         logoUrl: data.logoUrl || "",
@@ -63,11 +64,9 @@ export default function SettingsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
-                    <p className="text-muted-foreground text-sm mt-1">Global system configuration. Only SuperAdmins can make changes.</p>
-                </div>
+            <div>
+                <h2 className="text-xl sm:text-3xl font-bold tracking-tight">Settings</h2>
+                <p className="text-muted-foreground text-sm mt-1">Global system configuration. Only SuperAdmins can make changes.</p>
             </div>
 
             {!isSuperAdmin && (
@@ -158,7 +157,7 @@ export default function SettingsPage() {
                             try {
                                 const res = await fetch("/api/system/check-updates", { method: "POST" });
                                 const data = await res.json();
-                                if (data.success) {
+                                if (data.status) {
                                     toast.success(data.message || "Check complete!");
                                 } else {
                                     toast.error(data.message || "Failed to check updates");

@@ -224,13 +224,13 @@ export default function ApiDocsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
+        <div className="min-h-screen bg-gray-50 p-3 sm:p-6">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 sm:mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-                            <FileText className="w-8 h-8 text-blue-600" />
+                        <h1 className="text-xl sm:text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+                            <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
                             API Documentation
                         </h1>
                         <p className="text-gray-500 mt-2">

@@ -13,10 +13,10 @@ const createUserSchema = z.object({
 
 export async function GET(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
-    
+
     // Only SUPERADMIN can list users
     if (!user || !isAdmin(user.role)) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+        return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 403 });
     }
 
     try {
@@ -34,26 +34,26 @@ export async function GET(request: NextRequest) {
             }
         });
 
-        return NextResponse.json(users);
+        return NextResponse.json({ status: true, message: "Users fetched successfully", data: users });
     } catch (error) {
-        return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to fetch users", error: "Failed to fetch users" }, { status: 500 });
     }
 }
 
 export async function POST(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
-    
+
     // Only SUPERADMIN can create users
     if (!user || !isAdmin(user.role)) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+        return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 403 });
     }
 
     try {
         const body = await request.json();
         const parseResult = createUserSchema.safeParse(body);
-        
+
         if (!parseResult.success) {
-            return NextResponse.json({ error: parseResult.error.flatten() }, { status: 400 });
+            return NextResponse.json({ status: false, message: "Validation error", error: parseResult.error.flatten() }, { status: 400 });
         }
 
         const { name, email, password, role } = parseResult.data;
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
         // Check if email exists
         const existing = await prisma.user.findUnique({ where: { email } });
         if (existing) {
-            return NextResponse.json({ error: "Email already exists" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "Email already exists", error: "Email already exists" }, { status: 400 });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -82,10 +82,10 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        return NextResponse.json(newUser);
+        return NextResponse.json({ status: true, message: "User created successfully", data: newUser }, { status: 201 });
 
     } catch (error) {
         console.error("Create user error:", error);
-        return NextResponse.json({ error: "Failed to create user" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to create user", error: "Failed to create user" }, { status: 500 });
     }
 }

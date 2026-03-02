@@ -126,6 +126,21 @@ Get all sessions accessible to the authenticated user (role-based filtering)
     "sessionId": "marketing-1",
     "status": "Connected",
     "userId": "string",
+    "botConfig": {
+      "text": "Hello from WA-AKG!"
+    },
+    "webhooks": [
+      {
+        "text": "Hello from WA-AKG!"
+      }
+    ],
+    "_count": {
+      "contacts": 0,
+      "messages": 0,
+      "groups": 0,
+      "autoReplies": 0,
+      "scheduledMessages": 0
+    },
     "createdAt": "2026-01-15T08:00:00.000Z",
     "updatedAt": "2026-01-15T08:00:00.000Z"
   }
@@ -187,6 +202,9 @@ Content-Type: application/json
 | `sessionId` | string | No | — |
 | `status` | string | No | **Options:** `Connected`, `Disconnected`, `Connecting` |
 | `userId` | string | No | — |
+| `botConfig` | object, nullable | No | — |
+| `webhooks` | array of object | No | — |
+| `_count` | object, nullable | No | — |
 | `createdAt` | string (date-time) | No | — |
 | `updatedAt` | string (date-time) | No | — |
 
@@ -199,6 +217,21 @@ Content-Type: application/json
   "sessionId": "marketing-1",
   "status": "Connected",
   "userId": "string",
+  "botConfig": {
+    "text": "Hello from WA-AKG!"
+  },
+  "webhooks": [
+    {
+      "text": "Hello from WA-AKG!"
+    }
+  ],
+  "_count": {
+    "contacts": 0,
+    "messages": 0,
+    "groups": 0,
+    "autoReplies": 0,
+    "scheduledMessages": 0
+  },
   "createdAt": "2026-01-15T08:00:00.000Z",
   "updatedAt": "2026-01-15T08:00:00.000Z"
 }
@@ -247,9 +280,13 @@ Retrieve QR code (string and base64 image) for WhatsApp pairing
 
 ```json
 {
-  "success": true,
-  "qr": "2@AbCdEfGhIjKlMnOp...",
-  "base64": "data:image/png;base64,iVBORw0KGgo..."
+  "status": true,
+  "message": "QR code generated",
+  "data": {
+    "success": true,
+    "qr": "2@AbCdEfGhIjKlMnOp...",
+    "base64": "data:image/png;base64,iVBORw0KGgo..."
+  }
 }
 ```
 
@@ -438,6 +475,21 @@ Get detailed information about a specific session including uptime and status
   "sessionId": "marketing-1",
   "status": "Connected",
   "userId": "string",
+  "botConfig": {
+    "text": "Hello from WA-AKG!"
+  },
+  "webhooks": [
+    {
+      "text": "Hello from WA-AKG!"
+    }
+  ],
+  "_count": {
+    "contacts": 0,
+    "messages": 0,
+    "groups": 0,
+    "autoReplies": 0,
+    "scheduledMessages": 0
+  },
   "createdAt": "2026-01-15T08:00:00.000Z",
   "updatedAt": "2026-01-15T08:00:00.000Z",
   "uptime": 0,
@@ -483,15 +535,19 @@ Start, stop, restart, or logout a session
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -577,15 +633,19 @@ Permanently deletes session and logs out from WhatsApp
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -648,15 +708,19 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -783,15 +847,19 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -859,15 +927,19 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -1165,15 +1237,19 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -1315,15 +1391,19 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -1463,15 +1543,19 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -1757,15 +1841,19 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -2130,15 +2218,19 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -2425,15 +2517,19 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -5559,15 +5655,19 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -5628,15 +5728,19 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -5697,15 +5801,19 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -5744,15 +5852,19 @@ curl -X PUT "http://localhost:3000/api/profile/session-01/picture" \
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -6653,15 +6765,19 @@ curl -X POST "http://localhost:3000/api/scheduler" \
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -7365,15 +7481,19 @@ curl -X POST "http://localhost:3000/api/user/api-key" \
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -7685,15 +7805,19 @@ curl -X PUT "http://localhost:3000/api/labels/session-01/label_01" \
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -8208,15 +8332,19 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -8254,15 +8382,19 @@ curl -X PATCH "http://localhost:3000/api/notifications/read" \
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -8447,15 +8579,19 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -8526,15 +8662,19 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -8596,13 +8736,17 @@ curl -X POST "http://localhost:3000/api/system/check-updates" \
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
+| `status` | boolean | No | — |
+| `message` | string | No | — |
 | `error` | string | No | — |
 
 **Example:**
 
 ```json
 {
-  "error": "Unauthorized"
+  "status": false,
+  "message": "Error occurred",
+  "error": "Detailed error info"
 }
 ```
 
@@ -8610,15 +8754,19 @@ curl -X POST "http://localhost:3000/api/system/check-updates" \
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
 | `message` | string | No | — |
+| `data` | object, nullable | No | — |
 
 **Example:**
 
 ```json
 {
-  "success": true,
-  "message": "Operation successful"
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
 }
 ```
 
@@ -8631,6 +8779,9 @@ curl -X POST "http://localhost:3000/api/system/check-updates" \
 | `sessionId` | string | No | — |
 | `status` | string | No | **Options:** `Connected`, `Disconnected`, `Connecting` |
 | `userId` | string | No | — |
+| `botConfig` | object, nullable | No | — |
+| `webhooks` | array of object | No | — |
+| `_count` | object, nullable | No | — |
 | `createdAt` | string (date-time) | No | — |
 | `updatedAt` | string (date-time) | No | — |
 
@@ -8643,6 +8794,21 @@ curl -X POST "http://localhost:3000/api/system/check-updates" \
   "sessionId": "marketing-1",
   "status": "Connected",
   "userId": "string",
+  "botConfig": {
+    "text": "Hello from WA-AKG!"
+  },
+  "webhooks": [
+    {
+      "text": "Hello from WA-AKG!"
+    }
+  ],
+  "_count": {
+    "contacts": 0,
+    "messages": 0,
+    "groups": 0,
+    "autoReplies": 0,
+    "scheduledMessages": 0
+  },
   "createdAt": "2026-01-15T08:00:00.000Z",
   "updatedAt": "2026-01-15T08:00:00.000Z"
 }

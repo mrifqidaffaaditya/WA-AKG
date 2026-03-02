@@ -57,7 +57,9 @@ export default function SessionDetailPage() {
                 }
                 throw new Error("Failed to fetch");
             }
-            const data = await res.json();
+            const responseData = await res.json();
+            const data = responseData?.data;
+            if (!data) throw new Error("No data returned");
             setSession(data);
             setQrCode(data.qr || null);
             setUptime(data.uptime || 0);
@@ -114,7 +116,7 @@ export default function SessionDetailPage() {
             });
             const data = await res.json();
 
-            if (!res.ok) throw new Error(data.error || "Action failed");
+            if (!res.ok) throw new Error(data.message || data.error || "Action failed");
 
             toast.success(data.message || "Success");
 

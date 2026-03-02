@@ -21,32 +21,32 @@ export async function POST(request: NextRequest) {
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const body = await request.json();
         const { sessionId, content, type = "TEXT", mediaUrl, backgroundColor, font, mentions } = body; 
         
         if (!sessionId || !content) {
-             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+             return NextResponse.json({ status: false, message: "Missing required fields", error: "Missing required fields" }, { status: 400 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
         if (!instance?.socket) {
-            return NextResponse.json({ error: "Session not ready" }, { status: 503 });
+            return NextResponse.json({ status: false, message: "Session not ready", error: "Session not ready" }, { status: 503 });
         }
 
         const statusJid = 'status@broadcast';
         const userJid = instance.socket.user?.id || (instance.socket.authState.creds.me?.id);
 
         if (!userJid) {
-             return NextResponse.json({ error: "Session not fully connected (User JID missing)" }, { status: 503 });
+             return NextResponse.json({ status: false, message: "Session not fully connected (User JID missing)", error: "Session not fully connected (User JID missing)" }, { status: 503 });
         }
 
         let resultId: string | undefined;
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
             });
 
         } else if (type === 'IMAGE') {
-            if (!mediaUrl) return NextResponse.json({ error: "Media URL required for image status" }, { status: 400 });
+            if (!mediaUrl) return NextResponse.json({ status: false, message: "Media URL required for image status", error: "Media URL required for image status" }, { status: 400 });
             
             const sentMsg = await instance.socket.sendMessage(statusJid, {
                 image: { url: mediaUrl },
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
             resultId = sentMsg?.key.id!;
 
         } else if (type === 'VIDEO') {
-            if (!mediaUrl) return NextResponse.json({ error: "Media URL required for video status" }, { status: 400 });
+            if (!mediaUrl) return NextResponse.json({ status: false, message: "Media URL required for video status", error: "Media URL required for video status" }, { status: 400 });
             
             const sentMsg = await instance.socket.sendMessage(statusJid, {
                 video: { url: mediaUrl },
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
              resultId = sentMsg?.key.id!;
 
         } else {
-             return NextResponse.json({ error: "Invalid status type" }, { status: 400 });
+             return NextResponse.json({ status: false, message: "Invalid status type", error: "Invalid status type" }, { status: 400 });
         }
         
         console.log("Status Sent ID:", resultId);
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        return NextResponse.json({ success: true, id: resultId });
+        return NextResponse.json({ status: true, message: "Operation successful", data: { id: resultId } });
 
     } catch (e: any) {
         console.error("Post status error details:", {
