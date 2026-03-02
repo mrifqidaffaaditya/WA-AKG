@@ -13,8 +13,15 @@
     - **Connection Ping**: Monitors Baileys socket state and latency.
     - **Session Uptime**: Displays exactly how long the session has been connected.
     - **Message Store Stats**: Placeholders for tracking in-memory Baileys store (Contacts, Chats, Messages).
-- **Administration Features**:
-    - Added "System Monitor" link to the sidebar navigation (restricted to SUPERADMIN).
+- **Administration & UI Features**:
+    - Added "System Monitor" to the sidebar navigation (restricted to SUPERADMIN).
+    - Replaced the "Auto Reply" quick action card on the Dashboard with "System Monitor".
+    - Consolidated mobile menu navigation to precisely match the desktop sidebar's appearance and icon layout.
+
+### Optimized
+- **Mobile-First Responsiveness**:
+    - Long system details like OS Distro and Session Uptime now automatically truncate with ellipsis to prevent screen overflow on narrow devices.
+    - **Battery & Memory Optimization**: The System Monitor page uses the `Visibility API` to instantly pause real-time polling (every 3s) whenever the browser tab is hidden or minimized, preserving battery life and background resources.
 
 ### Fixed
 - **Next.js 15 Compatibility**: Fixed TypeScript errors related to `Promise`-wrapped `params` in dynamic API routes.
