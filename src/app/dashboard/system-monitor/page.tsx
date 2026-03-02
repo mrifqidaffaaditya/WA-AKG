@@ -31,11 +31,25 @@ export default function SystemMonitorPage() {
         }
     };
 
-    // Poll every 3 seconds
+    // Poll every 3 seconds only if visible
     useEffect(() => {
+        let isVisible = true;
+        const handleVisibilityChange = () => {
+            isVisible = document.visibilityState === 'visible';
+            if (isVisible) fetchStats();
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
         fetchStats();
-        const interval = setInterval(fetchStats, 3000);
-        return () => clearInterval(interval);
+
+        const interval = setInterval(() => {
+            if (isVisible) fetchStats();
+        }, 3000);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
     }, []);
 
     if (session?.user?.role !== "SUPERADMIN") {
@@ -100,9 +114,12 @@ export default function SystemMonitorPage() {
                     </h1>
                     <p className="text-muted-foreground">Real-time OS and Node process metrics.</p>
                 </div>
-                <div className="flex gap-2 text-sm text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-lg border">
-                    <Server className="h-4 w-4" />
-                    {data.os.distro} {data.os.release} ({data.os.platform}) ΓÇö Uptime: {formatUptime(data.os.uptime)}
+                <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-muted-foreground bg-muted/50 px-3 py-2 rounded-lg border leading-tight">
+                    <Server className="h-4 w-4 shrink-0" />
+                    <span className="truncate max-w-[200px] sm:max-w-none">{data.os.distro} {data.os.release}</span>
+                    <span className="hidden sm:inline">({data.os.platform})</span>
+                    <span className="mx-1 opacity-50">•</span>
+                    <span>Uptime: {formatUptime(data.os.uptime)}</span>
                 </div>
             </div>
 
