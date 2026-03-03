@@ -26,12 +26,12 @@ export function ChatLayoutClient({ sessionId }: ChatLayoutClientProps) {
     };
 
     return (
-        <div className="flex h-[calc(100vh-7rem)] sm:h-[calc(100vh-6rem)] bg-background rounded-xl border border-border/40 shadow-sm overflow-hidden">
+        <div className="flex h-full bg-background rounded-xl border border-border/40 shadow-sm overflow-hidden relative">
             {/* Chat List Panel */}
             <div
                 className={`
                     w-full md:w-80 lg:w-[340px] border-r border-border/30 h-full overflow-hidden flex-shrink-0
-                    absolute md:static inset-0 z-10 bg-background
+                    absolute md:static inset-0 z-20 bg-background
                     transition-transform duration-300 ease-in-out
                     ${selectedChat ? "-translate-x-full md:translate-x-0" : "translate-x-0"}
                 `}
@@ -47,9 +47,9 @@ export function ChatLayoutClient({ sessionId }: ChatLayoutClientProps) {
             <div
                 className={`
                     flex-1 h-full overflow-hidden
-                    absolute md:static inset-0 z-20 bg-background
+                    absolute md:static inset-0 z-10 bg-background
                     transition-transform duration-300 ease-in-out
-                    ${selectedChat ? "translate-x-0" : "translate-x-full md:translate-x-0"}
+                    ${selectedChat ? "translate-x-0 z-30" : "translate-x-full md:translate-x-0"}
                 `}
             >
                 {selectedChat ? (

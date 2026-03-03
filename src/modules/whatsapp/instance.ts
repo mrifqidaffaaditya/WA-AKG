@@ -26,6 +26,7 @@ export class WhatsAppInstance {
     io: Server;
     config: any = {};
     startTime: Date | null = null;
+    pairingCode: string | null = null;
 
     isStopped: boolean = false;
 
@@ -54,7 +55,7 @@ export class WhatsAppInstance {
                 creds: state.creds,
                 keys: makeCacheableSignalKeyStore(state.keys, pino({ level: process.env.BAILEYS_LOG_LEVEL || "error" }) as any),
             },
-            browser: ["WA-AKG", "Chrome", "1.0.0"],
+            browser: ["Ubuntu", "Chrome", "20.0.04"],
             markOnlineOnConnect: botConfig?.alwaysOnline ?? true,
             syncFullHistory: true, // Enable history sync to get contacts
         });
@@ -192,6 +193,34 @@ export class WhatsAppInstance {
             } else {
                 console.error("Error in handleConnectionUpdate:", error);
             }
+        }
+    }
+
+    async requestPairingCode(phoneNumber: string) {
+        if (!this.socket) {
+            throw new Error("Socket not initialized");
+        }
+
+        try {
+            // Validate phone number (basic check)
+            const cleanNumber = phoneNumber.replace(/[^0-9]/g, '');
+            if (!cleanNumber) throw new Error("Invalid phone number");
+
+            const code = await this.socket.requestPairingCode(cleanNumber);
+            this.pairingCode = code;
+            this.status = "SCAN_QR"; // Or specialized status? "PAIRING" is better but SCAN_QR triggers the right UI blocks usually
+
+            // Emit update
+            this.io?.to(this.sessionId).emit("connection.update", {
+                status: this.status,
+                qr: this.qr,
+                pairingCode: code
+            });
+
+            return code;
+        } catch (error) {
+            console.error("Pairing code error:", error);
+            throw error;
         }
     }
 }

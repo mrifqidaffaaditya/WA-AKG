@@ -66,7 +66,8 @@ export async function GET(
                 status: instance?.status || session.status, // Prefer live status
                 uptime,
                 me,
-                hasInstance: !!instance
+                hasInstance: !!instance,
+                pairingCode: instance?.pairingCode || null
             }
         });
 

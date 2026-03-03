@@ -7,7 +7,7 @@ export class WhatsAppManager {
     private static instance: WhatsAppManager;
     private sessions: Map<string, WhatsAppInstance> = new Map();
     public io: Server | null = null;
-    
+
     private constructor() {
         initScheduler();
     }
@@ -44,10 +44,10 @@ export class WhatsAppManager {
         }
 
         if (!this.io) {
-             console.error("Socket.IO not initialized in WhatsAppManager, and global fallback failed.");
-             throw new Error("Socket.IO not initialized");
+            console.error("Socket.IO not initialized in WhatsAppManager, and global fallback failed.");
+            throw new Error("Socket.IO not initialized");
         }
-        
+
         // Use custom ID if provided, otherwise generate random
         const sessionId = customSessionId || Math.random().toString(36).substring(7);
 
@@ -77,13 +77,13 @@ export class WhatsAppManager {
     public getInstance(sessionId: string) {
         return this.sessions.get(sessionId);
     }
-    
+
     async deleteSession(sessionId: string) {
         const instance = this.sessions.get(sessionId);
         if (instance) {
-             // Logout/Close socket
-             instance.socket?.end(undefined);
-             this.sessions.delete(sessionId);
+            // Logout/Close socket
+            instance.socket?.end(undefined);
+            this.sessions.delete(sessionId);
         }
         await prisma.session.delete({ where: { sessionId } });
     }
@@ -118,7 +118,7 @@ export class WhatsAppManager {
             instance = new WhatsAppInstance(sessionId, session.userId, this.io!);
             this.sessions.set(sessionId, instance);
         }
-        
+
         await instance.init();
     }
 
@@ -127,6 +127,12 @@ export class WhatsAppManager {
         // Small delay to ensure cleanup
         await new Promise(resolve => setTimeout(resolve, 1000));
         await this.startSession(sessionId);
+    }
+
+    async requestPairingCode(sessionId: string, phoneNumber: string) {
+        const instance = this.sessions.get(sessionId);
+        if (!instance) throw new Error("Instance not found or not running");
+        return await instance.requestPairingCode(phoneNumber);
     }
 }
 

@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { ChatInterface } from "@/components/chat/chat-interface";
+import { ChatLayoutClient } from "@/components/chat/chat-layout-client";
 import { cookies } from "next/headers";
 import { canAccessSession } from "@/lib/api-auth";
 import { SessionGuard } from "@/components/dashboard/session-guard";
@@ -24,9 +25,17 @@ export default async function ChatPage() {
         }
     }
 
+    if (!validSessionId) {
+        return (
+            <SessionGuard>
+                <ChatInterface sessionId={null} />
+            </SessionGuard>
+        );
+    }
+
     return (
-        <SessionGuard>
-            <ChatInterface sessionId={validSessionId} />
-        </SessionGuard>
+        <div className="h-[calc(100vh-6.5rem)] sm:h-[calc(100vh-6rem)]">
+            <ChatLayoutClient key={validSessionId} sessionId={validSessionId} />
+        </div>
     );
 }

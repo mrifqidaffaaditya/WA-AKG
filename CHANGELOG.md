@@ -17,6 +17,13 @@
     - Added security warnings on login/dashboard if Public Registration is enabled.
     - Sidebar navigation overhaul for better feature grouping (Messaging, Automation, Administration).
     - New dashboard controls for Command Prefix and Max Sticker Duration.
+- **WhatsApp Pairing Code Connection**:
+    - Support for linking WhatsApp accounts via 8-character pairing codes as an alternative to QR scanning.
+    - Integrated "Link with Phone Number" UI in Session Detail page with one-click copy support.
+    - Optimized browser identification for maximum compatibility with WhatsApp's pairing system.
+- **Message View & Media Download**:
+    - Fixed individual chat message visibility issues by standardizing API response structures.
+    - Added one-click Media Download buttons for Image, Video, Audio, and Document messages in the Chat Window.
 - **Standardization**: RESTful API path parameter standardization using `[sessionId]` and a consistent `{ status, message, data }` response format.
 
 ### Changed

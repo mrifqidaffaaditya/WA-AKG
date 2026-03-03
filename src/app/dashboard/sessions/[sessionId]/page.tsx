@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ArrowLeft, Play, Square, RotateCcw, LogOut, Power, Trash2, QrCode, Activity, HardDrive, Wifi, MemoryStick } from "lucide-react";
+import { ArrowLeft, Play, Square, RotateCcw, LogOut, Power, Trash2, QrCode, Activity, HardDrive, Wifi, MemoryStick, Copy, Check } from "lucide-react";
 import Link from "next/link";
 import { io, Socket } from "socket.io-client";
 import { QRCodeSVG } from "qrcode.react";
@@ -46,6 +47,9 @@ export default function SessionDetailPage() {
     const [socket, setSocket] = useState<Socket | null>(null);
     const [uptime, setUptime] = useState(0);
     const [systemMetrics, setSystemMetrics] = useState<any>(null);
+    const [phoneNumber, setPhoneNumber] = useState("");
+    const [pairingCode, setPairingCode] = useState<string | null>(null);
+    const [isPairing, setIsPairing] = useState(false);
 
     const fetchSession = async () => {
         try {
@@ -63,6 +67,7 @@ export default function SessionDetailPage() {
             if (!data) throw new Error("No data returned");
             setSession(data);
             setQrCode(data.qr || null);
+            setPairingCode(data.pairingCode || null);
             setUptime(data.uptime || 0);
         } catch (error) {
             console.error(error);
@@ -97,10 +102,11 @@ export default function SessionDetailPage() {
             socketInstance.emit("join-session", sessionId);
         });
 
-        socketInstance.on("connection.update", (data: { status: string, qr: string }) => {
+        socketInstance.on("connection.update", (data: { status: string, qr: string, pairingCode?: string }) => {
             console.log("Socket update:", data);
             setSession(prev => prev ? { ...prev, status: data.status } : null);
             setQrCode(data.qr || null);
+            if (data.pairingCode) setPairingCode(data.pairingCode);
 
             // Re-fetch full details on major status change (like connection) to get 'me' info
             if (data.status === 'CONNECTED') {
@@ -126,11 +132,13 @@ export default function SessionDetailPage() {
         };
     }, [sessionId]);
 
-    const performAction = async (action: string) => {
+    const performAction = async (action: string, payload: any = {}) => {
         const loadingToast = toast.loading(` performing ${action}...`);
         try {
             const res = await fetch(`/api/sessions/${sessionId}/${action}`, {
-                method: "POST"
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
             });
             const data = await res.json();
 
@@ -140,7 +148,11 @@ export default function SessionDetailPage() {
 
             // Refresh logic
             if (action === 'logout') {
-                setQrCode(null); // Will likely wait for scan-qr event
+                setQrCode(null);
+                setPairingCode(null);
+            }
+            if (action === 'pair' && data.data?.pairingCode) {
+                setPairingCode(data.data.pairingCode);
             }
             fetchSession();
 
@@ -149,6 +161,21 @@ export default function SessionDetailPage() {
         } finally {
             toast.dismiss(loadingToast);
         }
+    };
+
+    const handlePairingRequest = async () => {
+        if (!phoneNumber) {
+            toast.error("Please enter a phone number");
+            return;
+        }
+        setIsPairing(true);
+        await performAction('pair', { phoneNumber });
+        setIsPairing(false);
+    };
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        toast.success("Copied to clipboard");
     };
 
     const deleteSession = async () => {
@@ -243,9 +270,55 @@ export default function SessionDetailPage() {
                         )}
 
                         {qrCode && (
-                            <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg bg-white">
+                            <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg bg-white relative group">
                                 <QRCodeSVG value={qrCode} size={256} />
                                 <p className="mt-4 text-sm text-gray-500 animate-pulse">Scan with WhatsApp to connect</p>
+
+                                <div className="mt-6 pt-6 border-t w-full">
+                                    <div className="flex flex-col items-center gap-3">
+                                        <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Or link with phone number</div>
+                                        <div className="flex flex-col w-full max-w-sm gap-2 mt-1">
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    placeholder="628123456789"
+                                                    value={phoneNumber}
+                                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhoneNumber(e.target.value)}
+                                                    className="font-mono"
+                                                />
+                                                <Button onClick={handlePairingRequest} disabled={isPairing || !phoneNumber}>
+                                                    Link
+                                                </Button>
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground text-center">Use country code without + or spaces (e.g., 628123456789)</p>
+                                        </div>
+                                        {pairingCode && (
+                                            <div className="mt-4 p-4 bg-slate-900 rounded-lg w-full max-w-[320px] text-center border-2 border-slate-700 shadow-xl relative group/code">
+                                                <div className="text-[10px] text-slate-400 uppercase tracking-[0.2em] mb-2 font-semibold">Your Pairing Code</div>
+                                                <div
+                                                    className="text-3xl font-mono font-bold text-white tracking-[0.3em] flex justify-center cursor-pointer hover:text-blue-400 transition-colors py-2"
+                                                    onClick={() => copyToClipboard(pairingCode)}
+                                                    title="Click to copy"
+                                                >
+                                                    {pairingCode.toUpperCase().replace('-', '').split('').map((char, i) => (
+                                                        <span key={i} className="flex items-center">
+                                                            {char}
+                                                            {i === 3 && <span className="mx-2 text-slate-600 opacity-50">-</span>}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                                <Button
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    className="absolute top-2 right-2 h-7 w-7 text-slate-500 hover:text-white"
+                                                    onClick={() => copyToClipboard(pairingCode)}
+                                                >
+                                                    <Copy className="h-3.5 w-3.5" />
+                                                </Button>
+                                                <div className="text-[9px] text-slate-500 mt-2 italic">Enter this code on your phone</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </CardContent>
