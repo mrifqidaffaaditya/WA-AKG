@@ -176,7 +176,7 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
             {/* Header */}
             <div className="px-3 py-2.5 border-b bg-background/80 backdrop-blur-sm flex items-center gap-3 flex-shrink-0">
                 {onBack && (
-                    <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden flex-shrink-0" onClick={onBack}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={onBack}>
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                 )}
