@@ -45,7 +45,8 @@ export default function NotificationAdminPage() {
             });
 
             if (res.ok) {
-                const data = await res.json();
+                const responseData = await res.json();
+                const data = responseData?.data || {};
                 toast.success(`Notification sent successfully! (Count: ${data.count || 1})`);
                 // Reset form
                 setTitle("");
@@ -63,13 +64,13 @@ export default function NotificationAdminPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold flex items-center gap-2">
-                    <Bell className="h-8 w-8" /> Notification Manager
+            <div>
+                <h1 className="text-xl sm:text-3xl font-bold flex items-center gap-2">
+                    <Bell className="h-6 w-6 sm:h-8 sm:w-8" /> Notification Manager
                 </h1>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2">
                 <Card>
                     <CardHeader>
                         <CardTitle>Compose Notification</CardTitle>
@@ -86,7 +87,7 @@ export default function NotificationAdminPage() {
                             <Textarea value={message} onChange={e => setMessage(e.target.value)} placeholder="Detailed message..." />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                             <div className="space-y-2">
                                 <Label>Type</Label>
                                 <Select value={type} onValueChange={setType}>

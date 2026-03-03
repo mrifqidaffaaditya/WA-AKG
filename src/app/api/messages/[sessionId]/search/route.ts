@@ -14,7 +14,7 @@ export async function GET(
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const { sessionId } = await params;
@@ -30,6 +30,8 @@ export async function GET(
 
         if (!q && !jid) {
             return NextResponse.json({
+                status: false,
+                message: "At least one of 'q' (search query) or 'jid' is required",
                 error: "At least one of 'q' (search query) or 'jid' is required"
             }, { status: 400 });
         }
@@ -37,7 +39,7 @@ export async function GET(
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         // Get internal session ID
@@ -47,7 +49,7 @@ export async function GET(
         });
 
         if (!session) {
-            return NextResponse.json({ error: "Session not found" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Session not found", error: "Session not found" }, { status: 404 });
         }
 
         // Build search filters
@@ -89,13 +91,22 @@ export async function GET(
                     status: true,
                     timestamp: true,
                     quoteId: true,
+                    contract: {
+                        select: {
+                            name: true,
+                            notify: true,
+                            verifiedName: true,
+                            profilePic: true
+                        }
+                    }
                 }
             }),
             prisma.message.count({ where })
         ]);
 
         return NextResponse.json({
-            success: true,
+            status: true,
+            message: "Messages successfully retrieved",
             data: messages,
             pagination: {
                 total,
@@ -107,6 +118,6 @@ export async function GET(
 
     } catch (error) {
         console.error("Message search error:", error);
-        return NextResponse.json({ error: "Failed to search messages" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to search messages", error: "Failed to search messages" }, { status: 500 });
     }
 }

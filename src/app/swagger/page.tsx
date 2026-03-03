@@ -12,12 +12,27 @@ export default function ApiDocsPage() {
     const [error, setError] = useState("");
 
     useEffect(() => {
+        // Suppress Swagger UI legacy lifecycle warnings (ModelCollapse)
+        const originalWarn = console.warn;
+        console.warn = (...args) => {
+            if (typeof args[0] === 'string' &&
+                args[0].includes('UNSAFE_componentWillReceiveProps') &&
+                args[0].includes('ModelCollapse')) {
+                return;
+            }
+            originalWarn(...args);
+        };
+
         // Check if already authorized via session storage
         const isAuth = sessionStorage.getItem("swagger_auth") === "true";
         if (isAuth) {
             setAuthorized(true);
         }
         setLoading(false);
+
+        return () => {
+            console.warn = originalWarn;
+        };
     }, []);
 
     const handleLogin = (e: React.FormEvent) => {

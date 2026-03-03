@@ -15,7 +15,7 @@ export async function POST(
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const { sessionId, jid: rawJid, messageId } = await params;
@@ -25,18 +25,18 @@ export async function POST(
         const { message, mentions, fromMe } = body;
 
         if (!message) {
-            return NextResponse.json({ error: "message is required" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "message is required", error: "message is required" }, { status: 400 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
         if (!instance?.socket) {
-            return NextResponse.json({ error: "Session not ready" }, { status: 503 });
+            return NextResponse.json({ status: false, message: "Session not ready", error: "Session not ready" }, { status: 503 });
         }
 
         // Construct the quoted message key
@@ -157,10 +157,10 @@ export async function POST(
             quoted: quotedMsg as any
         });
 
-        return NextResponse.json({ success: true, message: "Message sent successfully" });
+        return NextResponse.json({ status: true, message: "Message sent successfully" });
 
     } catch (error) {
         console.error("Reply message error:", error);
-        return NextResponse.json({ error: "Failed to send reply" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to send reply", error: "Failed to send reply" }, { status: 500 });
     }
 }

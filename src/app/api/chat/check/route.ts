@@ -12,35 +12,33 @@ export async function POST(request: NextRequest) {
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const body = await request.json();
         const { sessionId, numbers } = body;
 
         if (!sessionId || !numbers || !Array.isArray(numbers)) {
-            return NextResponse.json({ 
-                error: "sessionId and numbers (array) are required" 
-            }, { status: 400 });
+            return NextResponse.json({ status: false, message: "sessionId and numbers (array) are required", error: "sessionId and numbers (array) are required" }, { status: 400 });
         }
 
         if (numbers.length === 0) {
-            return NextResponse.json({ error: "At least one number is required" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "At least one number is required", error: "At least one number is required" }, { status: 400 });
         }
 
         if (numbers.length > 50) {
-            return NextResponse.json({ error: "Maximum 50 numbers per request" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "Maximum 50 numbers per request", error: "Maximum 50 numbers per request" }, { status: 400 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
         if (!instance?.socket) {
-            return NextResponse.json({ error: "Session not ready" }, { status: 503 });
+            return NextResponse.json({ status: false, message: "Session not ready", error: "Session not ready" }, { status: 503 });
         }
 
         // Check numbers on WhatsApp
@@ -66,13 +64,10 @@ export async function POST(request: NextRequest) {
             })
         );
 
-        return NextResponse.json({ 
-            success: true,
-            results
-        });
+        return NextResponse.json({ status: true, message: "Operation successful", data: { results } });
 
     } catch (error) {
         console.error("Check WhatsApp error:", error);
-        return NextResponse.json({ error: "Failed to check numbers" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to check numbers", error: "Failed to check numbers" }, { status: 500 });
     }
 }

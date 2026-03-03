@@ -11,9 +11,9 @@ export async function GET(request: NextRequest) {
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
-        
+
         const { searchParams } = new URL(request.url);
         const sessionId = searchParams.get("sessionId");
 
@@ -23,17 +23,17 @@ export async function GET(request: NextRequest) {
             // Verify access
             const canAccess = await import("@/lib/api-auth").then(m => m.canAccessSession(user.id, user.role, sessionId));
             if (!canAccess) {
-                 return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+                return NextResponse.json({ status: false, message: "Forbidden", error: "Forbidden" }, { status: 403 });
             }
             // Get internal ID
-             const session = await prisma.session.findUnique({
+            const session = await prisma.session.findUnique({
                 where: { sessionId: sessionId },
                 select: { id: true }
             });
-            if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+            if (!session) return NextResponse.json({ status: false, message: "Session not found", error: "Session not found" }, { status: 404 });
             targetSessionId = session.id;
         } else {
-             // Fallback: Get first connected session based on role (Legacy behavior or default)
+            // Fallback: Get first connected session based on role (Legacy behavior or default)
             let userSession;
             if (isAdmin(user.role)) {
                 userSession = await prisma.session.findFirst({
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
                 });
             }
             if (!userSession) {
-                return NextResponse.json({ error: "No connected session" }, { status: 404 });
+                return NextResponse.json({ status: false, message: "No connected session", error: "No connected session" }, { status: 404 });
             }
             targetSessionId = userSession.id;
         }
@@ -59,9 +59,9 @@ export async function GET(request: NextRequest) {
             orderBy: { subject: 'asc' }
         });
 
-        return NextResponse.json(groups);
+        return NextResponse.json({ status: true, message: "Groups retrieved successfully", data: groups });
     } catch (error) {
         console.error("Get groups error:", error);
-        return NextResponse.json({ error: "Failed to fetch groups" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to fetch groups", error: "Failed to fetch groups" }, { status: 500 });
     }
 }

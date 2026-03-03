@@ -1,3 +1,126 @@
+## [v1.5.1] - 2026-03-03
+
+### Added
+- **WA-AKG API Heartbeat Monitoring**: 
+    - Full transition to a dual-app architecture with a standalone `wa-akg-api` monitoring system.
+    - Automated background heartbeat system in the main app to detect active server instances.
+    - Persistent MySQL/MariaDB storage for monitoring data with premium dark-mode dashboard.
+- **Global System Resource Monitoring**:
+    - Centralized "System Monitor" dashboard for Superadmins to track CPU (Live & Per-core), RAM, Disk, and Network health.
+    - Detailed process-level memory tracking (Heap/RSS) for the Node.js application.
+- **Per-Session Health Monitoring**: 
+    - Live Baileys socket ping/latency and connection uptime integrated directly into Session Detail pages.
+- **Anti-Ban Protection (Anti-Spam Rate Limit)**:
+    - High-performance message queue system to prevent WhatsApp account bans.
+    - Configurable per-session thresholds, randomized delays, and FIFO message sequence management.
+- **Improved Administration UI**:
+    - Added security warnings on login/dashboard if Public Registration is enabled.
+    - Sidebar navigation overhaul for better feature grouping (Messaging, Automation, Administration).
+    - New dashboard controls for Command Prefix and Max Sticker Duration.
+- **Standardization**: RESTful API path parameter standardization using `[sessionId]` and a consistent `{ status, message, data }` response format.
+
+### Changed
+- **SEO & Accessibility**: Introduced `NEXT_PUBLIC_ALLOW_INDEXING` toggle to control global search engine crawling (Default: noindex).
+- **Alert System Overhaul**: Replaced intrusive browser `alert()` and `confirm()` calls with modern Sonner Toasts and Radix UI dialogs.
+- **Mobile-First Responsiveness**: Comprehensive design update for 12+ dashboard pages to ensure flawless mobile viewing (tabs, headers, and grids).
+- **Socket Reliability**: Refactored socket status detection for always-accurate "CONNECTED" reporting via readyState investigation.
+
+### Fixed
+- **Next.js 15 Compatibility**: Resolved critical TypeScript errors with Promise-wrapped route params.
+- **JID Normalization**: Standardized mapping of `@lid` (Linked Device) to phone `@s.whatsapp.net` across Webhooks, Store, and UI.
+- **JID Encoding**: Fixed 404 router errors caused by unencoded `@` symbols in API documentation examples.
+- **Anti-Spam Stability**: Fixed socket wrapper preservation during session re-initialization.
+
+---
+
+## [v1.5.1-beta.3] - 2026-03-03
+
+### Changed
+- **SEO Accessibility**: Introduced `NEXT_PUBLIC_ALLOW_INDEXING` setting handling global HTML page bots indexing (Default: noindex/nofollow).
+- **Admin Dashboard Layout**: Added proactive visual warnings on Dashboard entry for Superadmins alerting when Public Registration is globally enabled to safeguard deployment environments.
+- **Improved Auth Consistency**: Standardized RESTful authentication validation, blocking users from listing user data or inspecting elements belonging to unowned session IDs via endpoints like `/api/contacts/route`.
+
+---
+
+## [v1.5.1-beta.2] - 2026-03-02
+
+### Added
+- **Global System Resource Monitoring**:
+    - New Dashboard page (`/dashboard/system-monitor`) for Superadmins to monitor host server health.
+    - Real-time CPU Load (Total & Per-Core breakdown).
+    - System RAM vs Node.js Process Memory (Heap/RSS) tracking.
+    - Network Traffic monitoring (Live RX/TX bytes per second).
+    - Disk Usage tracking for all mounted partitions.
+    - Automatic 3-second polling for live updates.
+- **Per-Session Health Monitoring**:
+    - Integrated real-time metrics into the Session Detail page.
+    - **Connection Ping**: Monitors Baileys socket state and latency.
+    - **Session Uptime**: Displays exactly how long the session has been connected.
+    - **Message Store Stats**: Placeholders for tracking in-memory Baileys store (Contacts, Chats, Messages).
+- **Administration & UI Features**:
+    - Added "System Monitor" to the sidebar navigation (restricted to SUPERADMIN).
+    - Replaced the "Auto Reply" quick action card on the Dashboard with "System Monitor".
+    - Consolidated mobile menu navigation to precisely match the desktop sidebar's appearance and icon layout.
+
+### Optimized
+- **Mobile-First Responsiveness**:
+    - Long system details like OS Distro and Session Uptime now automatically truncate with ellipsis to prevent screen overflow on narrow devices.
+    - **Battery & Memory Optimization**: The System Monitor page uses the `Visibility API` to instantly pause real-time polling (every 3s) whenever the browser tab is hidden or minimized, preserving battery life and background resources.
+
+### Fixed
+- **Next.js 15 Compatibility**: Fixed TypeScript errors related to `Promise`-wrapped `params` in dynamic API routes.
+- **Auth Logic**: Standardized backend auth to use `@/lib/api-auth` across all new monitoring endpoints.
+- **Socket Reliability**: Improved socket state detection for `CONNECTED` sessions by accessing the underlying `ws.readyState`.
+
+### Technical
+- **New Dependencies**: Added `systeminformation` for OS metrics and `@radix-ui/react-progress` for UI components.
+- **UI Components**: Manually implemented `src/components/ui/progress.tsx` due to environment-specific CLI issues.
+
+---
+
+## [v1.5.1-beta.1] - 2026-03-02
+
+### Added
+- **Anti-Ban Protection (Anti-Spam Rate Limit)**:
+    - Per-session message queue system to prevent WhatsApp from detecting spam and banning accounts.
+    - Configurable **Messages Threshold**, **Time Window**, **Min Delay**, and **Max Delay** via Bot Settings.
+    - FIFO queue ensures messages are sent in order with randomized delays between sends.
+    - Applies to **all** outgoing messages universally: bot replies, auto-replies, broadcasts, scheduled messages, and API calls.
+    - Detailed console logging with queue status, message types, delay info, and estimated send times:
+        - `📥 QUEUED` — Message enters the queue with position number.
+        - `⏳ DELAY` — Rate limit reached, showing delay duration and queue depth.
+        - `✅ SENDING/INSTANT` — Message dispatched with total wait time.
+    - Config cached for 10 seconds to avoid excessive database queries.
+    - Uses raw SQL queries for maximum compatibility (no Prisma client regeneration required).
+- **Configurable Bot Command Prefix**:
+    - New setting in Bot Settings to change the bot command prefix (default `#`, max 3 characters).
+    - `command-handler.ts` now reads prefix from database instead of hardcoded value.
+    - Menu command dynamically displays the configured prefix.
+- **Max Sticker Duration UI**:
+    - Added slider control (3–30 seconds) in Bot Settings for `maxStickerDuration`.
+    - Previously only configurable via database — now accessible in the dashboard.
+
+### Changed
+- **Alert System Overhaul**:
+    - Replaced native `alert()` in Broadcast page with `toast.error()` from Sonner.
+    - Replaced native `confirm()` in Media page with AlertDialog for file deletion.
+    - Added AlertDialog confirmation for API key regeneration in Webhooks page.
+- **Mobile Responsiveness**:
+    - Applied responsive design patterns across 12 dashboard pages: Groups, Scheduler, Auto Reply, Broadcast, Sticker, Users, Notifications, Webhooks, Settings, Bot Settings, API Docs, and Contacts.
+    - Headers wrap on mobile (`flex-col sm:flex-row`), form grids stack (`grid-cols-1 sm:grid-cols-2`), dialog widths constrained, font sizes adjusted.
+- **API Documentation Refactor**:
+    - Standardized all response schemas in `API_DOCUMENTATION.md` to reflect the new `{ status: boolean, message: string, data: object }` format instead of the legacy `{ success: boolean }`.
+    - Enriched the Session GET documentation to show `botConfig`, `webhooks`, and `_count` relationships.
+
+### Fixed
+- **API Quick Reference Bug**: Fixed completely outdated REST API endpoints in the Python and Node.js examples (e.g., changing `/api/chat/send` to `/api/messages/{sessionId}/{jid}/send`).
+- **JID Encoding in Docs**: Added explicit `@` symbol URL encoding (`%40s.whatsapp.net`) to code examples to prevent 404 router errors.
+- **Swagger UI Warning**: Suppressed `UNSAFE_componentWillReceiveProps` console warning from `ModelCollapse` component in Swagger UI page.
+- **Anti-Spam Reliability**: Fixed socket wrapping being lost on reconnection — now wraps `sendMessage` inline in `init()` so it persists across session reconnects.
+- **Prisma Schema**: Added `prefix`, `antiSpamEnabled`, `spamLimit`, `spamInterval`, `spamDelayMin`, `spamDelayMax` fields to `BotConfig` model.
+
+---
+
 ## [v1.5.0] - 2026-02-26
 
 ### Added

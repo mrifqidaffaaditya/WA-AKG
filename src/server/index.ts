@@ -29,8 +29,8 @@ app.prepare().then(() => {
     path: "/api/socket/io",
     addTrailingSlash: false,
     cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
+      origin: "*",
+      methods: ["GET", "POST"]
     }
   });
 
@@ -48,5 +48,39 @@ app.prepare().then(() => {
 
   server.listen(port, () => {
     console.log(`> Ready on http://${hostname}:${port}`);
+
+    // --- WA-AKG Monitor Heartbeat ---
+    // Sends a ping every 30 seconds to the monitoring server
+    const MONITOR_URL = "https://api-wa-akg.aikeigroup.net/api/ping";
+    const APP_URL = process.env.BASE_URL || `http://${hostname}:${port}`;
+    const APP_NAME = process.env.APP_NAME || "WA-AKG";
+
+    const sendHeartbeat = async () => {
+      try {
+        await fetch(MONITOR_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            appUrl: APP_URL,
+            appName: APP_NAME,
+            isBackend: true,
+            systemInfo: {
+              platform: process.platform,
+              nodeVersion: process.version,
+              memoryUsage: Math.round(process.memoryUsage().rss / 1024 / 1024) + "MB"
+            }
+          }),
+        });
+      } catch (error) {
+        // Silently fail to not disturb the main application
+        // console.error("Heartbeat failed", error);
+      }
+    };
+
+    // Initial ping
+    sendHeartbeat();
+    // Interval ping
+    setInterval(sendHeartbeat, 30000);
+    // --------------------------------
   });
 });

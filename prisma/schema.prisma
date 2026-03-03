@@ -237,6 +237,14 @@ model BotConfig {
   enablePing    Boolean  @default(true)
   enableUptime  Boolean  @default(true)
   removeBgApiKey String?
+  prefix        String   @default("#")
+  
+  // Anti-Spam / Rate Limit
+  antiSpamEnabled Boolean @default(false)
+  spamLimit       Int     @default(5)    // Messages allowed in window
+  spamInterval    Int     @default(10)   // Seconds window
+  spamDelayMin    Int     @default(1000) // MS min delay
+  spamDelayMax    Int     @default(3000) // MS max delay
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

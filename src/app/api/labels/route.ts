@@ -12,20 +12,20 @@ export async function GET(request: NextRequest) {
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const { searchParams } = new URL(request.url);
         const sessionId = searchParams.get("sessionId");
 
         if (!sessionId) {
-            return NextResponse.json({ error: "sessionId is required" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "sessionId is required", error: "sessionId is required" }, { status: 400 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const labels = await prisma.label.findMany({
@@ -38,11 +38,11 @@ export async function GET(request: NextRequest) {
             orderBy: { createdAt: 'desc' }
         });
 
-        return NextResponse.json({ success: true, labels });
+        return NextResponse.json({ status: true, message: "Operation successful", data: { labels } });
 
     } catch (error) {
         console.error("Get labels error:", error);
-        return NextResponse.json({ error: "Failed to get labels" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to get labels", error: "Failed to get labels" }, { status: 500 });
     }
 }
 
@@ -56,30 +56,26 @@ export async function POST(request: NextRequest) {
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const body = await request.json();
         const { sessionId, name, color } = body;
 
         if (!sessionId || !name) {
-            return NextResponse.json({ 
-                error: "sessionId and name are required" 
-            }, { status: 400 });
+            return NextResponse.json({ status: false, message: "sessionId and name are required", error: "sessionId and name are required" }, { status: 400 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         // Validate color (0-19 for WhatsApp colors)
         const colorValue = color !== undefined ? color : 0;
         if (colorValue < 0 || colorValue > 19) {
-            return NextResponse.json({ 
-                error: "Color must be between 0 and 19" 
-            }, { status: 400 });
+            return NextResponse.json({ status: false, message: "Color must be between 0 and 19", error: "Color must be between 0 and 19" }, { status: 400 });
         }
 
         // Color mapping (WhatsApp internal colors to hex)
@@ -99,10 +95,10 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        return NextResponse.json({ success: true, label });
+        return NextResponse.json({ status: true, message: "Operation successful", data: { label } });
 
     } catch (error) {
         console.error("Create label error:", error);
-        return NextResponse.json({ error: "Failed to create label" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to create label", error: "Failed to create label" }, { status: 500 });
     }
 }

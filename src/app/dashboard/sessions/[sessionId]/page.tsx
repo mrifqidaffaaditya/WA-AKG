@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ArrowLeft, Play, Square, RotateCcw, LogOut, Power, Trash2, QrCode } from "lucide-react";
+import { ArrowLeft, Play, Square, RotateCcw, LogOut, Power, Trash2, QrCode, Activity, HardDrive, Wifi, MemoryStick } from "lucide-react";
 import Link from "next/link";
 import { io, Socket } from "socket.io-client";
 import { QRCodeSVG } from "qrcode.react";
@@ -45,6 +45,7 @@ export default function SessionDetailPage() {
     const [qrCode, setQrCode] = useState<string | null>(null);
     const [socket, setSocket] = useState<Socket | null>(null);
     const [uptime, setUptime] = useState(0);
+    const [systemMetrics, setSystemMetrics] = useState<any>(null);
 
     const fetchSession = async () => {
         try {
@@ -57,7 +58,9 @@ export default function SessionDetailPage() {
                 }
                 throw new Error("Failed to fetch");
             }
-            const data = await res.json();
+            const responseData = await res.json();
+            const data = responseData?.data;
+            if (!data) throw new Error("No data returned");
             setSession(data);
             setQrCode(data.qr || null);
             setUptime(data.uptime || 0);
@@ -66,6 +69,18 @@ export default function SessionDetailPage() {
             toast.error("Failed to load session details");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchMetrics = async () => {
+        try {
+            const res = await fetch(`/api/system/monitor/${sessionId}`);
+            const result = await res.json();
+            if (result.status) {
+                setSystemMetrics(result.data);
+            }
+        } catch (e) {
+            // silent ignore
         }
     };
 
@@ -100,9 +115,14 @@ export default function SessionDetailPage() {
             setUptime(prev => prev + 1);
         }, 1000);
 
+        // Fetch metrics periodically
+        fetchMetrics();
+        const metricsInterval = setInterval(fetchMetrics, 3000);
+
         return () => {
             socketInstance.disconnect();
             clearInterval(interval);
+            clearInterval(metricsInterval);
         };
     }, [sessionId]);
 
@@ -114,7 +134,7 @@ export default function SessionDetailPage() {
             });
             const data = await res.json();
 
-            if (!res.ok) throw new Error(data.error || "Action failed");
+            if (!res.ok) throw new Error(data.message || data.error || "Action failed");
 
             toast.success(data.message || "Success");
 
@@ -194,6 +214,33 @@ export default function SessionDetailPage() {
                                 <span className="text-lg font-medium truncate">{session.me?.name || session.me?.id || "-"}</span>
                             </div>
                         </div>
+
+                        {/* System Resource Extension */}
+                        {session.status === 'CONNECTED' && systemMetrics && (
+                            <div className="mt-4 pt-4 border-t">
+                                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2"><Activity className="h-4 w-4" /> System Health</h4>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                    <div className="bg-slate-50 p-3 rounded border text-center relative overflow-hidden">
+                                        <Wifi className="h-4 w-4 text-slate-400 absolute top-2 right-2" />
+                                        <div className="text-xs text-slate-500">Ping state</div>
+                                        <div className="font-bold text-green-600 mt-1">{systemMetrics.ping}</div>
+                                    </div>
+                                    <div className="bg-slate-50 p-3 rounded border text-center">
+                                        <div className="text-xs text-slate-500">Store Contacts</div>
+                                        <div className="font-bold text-slate-700 mt-1">{systemMetrics.store?.contacts || 0}</div>
+                                    </div>
+                                    <div className="bg-slate-50 p-3 rounded border text-center">
+                                        <div className="text-xs text-slate-500">Store Chats</div>
+                                        <div className="font-bold text-slate-700 mt-1">{systemMetrics.store?.chats || 0}</div>
+                                    </div>
+                                    <div className="bg-slate-50 p-3 rounded border text-center relative">
+                                        <MemoryStick className="h-4 w-4 text-slate-400 absolute top-2 right-2 opacity-50" />
+                                        <div className="text-xs text-slate-500">Store Msgs</div>
+                                        <div className="font-bold text-slate-700 mt-1">{systemMetrics.store?.messages || 0}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {qrCode && (
                             <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg bg-white">

@@ -1,0 +1,12 @@
+﻿.next/types/validator.ts(1224,31): error TS2344: Type 'typeof import("C:/Users/opc/Downloads/New folder/WA-AKG Project/WA-AKG/src/app/api/system/monitor/[sessionId]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/system/monitor/[sessionId]">'.
+  Types of property 'GET' are incompatible.
+    Type '(req: Request, { params }: { params: { sessionId: string; }; }) => Promise<NextResponse<{ status: boolean; message: any; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ sessionId: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ sessionId: string; }>; }' is not assignable to type '{ params: { sessionId: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'sessionId' is missing in type 'Promise<{ sessionId: string; }>' but required in type '{ sessionId: string; }'.
+src/app/api/system/monitor/[sessionId]/route.ts(2,10): error TS2305: Module '"@/lib/auth"' has no exported member 'getAuthenticatedUser'.
+src/app/api/system/monitor/[sessionId]/route.ts(3,10): error TS2305: Module '"@/modules/whatsapp/manager"' has no exported member 'getSessionManager'.
+src/app/api/system/monitor/[sessionId]/route.ts(4,26): error TS2307: Cannot find module '@/modules/whatsapp/store/session' or its corresponding type declarations.
+src/app/api/system/monitor/route.ts(3,10): error TS2305: Module '"@/lib/auth"' has no exported member 'getAuthenticatedUser'.
+src/app/dashboard/system-monitor/page.tsx(6,26): error TS2307: Cannot find module '@/components/ui/progress' or its corresponding type declarations.

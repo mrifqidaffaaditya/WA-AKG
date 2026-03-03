@@ -11,7 +11,7 @@ export async function GET(
     try {
         const user = await getAuthenticatedUser(req);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const { sessionId } = await params;
@@ -23,7 +23,7 @@ export async function GET(
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         // Resolve sessionId string to database ID (CUID)
@@ -33,7 +33,7 @@ export async function GET(
         });
 
         if (!sessionData) {
-            return NextResponse.json({ error: "Session not found" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Session not found", error: "Session not found" }, { status: 404 });
         }
 
         const where: any = {
@@ -55,12 +55,19 @@ export async function GET(
                 where,
                 skip: (page - 1) * limit,
                 take: limit,
-                orderBy: { name: 'asc' }
+                orderBy: { name: 'asc' },
+                include: {
+                    _count: {
+                        select: { messages: true }
+                    }
+                }
             }),
             prisma.contact.count({ where })
         ]);
 
         return NextResponse.json({
+            status: true,
+            message: "Contacts retrieved successfully",
             data: contacts,
             meta: {
                 total,
@@ -71,6 +78,6 @@ export async function GET(
         });
     } catch (error) {
         console.error("Error fetching contacts:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Internal Server Error", error: "Internal Server Error" }, { status: 500 });
     }
 }

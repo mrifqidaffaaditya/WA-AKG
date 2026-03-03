@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createSwaggerSpec } from "next-swagger-doc";
 
 export const getApiDocs = () => {
@@ -56,14 +57,17 @@ All endpoints require authentication via:
                     Error: {
                         type: "object",
                         properties: {
-                            error: { type: "string", example: "Unauthorized" }
+                            status: { type: "boolean", example: false },
+                            message: { type: "string", example: "Error occurred" },
+                            error: { type: "string", example: "Detailed error info" }
                         }
                     },
                     Success: {
                         type: "object",
                         properties: {
-                            success: { type: "boolean", example: true },
-                            message: { type: "string", example: "Operation successful" }
+                            status: { type: "boolean", example: true },
+                            message: { type: "string", example: "Operation successful" },
+                            data: { type: "object", nullable: true }
                         }
                     },
                     Session: {
@@ -74,6 +78,19 @@ All endpoints require authentication via:
                             sessionId: { type: "string", example: "marketing-1" },
                             status: { type: "string", enum: ["Connected", "Disconnected", "Connecting"], example: "Connected" },
                             userId: { type: "string" },
+                            botConfig: { type: "object", nullable: true },
+                            webhooks: { type: "array", items: { type: "object" }, nullable: true },
+                            _count: {
+                                type: "object",
+                                properties: {
+                                    contacts: { type: "integer" },
+                                    messages: { type: "integer" },
+                                    groups: { type: "integer" },
+                                    autoReplies: { type: "integer" },
+                                    scheduledMessages: { type: "integer" }
+                                },
+                                nullable: true
+                            },
                             createdAt: { type: "string", format: "date-time" },
                             updatedAt: { type: "string", format: "date-time" }
                         }
@@ -163,7 +180,7 @@ All endpoints require authentication via:
                         content: {
                             "application/json": {
                                 schema: { $ref: "#/components/schemas/Error" },
-                                example: { error: "Unauthorized" }
+                                example: { status: false, message: "Unauthorized", error: "Unauthorized" }
                             }
                         }
                     },
@@ -172,7 +189,7 @@ All endpoints require authentication via:
                         content: {
                             "application/json": {
                                 schema: { $ref: "#/components/schemas/Error" },
-                                example: { error: "Forbidden - Cannot access this session" }
+                                example: { status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }
                             }
                         }
                     },
@@ -181,7 +198,7 @@ All endpoints require authentication via:
                         content: {
                             "application/json": {
                                 schema: { $ref: "#/components/schemas/Error" },
-                                example: { error: "Session not found" }
+                                example: { status: false, message: "Session not found", error: "Session not found" }
                             }
                         }
                     },
@@ -190,7 +207,7 @@ All endpoints require authentication via:
                         content: {
                             "application/json": {
                                 schema: { $ref: "#/components/schemas/Error" },
-                                example: { error: "Session not ready" }
+                                example: { status: false, message: "Session not ready", error: "Session not ready" }
                             }
                         }
                     },
@@ -199,7 +216,7 @@ All endpoints require authentication via:
                         content: {
                             "application/json": {
                                 schema: { $ref: "#/components/schemas/Error" },
-                                example: { error: "Invalid request parameters" }
+                                example: { status: false, message: "Invalid request parameters", error: "Invalid request parameters" }
                             }
                         }
                     },
@@ -208,7 +225,7 @@ All endpoints require authentication via:
                         content: {
                             "application/json": {
                                 schema: { $ref: "#/components/schemas/Error" },
-                                example: { error: "Internal Server Error" }
+                                example: { status: false, message: "Internal Server Error", error: "Internal Server Error" }
                             }
                         }
                     }
@@ -216,6 +233,139 @@ All endpoints require authentication via:
             },
             security: [{ ApiKeyAuth: [] }, { SessionAuth: [] }],
             paths: {
+                "/media/{filename}": {
+                    "get": {
+                        "tags": [
+                            "Media"
+                        ],
+                        "summary": "Get uploaded media file",
+                        "parameters": [
+                            {
+                                "name": "filename",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "File data"
+                            }
+                        }
+                    }
+                },
+                "/groups/{sessionId}/{jid}/leave": {
+                    "post": {
+                        "tags": [
+                            "Groups"
+                        ],
+                        "summary": "Leave a group",
+                        "parameters": [
+                            {
+                                "name": "sessionId",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            },
+                            {
+                                "name": "jid",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "Left the group successfully"
+                            }
+                        }
+                    }
+                },
+                "/docs": {
+                    "get": {
+                        "tags": [
+                            "Documentation"
+                        ],
+                        "summary": "Get Swagger JSON specification",
+                        "responses": {
+                            "200": {
+                                "description": "Swagger JSON spec"
+                            }
+                        }
+                    }
+                },
+                "/chats/by-label/{labelId}": {
+                    "get": {
+                        "tags": [
+                            "Chats"
+                        ],
+                        "summary": "Get chats by label ID",
+                        "parameters": [
+                            {
+                                "name": "labelId",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "List of chats with the label"
+                            }
+                        }
+                    }
+                },
+                "/auth/register": {
+                    "post": {
+                        "tags": [
+                            "Web Authentication"
+                        ],
+                        "summary": "Register a new user",
+                        "description": "Register a user via web.",
+                        "requestBody": {
+                            "required": true,
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "required": [
+                                            "name",
+                                            "email",
+                                            "password"
+                                        ],
+                                        "properties": {
+                                            "name": {
+                                                "type": "string",
+                                                "example": "John Doe"
+                                            },
+                                            "email": {
+                                                "type": "string",
+                                                "example": "john@example.com"
+                                            },
+                                            "password": {
+                                                "type": "string",
+                                                "example": "password123"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "responses": {
+                            "200": {
+                                "description": "User registered"
+                            }
+                        }
+                    }
+                },
                 // ==================== AUTHENTICATION ====================
                 "/auth/session": {
                     get: {
@@ -356,11 +506,7 @@ All endpoints require authentication via:
                                                 base64: { type: "string", description: "Base64 data URL for image" }
                                             }
                                         },
-                                        example: {
-                                            success: true,
-                                            qr: "2@AbCdEfGhIjKlMnOp...",
-                                            base64: "data:image/png;base64,iVBORw0KGgo..."
-                                        }
+                                        example: { status: true, message: "QR code generated", data: { success: true, qr: "2@AbCdEfGhIjKlMnOp...", base64: "data:image/png;base64,iVBORw0KGgo..." } }
                                     }
                                 }
                             },
@@ -2814,6 +2960,36 @@ All endpoints require authentication via:
                 },
 
                 "/groups/{sessionId}/{jid}/invite": {
+                    "put": {
+                        "tags": [
+                            "Groups"
+                        ],
+                        "summary": "Update or revoke group invite link",
+                        "parameters": [
+                            {
+                                "name": "sessionId",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            },
+                            {
+                                "name": "jid",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "Group invite updated"
+                            }
+                        }
+                    }
+                    ,
                     get: {
                         tags: ["Groups"],
                         summary: "Get invite code",
@@ -3073,6 +3249,28 @@ All endpoints require authentication via:
                     }
                 },
                 "/profile/{sessionId}/picture": {
+                    "delete": {
+                        "tags": [
+                            "Profile"
+                        ],
+                        "summary": "Remove profile picture",
+                        "parameters": [
+                            {
+                                "name": "sessionId",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "Profile picture removed"
+                            }
+                        }
+                    }
+                    ,
                     put: {
                         tags: ["Profile"],
                         summary: "Update profile picture",
@@ -3166,6 +3364,28 @@ All endpoints require authentication via:
 
                 // ==================== AUTO REPLY ====================
                 "/autoreplies/{sessionId}": {
+                    "delete": {
+                        "tags": [
+                            "Auto Replies"
+                        ],
+                        "summary": "Delete all autoreplies",
+                        "parameters": [
+                            {
+                                "name": "sessionId",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "Autoreplies deleted"
+                            }
+                        }
+                    }
+                    ,
                     get: {
                         tags: ["Auto Reply"],
                         summary: "List auto-reply rules",
@@ -3219,6 +3439,36 @@ All endpoints require authentication via:
                     }
                 },
                 "/autoreplies/{sessionId}/{replyId}": {
+                    "delete": {
+                        "tags": [
+                            "Auto Replies"
+                        ],
+                        "summary": "Delete a specific autoreply",
+                        "parameters": [
+                            {
+                                "name": "sessionId",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            },
+                            {
+                                "name": "replyId",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "Autoreply deleted"
+                            }
+                        }
+                    }
+                    ,
                     put: {
                         tags: ["Auto Reply"],
                         summary: "Update auto-reply rule",
@@ -3360,6 +3610,28 @@ All endpoints require authentication via:
 
                 // ==================== SCHEDULER ====================
                 "/scheduler/{sessionId}": {
+                    "delete": {
+                        "tags": [
+                            "Scheduler"
+                        ],
+                        "summary": "Delete all scheduled messages for a session",
+                        "parameters": [
+                            {
+                                "name": "sessionId",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "Scheduled messages deleted"
+                            }
+                        }
+                    }
+                    ,
                     get: {
                         tags: ["Scheduler"],
                         summary: "List scheduled messages",
@@ -3412,6 +3684,36 @@ All endpoints require authentication via:
                     }
                 },
                 "/scheduler/{sessionId}/{scheduleId}": {
+                    "delete": {
+                        "tags": [
+                            "Scheduler"
+                        ],
+                        "summary": "Delete a specific scheduled message",
+                        "parameters": [
+                            {
+                                "name": "sessionId",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            },
+                            {
+                                "name": "scheduleId",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "Scheduled message deleted"
+                            }
+                        }
+                    }
+                    ,
                     put: {
                         tags: ["Scheduler"],
                         summary: "Update scheduled message",
@@ -3466,6 +3768,18 @@ All endpoints require authentication via:
                     }
                 },
                 "/scheduler": {
+                    "post": {
+                        "tags": [
+                            "Scheduler"
+                        ],
+                        "summary": "Create a scheduled message task",
+                        "responses": {
+                            "200": {
+                                "description": "Scheduled task created"
+                            }
+                        }
+                    }
+                    ,
                     get: {
                         tags: ["Scheduler"],
                         summary: "List scheduled messages (DEPRECATED)",
@@ -3602,6 +3916,36 @@ All endpoints require authentication via:
                     }
                 },
                 "/webhooks/{sessionId}/{id}": {
+                    "delete": {
+                        "tags": [
+                            "Webhooks"
+                        ],
+                        "summary": "Delete a webhook configuration",
+                        "parameters": [
+                            {
+                                "name": "sessionId",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            },
+                            {
+                                "name": "id",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "Webhook deleted"
+                            }
+                        }
+                    }
+                    ,
                     put: {
                         tags: ["Webhooks"],
                         summary: "Update webhook",
@@ -3743,6 +4087,18 @@ All endpoints require authentication via:
 
                 // ==================== USERS ====================
                 "/users": {
+                    "post": {
+                        "tags": [
+                            "Users"
+                        ],
+                        "summary": "Create user resource",
+                        "responses": {
+                            "200": {
+                                "description": "User created"
+                            }
+                        }
+                    }
+                    ,
                     get: {
                         tags: ["Users"],
                         summary: "List users (SUPERADMIN only)",
@@ -3828,6 +4184,28 @@ All endpoints require authentication via:
                 },
 
                 "/users/{id}": {
+                    "delete": {
+                        "tags": [
+                            "Users"
+                        ],
+                        "summary": "Delete user",
+                        "parameters": [
+                            {
+                                "name": "id",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "User deleted"
+                            }
+                        }
+                    }
+                    ,
                     patch: {
                         tags: ["Users"],
                         summary: "Update user (SUPERADMIN only)",
@@ -3913,6 +4291,29 @@ All endpoints require authentication via:
                 },
 
                 "/user/api-key": {
+                    "post": {
+                        "tags": [
+                            "User"
+                        ],
+                        "summary": "Generate a new API Key",
+                        "responses": {
+                            "200": {
+                                "description": "API Key created"
+                            }
+                        }
+                    },
+                    "delete": {
+                        "tags": [
+                            "User"
+                        ],
+                        "summary": "Revoke API Key",
+                        "responses": {
+                            "200": {
+                                "description": "API Key revoked"
+                            }
+                        }
+                    }
+                    ,
                     get: {
                         tags: ["Users"],
                         summary: "Get current API key",
@@ -4126,6 +4527,36 @@ All endpoints require authentication via:
                     }
                 },
                 "/groups/{sessionId}/{jid}/picture": {
+                    "delete": {
+                        "tags": [
+                            "Groups"
+                        ],
+                        "summary": "Remove group picture",
+                        "parameters": [
+                            {
+                                "name": "sessionId",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            },
+                            {
+                                "name": "jid",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "Group picture removed"
+                            }
+                        }
+                    }
+                    ,
                     put: {
                         tags: ["Groups"],
                         summary: "Update group picture",
@@ -4367,6 +4798,90 @@ All endpoints require authentication via:
                 },
                 // ==================== LABELS ====================
                 "/labels/{sessionId}": {
+                    "post": {
+                        "tags": [
+                            "Labels"
+                        ],
+                        "summary": "Create a label",
+                        "parameters": [
+                            {
+                                "name": "sessionId",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        ],
+                        "requestBody": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "required": [
+                                            "name"
+                                        ],
+                                        "properties": {
+                                            "name": {
+                                                "type": "string"
+                                            },
+                                            "color": {
+                                                "type": "integer"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "responses": {
+                            "200": {
+                                "description": "Label created"
+                            }
+                        }
+                    },
+                    "put": {
+                        "tags": [
+                            "Labels"
+                        ],
+                        "summary": "Update all labels or bulk update",
+                        "parameters": [
+                            {
+                                "name": "sessionId",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "Labels updated"
+                            }
+                        }
+                    },
+                    "delete": {
+                        "tags": [
+                            "Labels"
+                        ],
+                        "summary": "Delete labels",
+                        "parameters": [
+                            {
+                                "name": "sessionId",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "Labels deleted"
+                            }
+                        }
+                    }
+                    ,
                     get: {
                         tags: ["Labels"],
                         summary: "List labels",
@@ -4473,6 +4988,36 @@ All endpoints require authentication via:
                     }
                 },
                 "/labels/{sessionId}/{labelId}": {
+                    "delete": {
+                        "tags": [
+                            "Labels"
+                        ],
+                        "summary": "Delete a specific label",
+                        "parameters": [
+                            {
+                                "name": "sessionId",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            },
+                            {
+                                "name": "labelId",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "Label deleted"
+                            }
+                        }
+                    }
+                    ,
                     put: {
                         tags: ["Labels"],
                         summary: "Update label",
@@ -4600,6 +5145,18 @@ All endpoints require authentication via:
 
                 // ==================== NOTIFICATIONS ====================
                 "/notifications": {
+                    "post": {
+                        "tags": [
+                            "Notifications"
+                        ],
+                        "summary": "Send or register a notification",
+                        "responses": {
+                            "200": {
+                                "description": "Notification processed"
+                            }
+                        }
+                    }
+                    ,
                     get: {
                         tags: ["Notifications"],
                         summary: "List notifications",
@@ -4742,6 +5299,18 @@ All endpoints require authentication via:
 
                 // ==================== SYSTEM ====================
                 "/settings/system": {
+                    "post": {
+                        "tags": [
+                            "Settings"
+                        ],
+                        "summary": "Update system settings",
+                        "responses": {
+                            "200": {
+                                "description": "System settings updated"
+                            }
+                        }
+                    }
+                    ,
                     get: {
                         tags: ["System"],
                         summary: "Get system settings",

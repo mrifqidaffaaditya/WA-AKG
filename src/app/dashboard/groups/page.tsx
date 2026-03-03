@@ -35,7 +35,7 @@ export default function GroupsPage() {
             const res = await fetch(`/api/groups/${sessId}`);
             if (res.ok) {
                 const data = await res.json();
-                setGroups(data);
+                setGroups(data?.data || []);
             } else {
                 setGroups([]);
             }
@@ -83,22 +83,22 @@ export default function GroupsPage() {
     return (
         <SessionGuard>
             <div className="space-y-6">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
-                        <h1 className="text-2xl font-bold flex items-center gap-2">
-                            <Users className="h-6 w-6" /> Groups
+                        <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                            <Users className="h-5 w-5 sm:h-6 sm:w-6" /> Groups
                         </h1>
-                        <p className="text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                             {sessionId ? "Manage groups for active session." : "Select a session from the top bar."}
                         </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" onClick={() => sessionId && fetchGroups(sessionId)} disabled={loading || !sessionId}>
-                            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => sessionId && fetchGroups(sessionId)} disabled={loading || !sessionId}>
+                            <RefreshCw className={`h-4 w-4 mr-1 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
                             Refresh
                         </Button>
-                        <Button onClick={() => setIsCreateOpen(true)} disabled={!sessionId}>
-                            <Plus className="h-4 w-4 mr-2" /> Create Group
+                        <Button size="sm" className="flex-1 sm:flex-none" onClick={() => setIsCreateOpen(true)} disabled={!sessionId}>
+                            <Plus className="h-4 w-4 mr-1 sm:mr-2" /> Create
                         </Button>
                     </div>
                 </div>
@@ -110,9 +110,9 @@ export default function GroupsPage() {
 
                 {/* Create Dialog */}
                 {isCreateOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                        <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-                            <h2 className="text-xl font-bold mb-4">Create New Group</h2>
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                        <div className="bg-white dark:bg-background p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-sm">
+                            <h2 className="text-lg sm:text-xl font-bold mb-4">Create New Group</h2>
                             <div className="space-y-4">
                                 <div>
                                     <Label>Group Subject</Label>
@@ -135,7 +135,7 @@ export default function GroupsPage() {
                         {sessionId ? "No groups found matching criteria." : "No session selected."}
                     </div>
                 ) : (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                         {filteredGroups.map(group => (
                             <div key={group.id} className="bg-white p-4 rounded-lg shadow border flex justify-between items-start">
                                 <div>

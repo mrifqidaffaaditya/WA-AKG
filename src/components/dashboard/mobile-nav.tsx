@@ -23,6 +23,7 @@ import {
     UserCheck,
     Megaphone,
     HardDrive,
+    Activity,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
@@ -78,6 +79,7 @@ const navGroups: NavGroup[] = [
             { href: "/dashboard/media", label: "Media Manager", icon: HardDrive },
             { href: "/dashboard/users", label: "Users", icon: Users },
             { href: "/dashboard/settings", label: "Settings", icon: Settings },
+            { href: "/dashboard/system-monitor", label: "System Monitor", icon: Activity, superadminOnly: true },
             { href: "/dashboard/notifications", label: "Notifications", icon: Bell, superadminOnly: true },
         ],
     },
@@ -130,19 +132,23 @@ export function MobileNav({ appName = "WA-AKG" }: { appName?: string }) {
                                             target={external ? "_blank" : undefined}
                                             onClick={() => setOpen(false)}
                                             className={`
-                                                flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium
-                                                transition-all duration-150
+                                                flex items-center rounded-lg text-sm font-medium
+                                                transition-all duration-200 group relative
+                                                gap-3 px-3 py-2
                                                 ${isActive(href)
-                                                    ? "bg-slate-900 text-white shadow-sm"
-                                                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                                                    ? "text-primary bg-primary/10 shadow-sm"
+                                                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                                                 }
                                             `}
                                         >
+                                            {isActive(href) && (
+                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-primary rounded-r-full" />
+                                            )}
                                             <Icon
-                                                size={18}
-                                                className={`flex-shrink-0 ${isActive(href) ? "text-white" : "text-slate-400"}`}
+                                                size={17}
+                                                className={`flex-shrink-0 transition-colors duration-200 ${isActive(href) ? "text-primary" : "text-muted-foreground/70 group-hover:text-foreground"}`}
                                             />
-                                            <span>{label}</span>
+                                            <span className="truncate">{label}</span>
                                         </Link>
                                     ))}
                                 </div>

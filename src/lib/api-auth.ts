@@ -16,7 +16,7 @@ type Role = keyof typeof ROLE_HIERARCHY;
  */
 export async function validateApiKey(request: NextRequest) {
     const apiKey = request.headers.get("x-api-key");
-    
+
     if (!apiKey) {
         return null;
     }
@@ -54,7 +54,7 @@ export async function getAuthenticatedUser(request?: NextRequest) {
             where: { id: session.user.id },
             select: { id: true, email: true, name: true, role: true }
         });
-        
+
         if (user) {
             return { ...user, authMethod: "session" as const };
         }
@@ -110,13 +110,39 @@ export async function canAccessSession(userId: string, userRole: string, session
 export async function getAccessibleSessions(userId: string, userRole: string) {
     if (isAdmin(userRole)) {
         return prisma.session.findMany({
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            include: {
+                botConfig: true,
+                webhooks: true,
+                _count: {
+                    select: {
+                        contacts: true,
+                        messages: true,
+                        groups: true,
+                        autoReplies: true,
+                        scheduledMessages: true
+                    }
+                }
+            }
         });
     }
 
     return prisma.session.findMany({
         where: { userId },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
+        include: {
+            botConfig: true,
+            webhooks: true,
+            _count: {
+                select: {
+                    contacts: true,
+                    messages: true,
+                    groups: true,
+                    autoReplies: true,
+                    scheduledMessages: true
+                }
+            }
+        }
     });
 }
 

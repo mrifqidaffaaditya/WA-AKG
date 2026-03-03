@@ -10,7 +10,7 @@ export async function PUT(
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const { sessionId, jid } = await params;
@@ -19,18 +19,18 @@ export async function PUT(
         const file = formData.get("file") as File;
 
         if (!file) {
-            return NextResponse.json({ error: "file is required" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "file is required", error: "file is required" }, { status: 400 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
         if (!instance?.socket) {
-            return NextResponse.json({ error: "Session not ready" }, { status: 503 });
+            return NextResponse.json({ status: false, message: "Session not ready", error: "Session not ready" }, { status: 503 });
         }
 
         // Convert File to Buffer
@@ -39,17 +39,17 @@ export async function PUT(
         // Update group picture
         await instance.socket.updateProfilePicture(decodedJid, buffer);
 
-        return NextResponse.json({ success: true, message: "Group picture updated successfully" });
+        return NextResponse.json({ status: true, message: "Group picture updated successfully" });
 
     } catch (error: any) {
         console.error("Update group picture error:", error);
         
         // Handle specific errors
         if (error.message?.includes("not-admin") || error.message?.includes("forbidden")) {
-            return NextResponse.json({ error: "Bot must be admin to update group picture" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Bot must be admin to update group picture", error: "Bot must be admin to update group picture" }, { status: 403 });
         }
         
-        return NextResponse.json({ error: "Failed to update group picture" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to update group picture", error: "Failed to update group picture" }, { status: 500 });
     }
 }
 
@@ -61,7 +61,7 @@ export async function DELETE(
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const { sessionId, jid } = await params;
@@ -70,26 +70,26 @@ export async function DELETE(
         // Check verification
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
         if (!instance?.socket) {
-            return NextResponse.json({ error: "Session not ready" }, { status: 503 });
+            return NextResponse.json({ status: false, message: "Session not ready", error: "Session not ready" }, { status: 503 });
         }
 
         // Remove group picture
         await instance.socket.removeProfilePicture(decodedJid);
 
-        return NextResponse.json({ success: true, message: "Group picture removed successfully" });
+        return NextResponse.json({ status: true, message: "Group picture removed successfully" });
 
     } catch (error: any) {
         console.error("Remove group picture error:", error);
         
         if (error.message?.includes("not-admin") || error.message?.includes("forbidden")) {
-            return NextResponse.json({ error: "Bot must be admin to remove group picture" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Bot must be admin to remove group picture", error: "Bot must be admin to remove group picture" }, { status: 403 });
         }
         
-        return NextResponse.json({ error: "Failed to remove group picture" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to remove group picture", error: "Failed to remove group picture" }, { status: 500 });
     }
 }

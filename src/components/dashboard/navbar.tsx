@@ -39,9 +39,10 @@ export function Navbar({ appName }: NavbarProps) {
         try {
             const res = await fetch("/api/notifications");
             if (res.ok) {
-                const data = await res.json();
-                setNotifications(data);
-                setUnreadCount(data.filter((n: Notification) => !n.read).length);
+                const responseData = await res.json();
+                const items = responseData?.data || [];
+                setNotifications(items);
+                setUnreadCount(items.filter((n: Notification) => !n.read).length);
             }
         } catch (e) {
             console.error("Failed to fetch notifications");

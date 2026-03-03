@@ -49,6 +49,7 @@ export default function WebhooksPage() {
     const [apiKey, setApiKey] = useState<string | null>(null);
     const [showApiKey, setShowApiKey] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [showRegenConfirm, setShowRegenConfirm] = useState(false);
 
     // New webhook form
     const [showNewForm, setShowNewForm] = useState(false);
@@ -70,8 +71,8 @@ export default function WebhooksPage() {
             // Fetch webhooks using the new session-scoped endpoint
             const res = await fetch(`/api/webhooks/${sessionId}`);
             if (res.ok) {
-                const data = await res.json();
-
+                const responseData = await res.json();
+                const data = responseData?.data || [];
                 // Find current session to get its internal ID (CUID)
                 const currentSession = sessions.find(s => s.sessionId === sessionId);
                 const currentSessionCuid = currentSession?.id;
@@ -96,7 +97,7 @@ export default function WebhooksPage() {
             const res = await fetch("/api/user/api-key");
             if (res.ok) {
                 const data = await res.json();
-                setApiKey(data.apiKey);
+                setApiKey(data?.data?.apiKey);
             }
         } catch (error) {
             console.error("Failed to fetch API key", error);
@@ -108,7 +109,7 @@ export default function WebhooksPage() {
             const res = await fetch("/api/user/api-key", { method: "POST" });
             if (res.ok) {
                 const data = await res.json();
-                setApiKey(data.apiKey);
+                setApiKey(data?.data?.apiKey);
                 toast.success("New API key generated!");
             }
         } catch (error) {
@@ -252,8 +253,8 @@ export default function WebhooksPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold">Webhooks & API</h1>
+            <div>
+                <h1 className="text-xl sm:text-2xl font-bold">Webhooks & API</h1>
             </div>
 
             {/* API Key Section */}
@@ -267,8 +268,8 @@ export default function WebhooksPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex items-center gap-3">
-                        <div className="flex-1 bg-slate-100 rounded-md p-3 font-mono text-sm">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                        <div className="flex-1 bg-slate-100 rounded-md p-2 sm:p-3 font-mono text-xs sm:text-sm overflow-x-auto">
                             {apiKey ? (
                                 showApiKey ? apiKey : "••••••••••••••••••••••••••••••••"
                             ) : (
@@ -285,7 +286,13 @@ export default function WebhooksPage() {
                                 </Button>
                             </>
                         )}
-                        <Button onClick={generateNewApiKey}>
+                        <Button onClick={() => {
+                            if (apiKey) {
+                                setShowRegenConfirm(true);
+                            } else {
+                                generateNewApiKey();
+                            }
+                        }}>
                             <RefreshCw className="h-4 w-4 mr-2" />
                             {apiKey ? "Regenerate" : "Generate"}
                         </Button>
@@ -296,6 +303,22 @@ export default function WebhooksPage() {
                         </p>
                     )}
                 </CardContent>
+
+                {/* API Key Regeneration Confirmation */}
+                <AlertDialog open={showRegenConfirm} onOpenChange={setShowRegenConfirm}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Regenerate API Key?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will invalidate your current API key. All existing integrations using the old key will stop working immediately. This action cannot be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => { setShowRegenConfirm(false); generateNewApiKey(); }} className="bg-red-600 hover:bg-red-700">Regenerate</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </Card>
 
             {/* Webhooks Section */}

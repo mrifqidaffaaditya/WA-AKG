@@ -12,7 +12,7 @@ export async function PUT(
         const { sessionId, labelId } = await params;
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const body = await request.json();
@@ -24,17 +24,17 @@ export async function PUT(
         });
 
         if (!label) {
-            return NextResponse.json({ error: "Label not found" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Label not found", error: "Label not found" }, { status: 404 });
         }
 
         if (label.sessionId !== sessionId) {
-            return NextResponse.json({ error: "Label does not belong to this session" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Label does not belong to this session", error: "Label does not belong to this session" }, { status: 404 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, label.sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this label" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this label", error: "Forbidden - Cannot access this label" }, { status: 403 });
         }
 
         // Prepare update data
@@ -42,9 +42,7 @@ export async function PUT(
         if (name) updateData.name = name;
         if (color !== undefined) {
             if (color < 0 || color > 19) {
-                return NextResponse.json({ 
-                    error: "Color must be between 0 and 19" 
-                }, { status: 400 });
+                return NextResponse.json({ status: false, message: "Color must be between 0 and 19", error: "Color must be between 0 and 19" }, { status: 400 });
             }
             const colorMap = [
                 "#FF0000", "#FF7F00", "#FFFF00", "#00FF00", "#0000FF",
@@ -61,11 +59,11 @@ export async function PUT(
             data: updateData
         });
 
-        return NextResponse.json({ success: true, label: updatedLabel });
+        return NextResponse.json({ status: true, message: "Operation successful", data: updatedLabel });
 
     } catch (error) {
         console.error("Update label error:", error);
-        return NextResponse.json({ error: "Failed to update label" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to update label", error: "Failed to update label" }, { status: 500 });
     }
 }
 
@@ -78,7 +76,7 @@ export async function DELETE(
         const { sessionId, labelId } = await params;
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         // Find label and verify access
@@ -87,17 +85,17 @@ export async function DELETE(
         });
 
         if (!label) {
-            return NextResponse.json({ error: "Label not found" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Label not found", error: "Label not found" }, { status: 404 });
         }
 
         if (label.sessionId !== sessionId) {
-            return NextResponse.json({ error: "Label does not belong to this session" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Label does not belong to this session", error: "Label does not belong to this session" }, { status: 404 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, label.sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this label" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this label", error: "Forbidden - Cannot access this label" }, { status: 403 });
         }
 
         // Delete label (cascade will delete chatLabels)
@@ -105,13 +103,10 @@ export async function DELETE(
             where: { id: labelId }
         });
 
-        return NextResponse.json({ 
-            success: true,
-            message: "Label deleted successfully"
-        });
+        return NextResponse.json({ status: true, message: "Label deleted successfully" });
 
     } catch (error) {
         console.error("Delete label error:", error);
-        return NextResponse.json({ error: "Failed to delete label" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to delete label", error: "Failed to delete label" }, { status: 500 });
     }
 }

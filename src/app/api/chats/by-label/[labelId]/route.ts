@@ -17,7 +17,7 @@ export async function GET(
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         // Verify label exists and get sessionId
@@ -26,13 +26,13 @@ export async function GET(
         });
 
         if (!label) {
-            return NextResponse.json({ error: "Label not found" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Label not found", error: "Label not found" }, { status: 404 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, label.sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this label" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this label", error: "Forbidden - Cannot access this label" }, { status: 403 });
         }
 
         // Get all chats with this label
@@ -56,6 +56,6 @@ export async function GET(
 
     } catch (error) {
         console.error("Get chats by label error:", error);
-        return NextResponse.json({ error: "Failed to get chats by label" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to get chats by label", error: "Failed to get chats by label" }, { status: 500 });
     }
 }

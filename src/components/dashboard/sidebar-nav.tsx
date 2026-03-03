@@ -22,6 +22,7 @@ import {
     UserCheck,
     Megaphone,
     HardDrive,
+    Activity,
 } from "lucide-react";
 import { useSidebar } from "./sidebar-context";
 import {
@@ -89,6 +90,7 @@ const navGroups: NavGroup[] = [
             { href: "/dashboard/media", label: "Media Manager", icon: HardDrive },
             { href: "/dashboard/users", label: "Users", icon: Users },
             { href: "/dashboard/settings", label: "Settings", icon: Settings },
+            { href: "/dashboard/system-monitor", label: "System Monitor", icon: Activity, superadminOnly: true },
             { href: "/dashboard/notifications", label: "Notifications", icon: Bell, superadminOnly: true },
         ],
     },

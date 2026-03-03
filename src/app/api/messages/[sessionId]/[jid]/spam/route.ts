@@ -10,7 +10,7 @@ export async function POST(
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const { sessionId, jid } = await params;
@@ -18,18 +18,18 @@ export async function POST(
         const { message, count = 10, delay = 500 } = body; 
         
         if (!message) {
-             return NextResponse.json({ error: "message is required" }, { status: 400 });
+             return NextResponse.json({ status: false, message: "message is required", error: "message is required" }, { status: 400 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
         if (!instance?.socket) {
-            return NextResponse.json({ error: "Session not ready" }, { status: 503 });
+            return NextResponse.json({ status: false, message: "Session not ready", error: "Session not ready" }, { status: 503 });
         }
 
         const decodedJid = decodeURIComponent(jid);
@@ -46,10 +46,10 @@ export async function POST(
              }
         })();
         
-        return NextResponse.json({ success: true, message: `Bombing ${count} messages started` });
+        return NextResponse.json({ status: true, message: `Bombing ${count} messages started` });
 
     } catch (e) {
         console.error("Spam error", e);
-        return NextResponse.json({ error: "Failed to start spam" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to start spam", error: "Failed to start spam" }, { status: 500 });
     }
 }

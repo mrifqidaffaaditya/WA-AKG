@@ -6,7 +6,7 @@ import { generateApiKey } from "@/lib/api-auth";
 // Get current user's API key
 export async function GET() {
     const session = await auth();
-    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session?.user?.id) return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
 
     try {
         const user = await prisma.user.findUnique({
@@ -14,16 +14,16 @@ export async function GET() {
             select: { apiKey: true }
         });
 
-        return NextResponse.json({ apiKey: user?.apiKey || null });
+        return NextResponse.json({ status: true, message: "API key fetched", data: { apiKey: user?.apiKey || null } });
     } catch (error) {
-        return NextResponse.json({ error: "Failed to fetch API key" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to fetch API key", error: "Failed to fetch API key" }, { status: 500 });
     }
 }
 
 // Generate new API key
 export async function POST() {
     const session = await auth();
-    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session?.user?.id) return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
 
     try {
         const newApiKey = generateApiKey();
@@ -33,17 +33,17 @@ export async function POST() {
             data: { apiKey: newApiKey }
         });
 
-        return NextResponse.json({ apiKey: newApiKey });
+        return NextResponse.json({ status: true, message: "API key generated", data: { apiKey: newApiKey } });
     } catch (error) {
         console.error("Generate API key error:", error);
-        return NextResponse.json({ error: "Failed to generate API key" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to generate API key", error: "Failed to generate API key" }, { status: 500 });
     }
 }
 
 // Delete/revoke API key
 export async function DELETE() {
     const session = await auth();
-    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session?.user?.id) return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
 
     try {
         await prisma.user.update({
@@ -51,8 +51,8 @@ export async function DELETE() {
             data: { apiKey: null }
         });
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ status: true, message: "API key revoked" });
     } catch (error) {
-        return NextResponse.json({ error: "Failed to revoke API key" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to revoke API key", error: "Failed to revoke API key" }, { status: 500 });
     }
 }

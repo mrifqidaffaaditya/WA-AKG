@@ -88,6 +88,19 @@ graph LR
 
 ---
 
+## 🧩 Integrations: Native n8n Support
+
+WA-AKG natively supports **n8n**! You can build complex, no-code/low-code WhatsApp automation workflows using our official community nodes.
+
+[![n8n nodes](https://img.shields.io/badge/n8n-nodes--wa--akg-EA4B71?style=for-the-badge&logo=n8n&logoColor=white)](https://www.npmjs.com/package/n8n-nodes-wa-akg)
+
+- **Action Node**: Full control over messaging, groups, sessions, contacts, and labels directly from your n8n workflows.
+- **Trigger Node**: Instantly catch real-time webhooks (Message Received, Group Joined, etc.) and trigger your workflows automatically.
+
+👉 **[View on npm (n8n-nodes-wa-akg)](https://www.npmjs.com/package/n8n-nodes-wa-akg)**
+
+---
+
 ## 🚀 Quick Installation
 
 ### 1. Prerequisites

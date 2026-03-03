@@ -13,12 +13,12 @@ export async function GET(
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const session = await prisma.session.findUnique({
@@ -27,13 +27,13 @@ export async function GET(
         });
 
         if (!session) {
-            return NextResponse.json({ error: "Session not found" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Session not found", error: "Session not found" }, { status: 404 });
         }
 
-        return NextResponse.json(session);
+        return NextResponse.json({ status: true, message: "Session settings fetched successfully", data: session });
     } catch (e) {
         console.error("Get session settings error:", e);
-        return NextResponse.json({ error: "Failed to get settings" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to get settings", error: "Failed to get settings" }, { status: 500 });
     }
 }
 
@@ -47,13 +47,13 @@ export async function PATCH(
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const body = await request.json();
@@ -70,11 +70,11 @@ export async function PATCH(
             // In a real app we might update internal instance state
         }
 
-        return NextResponse.json(updated);
+        return NextResponse.json({ status: true, message: "Session settings updated successfully", data: updated });
 
     } catch (e) {
         console.error("Update session settings error:", e);
-        return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to update settings", error: "Failed to update settings" }, { status: 500 });
     }
 }
 
@@ -88,13 +88,13 @@ export async function DELETE(
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot delete this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot delete this session", error: "Forbidden - Cannot delete this session" }, { status: 403 });
         }
 
         // Disconnect WhatsApp session first
@@ -113,10 +113,10 @@ export async function DELETE(
             where: { sessionId }
         });
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ status: true, message: "Session deleted successfully" });
 
     } catch (e) {
         console.error("Delete session error:", e);
-        return NextResponse.json({ error: "Failed to delete session" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to delete session", error: "Failed to delete session" }, { status: 500 });
     }
 }

@@ -11,12 +11,12 @@ export async function GET(
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         // @ts-ignore
@@ -26,7 +26,7 @@ export async function GET(
         });
 
         if (!session) {
-            return NextResponse.json({ error: "Session not found" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Session not found", error: "Session not found" }, { status: 404 });
         }
 
         // Return config or default if null
@@ -44,13 +44,19 @@ export async function GET(
             botName: "WA-AKG Bot",
             removeBgApiKey: null,
             enableVideoSticker: true,
-            maxStickerDuration: 10
+            maxStickerDuration: 10,
+            prefix: "#",
+            antiSpamEnabled: false,
+            spamLimit: 5,
+            spamInterval: 10,
+            spamDelayMin: 1000,
+            spamDelayMax: 3000
         };
 
-        return NextResponse.json(session.botConfig);
+        return NextResponse.json({ status: true, message: "Bot config fetched successfully", data: session.botConfig });
     } catch (error) {
         console.error("Get Bot Config Error:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Internal Server Error", error: "Internal Server Error" }, { status: 500 });
     }
 }
 
@@ -62,10 +68,10 @@ export async function POST(
 
     try {
         const user = await getAuthenticatedUser(request);
-        if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (!user) return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
 
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
-        if (!canAccess) return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+        if (!canAccess) return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
 
         const body = await request.json();
 
@@ -75,7 +81,7 @@ export async function POST(
             select: { id: true }
         });
 
-        if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+        if (!session) return NextResponse.json({ status: false, message: "Session not found", error: "Session not found" }, { status: 404 });
 
         // Upsert Config
         // @ts-ignore
@@ -97,6 +103,12 @@ export async function POST(
                 enablePing: body.enablePing ?? true,
                 enableUptime: body.enableUptime ?? true,
                 removeBgApiKey: body.removeBgApiKey || null,
+                prefix: body.prefix || "#",
+                antiSpamEnabled: body.antiSpamEnabled ?? false,
+                spamLimit: body.spamLimit || 5,
+                spamInterval: body.spamInterval || 10,
+                spamDelayMin: body.spamDelayMin || 1000,
+                spamDelayMax: body.spamDelayMax || 3000,
             },
             update: {
                 botMode: body.botMode,
@@ -112,12 +124,18 @@ export async function POST(
                 enablePing: body.enablePing,
                 enableUptime: body.enableUptime,
                 removeBgApiKey: body.removeBgApiKey || null,
+                prefix: body.prefix,
+                antiSpamEnabled: body.antiSpamEnabled,
+                spamLimit: body.spamLimit,
+                spamInterval: body.spamInterval,
+                spamDelayMin: body.spamDelayMin,
+                spamDelayMax: body.spamDelayMax,
             }
         });
 
-        return NextResponse.json(config);
+        return NextResponse.json({ status: true, message: "Bot config updated successfully", data: config });
     } catch (error) {
         console.error("Update Bot Config Error:", error);
-        return NextResponse.json({ error: "Failed to update config" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to update config", error: "Failed to update config" }, { status: 500 });
     }
 }

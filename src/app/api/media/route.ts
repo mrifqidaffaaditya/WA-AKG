@@ -28,12 +28,12 @@ function parseFilename(filename: string): { sessionId: string; keyId: string } |
 export async function GET(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
     }
 
     try {
         if (!existsSync(MEDIA_DIR)) {
-            return NextResponse.json({ files: [], totalSize: 0, totalCount: 0 });
+            return NextResponse.json({ status: true, message: "No media directory", data: { files: [], totalSize: 0, totalCount: 0 } });
         }
 
         const isSuperAdmin = user.role === "SUPERADMIN";
@@ -127,13 +127,17 @@ export async function GET(request: NextRequest) {
         const totalSize = files.reduce((sum, f) => sum + f.size, 0);
 
         return NextResponse.json({
-            files,
-            totalSize,
-            totalCount: files.length,
+            status: true,
+            message: "Media files fetched successfully",
+            data: {
+                files,
+                totalSize,
+                totalCount: files.length,
+            }
         });
     } catch (error: any) {
         console.error("Media list error:", error);
-        return NextResponse.json({ error: "Failed to list media" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to list media", error: "Failed to list media" }, { status: 500 });
     }
 }
 
@@ -144,7 +148,7 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
     }
 
     try {
@@ -152,7 +156,7 @@ export async function DELETE(request: NextRequest) {
         const { filenames } = body;
 
         if (!Array.isArray(filenames) || filenames.length === 0) {
-            return NextResponse.json({ error: "filenames array is required" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "Invalid payload", error: "filenames array is required" }, { status: 400 });
         }
 
         let deleted = 0;
@@ -192,9 +196,9 @@ export async function DELETE(request: NextRequest) {
             }
         }
 
-        return NextResponse.json({ deleted, failed, errors });
+        return NextResponse.json({ status: true, message: "Media files processed", data: { deleted, failed, errors } });
     } catch (error: any) {
         console.error("Media delete error:", error);
-        return NextResponse.json({ error: "Failed to delete media" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to delete media", error: "Failed to delete media" }, { status: 500 });
     }
 }

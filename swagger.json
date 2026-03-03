@@ -30,22 +30,34 @@
       "Error": {
         "type": "object",
         "properties": {
+          "status": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "example": "Error occurred"
+          },
           "error": {
             "type": "string",
-            "example": "Unauthorized"
+            "example": "Detailed error info"
           }
         }
       },
       "Success": {
         "type": "object",
         "properties": {
-          "success": {
+          "status": {
             "type": "boolean",
             "example": true
           },
           "message": {
             "type": "string",
             "example": "Operation successful"
+          },
+          "data": {
+            "type": "object",
+            "nullable": true
           }
         }
       },
@@ -75,6 +87,38 @@
           },
           "userId": {
             "type": "string"
+          },
+          "botConfig": {
+            "type": "object",
+            "nullable": true
+          },
+          "webhooks": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "nullable": true
+          },
+          "_count": {
+            "type": "object",
+            "properties": {
+              "contacts": {
+                "type": "integer"
+              },
+              "messages": {
+                "type": "integer"
+              },
+              "groups": {
+                "type": "integer"
+              },
+              "autoReplies": {
+                "type": "integer"
+              },
+              "scheduledMessages": {
+                "type": "integer"
+              }
+            },
+            "nullable": true
           },
           "createdAt": {
             "type": "string",
@@ -256,6 +300,8 @@
               "$ref": "#/components/schemas/Error"
             },
             "example": {
+              "status": false,
+              "message": "Unauthorized",
               "error": "Unauthorized"
             }
           }
@@ -269,6 +315,8 @@
               "$ref": "#/components/schemas/Error"
             },
             "example": {
+              "status": false,
+              "message": "Forbidden - Cannot access this session",
               "error": "Forbidden - Cannot access this session"
             }
           }
@@ -282,6 +330,8 @@
               "$ref": "#/components/schemas/Error"
             },
             "example": {
+              "status": false,
+              "message": "Session not found",
               "error": "Session not found"
             }
           }
@@ -295,6 +345,8 @@
               "$ref": "#/components/schemas/Error"
             },
             "example": {
+              "status": false,
+              "message": "Session not ready",
               "error": "Session not ready"
             }
           }
@@ -308,6 +360,8 @@
               "$ref": "#/components/schemas/Error"
             },
             "example": {
+              "status": false,
+              "message": "Invalid request parameters",
               "error": "Invalid request parameters"
             }
           }
@@ -321,6 +375,8 @@
               "$ref": "#/components/schemas/Error"
             },
             "example": {
+              "status": false,
+              "message": "Internal Server Error",
               "error": "Internal Server Error"
             }
           }
@@ -525,9 +581,13 @@
                   }
                 },
                 "example": {
-                  "success": true,
-                  "qr": "2@AbCdEfGhIjKlMnOp...",
-                  "base64": "data:image/png;base64,iVBORw0KGgo..."
+                  "status": true,
+                  "message": "QR code generated",
+                  "data": {
+                    "success": true,
+                    "qr": "2@AbCdEfGhIjKlMnOp...",
+                    "base64": "data:image/png;base64,iVBORw0KGgo..."
+                  }
                 }
               }
             }

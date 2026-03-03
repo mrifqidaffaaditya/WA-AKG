@@ -11,7 +11,7 @@ export async function POST(
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const { sessionId, jid } = await params;
@@ -19,18 +19,18 @@ export async function POST(
         const file = formData.get("file") as File;
         
         if (!file) {
-             return NextResponse.json({ error: "file is required" }, { status: 400 });
+             return NextResponse.json({ status: false, message: "file is required", error: "file is required" }, { status: 400 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
         if (!instance?.socket) {
-            return NextResponse.json({ error: "Session not ready" }, { status: 503 });
+            return NextResponse.json({ status: false, message: "Session not ready", error: "Session not ready" }, { status: 503 });
         }
 
         const decodedJid = decodeURIComponent(jid);
@@ -57,10 +57,10 @@ export async function POST(
 
         await instance.socket.sendMessage(decodedJid, { sticker: stickerBuffer });
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ status: true, message: "Operation successful" });
 
     } catch (e) {
         console.error("Sticker error", e);
-        return NextResponse.json({ error: "Failed to create sticker" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to create sticker", error: "Failed to create sticker" }, { status: 500 });
     }
 }

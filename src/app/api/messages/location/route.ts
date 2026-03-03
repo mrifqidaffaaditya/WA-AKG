@@ -12,36 +12,34 @@ export async function POST(request: NextRequest) {
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const body = await request.json();
         const { sessionId, jid, latitude, longitude, name, address } = body;
 
         if (!sessionId || !jid || latitude === undefined || longitude === undefined) {
-            return NextResponse.json({ 
-                error: "sessionId, jid, latitude, and longitude are required" 
-            }, { status: 400 });
+            return NextResponse.json({ status: false, message: "sessionId, jid, latitude, and longitude are required", error: "sessionId, jid, latitude, and longitude are required" }, { status: 400 });
         }
 
         // Validate latitude and longitude ranges
         if (latitude < -90 || latitude > 90) {
-            return NextResponse.json({ error: "Latitude must be between -90 and 90" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "Latitude must be between -90 and 90", error: "Latitude must be between -90 and 90" }, { status: 400 });
         }
 
         if (longitude < -180 || longitude > 180) {
-            return NextResponse.json({ error: "Longitude must be between -180 and 180" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "Longitude must be between -180 and 180", error: "Longitude must be between -180 and 180" }, { status: 400 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
         if (!instance?.socket) {
-            return NextResponse.json({ error: "Session not ready" }, { status: 503 });
+            return NextResponse.json({ status: false, message: "Session not ready", error: "Session not ready" }, { status: 503 });
         }
 
         // Send location message
@@ -54,10 +52,10 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ status: true, message: "Operation successful" });
 
     } catch (error) {
         console.error("Send location error:", error);
-        return NextResponse.json({ error: "Failed to send location" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to send location", error: "Failed to send location" }, { status: 500 });
     }
 }

@@ -63,7 +63,8 @@ export function SessionManager({ user }: { user: any }) {
     }, []);
 
     const fetchSessions = () => {
-        fetch('/api/sessions').then(res => res.json()).then(data => {
+        fetch('/api/sessions').then(res => res.json()).then(responseData => {
+            const data = responseData?.data || [];
             if (Array.isArray(data)) setSessions(data);
         });
     }
@@ -91,9 +92,10 @@ export function SessionManager({ user }: { user: any }) {
                     sessionId: newSessionId || undefined // Optional, backend will generate if empty
                 })
             });
-            const session = await res.json();
+            const responseData = await res.json();
+            const session = responseData?.data;
 
-            if (!res.ok) throw new Error(session.error || "Failed to create");
+            if (!res.ok || !session) throw new Error(responseData.error || responseData.message || "Failed to create");
 
             setSessions([...sessions, session]);
             setNewSessionName("");

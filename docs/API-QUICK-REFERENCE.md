@@ -44,12 +44,10 @@ curl http://localhost:3000/api/sessions \
 ### 3. Send a Text Message
 
 ```bash
-curl -X POST http://localhost:3000/api/chat/send \
+curl -X POST http://localhost:3000/api/messages/session-name/6281234567890%40s.whatsapp.net/send \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
-    "sessionId": "session-name",
-    "jid": "6281234567890@s.whatsapp.net",
     "message": {
       "text": "Hello from API!"
     }
@@ -59,12 +57,10 @@ curl -X POST http://localhost:3000/api/chat/send \
 ### 4. Send an Image
 
 ```bash
-curl -X POST http://localhost:3000/api/chat/send \
+curl -X POST http://localhost:3000/api/messages/session-name/6281234567890%40s.whatsapp.net/send \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
-    "sessionId": "session-name",
-    "jid": "6281234567890@s.whatsapp.net",
     "message": {
       "image": {
         "url": "https://example.com/image.jpg"
@@ -299,24 +295,24 @@ const apiKey = 'ak_your-api-key';
 const baseUrl = 'http://localhost:3000/api';
 
 async function sendMessage(sessionId: string, jid: string, text: string) {
-  const response = await fetch(`${baseUrl}/chat/send`, {
+  const encJid = encodeURIComponent(jid);
+  const response = await fetch(`${baseUrl}/messages/${sessionId}/${encJid}/send`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-API-Key': apiKey
     },
     body: JSON.stringify({
-      sessionId,
-      jid,
       message: { text }
     })
   });
   
-  if (!response.ok) {
-    throw new Error(`API error: ${response.statusText}`);
+  const data = await response.json();
+  if (!data.status) {
+    throw new Error(`API error: ${data.message || data.error}`);
   }
   
-  return response.json();
+  return data;
 }
 
 // Usage
@@ -331,6 +327,7 @@ sendMessage('session-name', '6281234567890@s.whatsapp.net', 'Hello!')
 
 ```python
 import requests
+import urllib.parse
 
 API_KEY = 'ak_your-api-key'
 BASE_URL = 'http://localhost:3000/api'
@@ -341,26 +338,32 @@ def send_message(session_id, jid, text):
         'X-API-Key': API_KEY
     }
     
+    enc_jid = urllib.parse.quote(jid, safe='')
+    
     data = {
-        'sessionId': session_id,
-        'jid': jid,
         'message': {
             'text': text
         }
     }
     
     response = requests.post(
-        f'{BASE_URL}/chat/send',
+        f'{BASE_URL}/messages/{session_id}/{enc_jid}/send',
         headers=headers,
         json=data
     )
     
-    response.raise_for_status()
-    return response.json()
+    result = response.json()
+    if not result.get('status'):
+        raise Exception(f"API error: {result.get('message')}")
+        
+    return result
 
 # Usage
-result = send_message('session-name', '6281234567890@s.whatsapp.net', 'Hello!')
-print(f'Message sent: {result}')
+try:
+    result = send_message('session-name', '6281234567890@s.whatsapp.net', 'Hello!')
+    print(f'Message sent: {result}')
+except Exception as e:
+    print(e)
 ```
 
 ---

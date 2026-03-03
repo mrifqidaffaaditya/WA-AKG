@@ -21,7 +21,7 @@ export default function BroadcastPage() {
     const [loading, setLoading] = useState(false);
 
     const handleSend = async () => {
-        if (!sessionId) return alert("No active session found");
+        if (!sessionId) return toast.error("No active session found");
         setLoading(true);
 
         try {
@@ -61,11 +61,11 @@ export default function BroadcastPage() {
     return (
         <SessionGuard>
             <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                    <h2 className="text-3xl font-bold tracking-tight">Broadcast / Blast</h2>
+                <div>
+                    <h2 className="text-xl sm:text-3xl font-bold tracking-tight">Broadcast / Blast</h2>
                 </div>
 
-                <div className="grid gap-6 md:grid-cols-2">
+                <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2">
                     <Card>
                         <CardHeader>
                             <CardTitle>Recipients</CardTitle>

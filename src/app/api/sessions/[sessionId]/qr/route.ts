@@ -13,18 +13,18 @@ export async function GET(
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
         if (!instance) {
-            return NextResponse.json({ error: "Session not found" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Session not found", error: "Session not found" }, { status: 404 });
         }
 
         const qr = instance.qr; // Access qr property directory
@@ -55,6 +55,6 @@ export async function GET(
 
     } catch (error) {
         console.error("Get QR error:", error);
-        return NextResponse.json({ error: "Failed to get QR code" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to get QR code", error: "Failed to get QR code" }, { status: 500 });
     }
 }

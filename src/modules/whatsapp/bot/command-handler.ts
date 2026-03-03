@@ -28,6 +28,7 @@ const DEFAULT_CONFIG = {
     enablePing: true,
     enableUptime: true,
     botName: "WA-AKG Bot",
+    prefix: "#",
     removeBgApiKey: null as string | null
 };
 
@@ -61,7 +62,9 @@ export async function handleBotCommand(
         text = messageContent.videoMessage.caption;
     }
 
-    if (!text.startsWith("#")) return;
+    // Quick check: skip non-command messages early (common prefixes)
+    // We'll do a proper prefix check after loading config
+    if (!text || text.length === 0) return;
 
     // Fetch session first
     const session = await prisma.session.findUnique({
@@ -80,6 +83,10 @@ export async function handleBotCommand(
     const config = botConfig || DEFAULT_CONFIG;
 
     if (!config.enabled) return;
+
+    // Now check prefix with loaded config
+    const prefix = (config as any).prefix || "#";
+    if (!text.startsWith(prefix)) return;
 
     // Verify Access Permissions
     const botMode = (config as any).botMode || 'OWNER'; // Default to OWNER if missing
@@ -128,7 +135,7 @@ export async function handleBotCommand(
     if (!canExecute) return;
 
     const [command, ...args] = text.trim().split(" ");
-    const cmd = command.toLowerCase().slice(1); // remove #
+    const cmd = command.toLowerCase().slice(prefix.length); // remove prefix
 
     try {
         switch (cmd) {
@@ -324,12 +331,12 @@ export async function handleBotCommand(
 🤖 *${botName} Menu* 🤖
 
 📌 *Commands:*
-• *#sticker* / *#s*: Convert Image/Video to Sticker
+• *${prefix}sticker* / *${prefix}s*: Convert Image/Video to Sticker
   - Supports Images, GIFs, and Videos (max ${(config as any).maxStickerDuration || 10}s)
-  - Use *#sticker nobg* to remove background (Images only)
-• *#ping*: Check Bot Status
-• *#uptime*: Check Session Uptime
-• *#id*: Get Chat ID
+  - Use *${prefix}sticker nobg* to remove background (Images only)
+• *${prefix}ping*: Check Bot Status
+• *${prefix}uptime*: Check Session Uptime
+• *${prefix}id*: Get Chat ID
 
 _Made with ❤️_
 `;

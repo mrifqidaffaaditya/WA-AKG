@@ -8,12 +8,12 @@ export async function PATCH(
     { params }: { params: Promise<{ id: string }> }
 ) {
     const user = await getAuthenticatedUser(request);
-    
+
     // Only SUPERADMIN can update users
     if (!user || !isAdmin(user.role)) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+        return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 403 });
     }
-    
+
     const { id } = await params;
 
     try {
@@ -22,7 +22,7 @@ export async function PATCH(
 
         // Prevent modifying own role to lock oneself out (optional safety)
         if (id === user.id && role && role !== "SUPERADMIN") {
-             // Allow update but maybe warn? For now let it be.
+            // Allow update but maybe warn? For now let it be.
         }
 
         const updateData: any = {};
@@ -45,11 +45,11 @@ export async function PATCH(
             }
         });
 
-        return NextResponse.json(updatedUser);
+        return NextResponse.json({ status: true, message: "User updated successfully", data: updatedUser });
 
     } catch (error) {
         console.error("Update user error:", error);
-        return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to update user", error: "Failed to update user" }, { status: 500 });
     }
 }
 
@@ -58,23 +58,23 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     const user = await getAuthenticatedUser(request);
-    
+
     // Only SUPERADMIN can delete users
     if (!user || !isAdmin(user.role)) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+        return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 403 });
     }
-    
+
     const { id } = await params;
 
     if (id === user.id) {
-        return NextResponse.json({ error: "Cannot delete yourself" }, { status: 400 });
+        return NextResponse.json({ status: false, message: "Cannot delete yourself", error: "Cannot delete yourself" }, { status: 400 });
     }
 
     try {
         await prisma.user.delete({ where: { id } });
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ status: true, message: "User deleted successfully" });
     } catch (error) {
         console.error("Delete user error:", error);
-        return NextResponse.json({ error: "Failed to delete user" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to delete user", error: "Failed to delete user" }, { status: 500 });
     }
 }

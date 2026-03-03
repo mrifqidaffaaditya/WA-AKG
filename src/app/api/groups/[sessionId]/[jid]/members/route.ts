@@ -10,7 +10,7 @@ export async function PUT(
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
         
         const { sessionId, jid } = await params;
@@ -19,9 +19,7 @@ export async function PUT(
         const { action, participants } = body;
 
         if (!action || !participants || !Array.isArray(participants)) {
-            return NextResponse.json({ 
-                error: "action and participants (array) are required" 
-            }, { status: 400 });
+            return NextResponse.json({ status: false, message: "action and participants (array) are required", error: "action and participants (array) are required" }, { status: 400 });
         }
 
         const validActions = ['add', 'remove', 'promote', 'demote'];
@@ -32,18 +30,18 @@ export async function PUT(
         }
 
         if (participants.length === 0) {
-            return NextResponse.json({ error: "Participants array cannot be empty" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "Participants array cannot be empty", error: "Participants array cannot be empty" }, { status: 400 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
         if (!instance?.socket) {
-            return NextResponse.json({ error: "Session not ready" }, { status: 503 });
+            return NextResponse.json({ status: false, message: "Session not ready", error: "Session not ready" }, { status: 503 });
         }
 
         // Execute the action
@@ -63,17 +61,13 @@ export async function PUT(
         console.error("Update group members error:", error);
         
         if (error.message?.includes("not-admin") || error.message?.includes("forbidden")) {
-            return NextResponse.json({ 
-                error: "Bot must be admin to update group members" 
-            }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Bot must be admin to update group members", error: "Bot must be admin to update group members" }, { status: 403 });
         }
         
         if (error.message?.includes("not-authorized")) {
-            return NextResponse.json({ 
-                error: "Not authorized to perform this action" 
-            }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Not authorized to perform this action", error: "Not authorized to perform this action" }, { status: 403 });
         }
         
-        return NextResponse.json({ error: "Failed to update group members" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to update group members", error: "Failed to update group members" }, { status: 500 });
     }
 }

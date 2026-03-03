@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const jid = searchParams.get("jid");
     
     if (!jid) {
-        return NextResponse.json({ error: "jid is required" }, { status: 400 });
+        return NextResponse.json({ status: false, message: "jid is required", error: "jid is required" }, { status: 400 });
     }
     
     const decodedJid = decodeURIComponent(jid);
@@ -21,20 +21,20 @@ export async function GET(request: NextRequest) {
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const { searchParams } = new URL(request.url);
         const sessionId = searchParams.get("sessionId");
 
         if (!sessionId) {
-            return NextResponse.json({ error: "sessionId is required" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "sessionId is required", error: "sessionId is required" }, { status: 400 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         const chatLabels = await prisma.chatLabel.findMany({
@@ -49,11 +49,11 @@ export async function GET(request: NextRequest) {
 
         const labels = chatLabels.map(cl => cl.label);
 
-        return NextResponse.json({ success: true, labels });
+        return NextResponse.json({ status: true, message: "Operation successful", data: { labels } });
 
     } catch (error) {
         console.error("Get chat labels error:", error);
-        return NextResponse.json({ error: "Failed to get chat labels" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to get chat labels", error: "Failed to get chat labels" }, { status: 500 });
     }
 }
 
@@ -68,7 +68,7 @@ export async function PUT(request: NextRequest) {
     const jid = searchParams.get("jid");
     
     if (!jid) {
-        return NextResponse.json({ error: "jid is required" }, { status: 400 });
+        return NextResponse.json({ status: false, message: "jid is required", error: "jid is required" }, { status: 400 });
     }
     
     const decodedJid = decodeURIComponent(jid);
@@ -76,28 +76,24 @@ export async function PUT(request: NextRequest) {
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         const body = await request.json();
         const { sessionId, labelIds, action } = body;
 
         if (!sessionId || !labelIds || !Array.isArray(labelIds) || !action) {
-            return NextResponse.json({ 
-                error: "sessionId, labelIds (array), and action are required" 
-            }, { status: 400 });
+            return NextResponse.json({ status: false, message: "sessionId, labelIds (array), and action are required", error: "sessionId, labelIds (array), and action are required" }, { status: 400 });
         }
 
         if (!['add', 'remove'].includes(action)) {
-            return NextResponse.json({ 
-                error: "action must be 'add' or 'remove'" 
-            }, { status: 400 });
+            return NextResponse.json({ status: false, message: "action must be 'add' or 'remove'", error: "action must be 'add' or 'remove'" }, { status: 400 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         if (action === 'add') {
@@ -160,6 +156,6 @@ export async function PUT(request: NextRequest) {
 
     } catch (error) {
         console.error("Update chat labels error:", error);
-        return NextResponse.json({ error: "Failed to update chat labels" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to update chat labels", error: "Failed to update chat labels" }, { status: 500 });
     }
 }

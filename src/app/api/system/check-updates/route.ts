@@ -13,8 +13,8 @@ import { NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
     const user = await getAuthenticatedUser(req); // Support API Key
-    if (!user) return new Response("Unauthorized", { status: 401 });
-    
+    if (!user) return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
+
     // Check for SUPERADMIN role? Original code didn't check, but usually system updates are restricted.
     // Ideally we should check user.role === 'SUPERADMIN'
     // But let's stick to making it work first.
@@ -22,11 +22,11 @@ export async function POST(req: NextRequest) {
 
     try {
         const release = await getLatestRelease(REPO_OWNER, REPO_NAME);
-        if (!release) return NextResponse.json({ success: false, message: "Could not fetch release" });
+        if (!release) return NextResponse.json({ status: false, message: "Could not fetch release", error: "Could not fetch release" });
 
         const version = release.tag_name;
         const title = `New Update Available: ${version}`;
-        
+
         // Check if we already notified this user about this version
         const existing = await prisma.notification.findFirst({
             where: {
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
         });
 
         if (existing) {
-            return NextResponse.json({ success: true, message: "Already up to date (notification exists)", version });
+            return NextResponse.json({ status: true, message: "Already up to date (notification exists)", data: { version } });
         }
 
         // Create notification
@@ -64,10 +64,10 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        return NextResponse.json({ success: true, message: "Notification sent", version });
+        return NextResponse.json({ status: true, message: "Notification sent", data: { version } });
 
     } catch (e) {
         console.error(e);
-        return new Response("Error checking updates", { status: 500 });
+        return NextResponse.json({ status: false, message: "Error checking updates", error: "Error checking updates" }, { status: 500 });
     }
 }

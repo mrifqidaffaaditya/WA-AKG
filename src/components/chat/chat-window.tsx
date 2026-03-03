@@ -52,8 +52,8 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
         try {
             const res = await fetch(`/api/chat/${sessionId}/${encodeURIComponent(jid)}`);
             if (res.ok) {
-                const data = await res.json();
-                setMessages(data);
+                const responseData = await res.json();
+                setMessages(responseData?.data || []);
                 setTimeout(() => scrollToBottom(false), 100);
             }
         } catch (error) {

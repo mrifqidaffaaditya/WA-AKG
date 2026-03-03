@@ -13,13 +13,13 @@ export async function GET(
     try {
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
         }
 
         // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
         // Find message in database
@@ -28,15 +28,15 @@ export async function GET(
         });
 
         if (!message) {
-            return NextResponse.json({ error: "Message not found" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Message not found", error: "Message not found" }, { status: 404 });
         }
 
         if (message.sessionId !== sessionId) {
-            return NextResponse.json({ error: "Message does not belong to this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Message does not belong to this session", error: "Message does not belong to this session" }, { status: 403 });
         }
 
         if (!message.mediaUrl) {
-            return NextResponse.json({ error: "Message has no media" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Message has no media", error: "Message has no media" }, { status: 404 });
         }
 
         // If mediaUrl is a local path, return it
@@ -49,7 +49,7 @@ export async function GET(
         const filePath = path.join(process.cwd(), message.mediaUrl);
         
         if (!fs.existsSync(filePath)) {
-            return NextResponse.json({ error: "Media file not found on disk" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Media file not found on disk", error: "Media file not found on disk" }, { status: 404 });
         }
 
         const fileBuffer = fs.readFileSync(filePath);
@@ -71,6 +71,6 @@ export async function GET(
 
     } catch (error) {
         console.error("Download media error:", error);
-        return NextResponse.json({ error: "Failed to download media" }, { status: 500 });
+        return NextResponse.json({ status: false, message: "Failed to download media", error: "Failed to download media" }, { status: 500 });
     }
 }
