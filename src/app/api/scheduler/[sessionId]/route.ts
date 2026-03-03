@@ -77,11 +77,14 @@ export async function POST(
             return NextResponse.json({ status: false, message: "Session not found", error: "Session not found" }, { status: 404 });
         }
 
+        // Fetch system timezone
         // @ts-ignore
         const systemConfig = await prisma.systemConfig.findUnique({ where: { id: "default" } });
         const timezone = systemConfig?.timezone || "Asia/Jakarta";
 
+        console.log(`[Scheduler:POST] Received sendAt: ${sendAt}, using timezone: ${timezone}`);
         const utcDate = moment.tz(sendAt, timezone).toDate();
+        console.log(`[Scheduler:POST] Resolved UTC Date: ${utcDate.toISOString()}`);
 
         const scheduled = await prisma.scheduledMessage.create({
             data: {

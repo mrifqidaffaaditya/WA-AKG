@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
+import moment from "moment-timezone";
 
 export async function PUT(
     request: NextRequest,
@@ -19,18 +20,29 @@ export async function PUT(
         }
 
         const body = await request.json();
-        const { jid, content, sendAt } = body;
+        const { jid, content, sendAt, mediaUrl, mediaType } = body;
 
         if (!jid || !content || !sendAt) {
             return NextResponse.json({ status: false, message: "JID, content, and sendAt are required", error: "JID, content, and sendAt are required" }, { status: 400 });
         }
+
+        // Fetch system timezone
+        // @ts-ignore
+        const systemConfig = await prisma.systemConfig.findUnique({ where: { id: "default" } });
+        const timezone = systemConfig?.timezone || "Asia/Jakarta";
+
+        console.log(`[Scheduler:PUT] Received sendAt: ${sendAt}, using timezone: ${timezone}`);
+        const utcDate = moment.tz(sendAt, timezone).toDate();
+        console.log(`[Scheduler:PUT] Resolved UTC Date: ${utcDate.toISOString()}`);
 
         const updated = await prisma.scheduledMessage.update({
             where: { id: scheduleId },
             data: {
                 jid,
                 content,
-                sendAt: new Date(sendAt)
+                sendAt: utcDate,
+                mediaUrl: mediaUrl || null,
+                mediaType: mediaType || null
             }
         });
 

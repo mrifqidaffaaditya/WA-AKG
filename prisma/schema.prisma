@@ -246,6 +246,11 @@ model BotConfig {
   spamDelayMin    Int     @default(1000) // MS min delay
   spamDelayMax    Int     @default(3000) // MS max delay
 
+  // Automation & Presence
+  welcomeMessage  String? @db.Text
+  autoRead        Boolean @default(false)
+  alwaysOnline    Boolean @default(false)
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

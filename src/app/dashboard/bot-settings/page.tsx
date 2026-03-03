@@ -8,7 +8,15 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { RefreshCw, Save, AlertCircle, Bot } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { RefreshCw, Save, AlertCircle, Bot, X, Plus, ShieldCheck, Zap, UserCheck, MessageSquarePlus } from "lucide-react";
 import { toast } from "sonner";
 
 export default function BotSettingsPage() {
@@ -29,9 +37,20 @@ export default function BotSettingsPage() {
         spamLimit: 5,
         spamInterval: 10,
         spamDelayMin: 1000,
-        spamDelayMax: 3000
+        spamDelayMax: 3000,
+
+        // New fields
+        welcomeMessage: "",
+        autoRead: false,
+        alwaysOnline: false,
+        botAllowedJids: [] as string[],
+        botBlockedJids: [] as string[],
+        autoReplyAllowedJids: [] as string[],
+        autoReplyBlockedJids: [] as string[],
     });
     const [botLoading, setBotLoading] = useState(false);
+
+    const [newJid, setNewJid] = useState("");
 
     const [privacyConfig, setPrivacyConfig] = useState({
         ghostMode: false,
@@ -48,7 +67,17 @@ export default function BotSettingsPage() {
             .then(responseData => {
                 const data = responseData?.data;
                 if (data && !responseData.error) {
-                    setBotConfig(prev => ({ ...prev, ...data, removeBgApiKey: data.removeBgApiKey || "", prefix: data.prefix || "#" }));
+                    setBotConfig(prev => ({
+                        ...prev,
+                        ...data,
+                        removeBgApiKey: data.removeBgApiKey || "",
+                        prefix: data.prefix || "#",
+                        welcomeMessage: data.welcomeMessage || "",
+                        botAllowedJids: data.botAllowedJids || [],
+                        botBlockedJids: data.botBlockedJids || [],
+                        autoReplyAllowedJids: data.autoReplyAllowedJids || [],
+                        autoReplyBlockedJids: data.autoReplyBlockedJids || [],
+                    }));
                 }
             })
             .catch(() => { });
@@ -106,6 +135,27 @@ export default function BotSettingsPage() {
         }
     };
 
+    const addJid = (listName: 'botAllowedJids' | 'botBlockedJids' | 'autoReplyAllowedJids' | 'autoReplyBlockedJids') => {
+        if (!newJid || !newJid.trim()) return;
+        let formatted = newJid.trim();
+        if (!formatted.includes('@')) formatted += '@s.whatsapp.net';
+
+        if (!botConfig[listName].includes(formatted)) {
+            setBotConfig(prev => ({
+                ...prev,
+                [listName]: [...prev[listName], formatted]
+            }));
+        }
+        setNewJid("");
+    };
+
+    const removeJid = (listName: 'botAllowedJids' | 'botBlockedJids' | 'autoReplyAllowedJids' | 'autoReplyBlockedJids', jid: string) => {
+        setBotConfig(prev => ({
+            ...prev,
+            [listName]: prev[listName].filter(item => item !== jid)
+        }));
+    };
+
     const inputClass = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
 
     return (
@@ -130,17 +180,19 @@ export default function BotSettingsPage() {
                 </Card>
             ) : (
                 <>
-                    {/* Bot & Auto Reply Configuration */}
+                    {/* Bot Mode & Access Section */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Bot & Auto Reply Configuration</CardTitle>
-                            <CardDescription>Manage automated features and commands for this session.</CardDescription>
+                            <CardTitle className="flex items-center gap-2">
+                                <ShieldCheck className="h-5 w-5 text-primary" />
+                                Bot Mode & Access Control
+                            </CardTitle>
+                            <CardDescription>Configure who can interact with the bot and use commands.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="grid gap-2">
                                 <Label>Bot Name</Label>
-                                <input
-                                    className={inputClass}
+                                <Input
                                     placeholder="WA-AKG Bot"
                                     value={botConfig.botName}
                                     onChange={(e) => setBotConfig(prev => ({ ...prev, botName: e.target.value }))}
@@ -148,49 +200,170 @@ export default function BotSettingsPage() {
                                 <p className="text-xs text-muted-foreground">The display name used by the bot in automated responses.</p>
                             </div>
 
-                            <div className="grid gap-2">
-                                <Label>Command Prefix</Label>
-                                <Input
-                                    className="max-w-[100px]"
-                                    placeholder="#"
-                                    maxLength={3}
-                                    value={botConfig.prefix}
-                                    onChange={(e) => setBotConfig(prev => ({ ...prev, prefix: e.target.value }))}
-                                />
-                                <p className="text-xs text-muted-foreground">The prefix character for bot commands (e.g. <code className="bg-muted px-1 rounded">#sticker</code>, <code className="bg-muted px-1 rounded">#ping</code>). Default: <code className="bg-muted px-1 rounded">#</code></p>
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label>Command Prefix</Label>
+                                    <Input
+                                        className="max-w-[100px]"
+                                        placeholder="#"
+                                        maxLength={3}
+                                        value={botConfig.prefix}
+                                        onChange={(e) => setBotConfig(prev => ({ ...prev, prefix: e.target.value }))}
+                                    />
+                                    <p className="text-xs text-muted-foreground">The prefix character for bot commands.</p>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Bot Interaction Mode</Label>
+                                    <Select
+                                        value={botConfig.botMode}
+                                        onValueChange={(v: any) => setBotConfig(prev => ({ ...prev, botMode: v }))}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select Mode" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="ALL">Public (Everyone)</SelectItem>
+                                            <SelectItem value="OWNER">Private (Owner Only)</SelectItem>
+                                            <SelectItem value="SPECIFIC">Whitelist (Selected JIDs)</SelectItem>
+                                            <SelectItem value="BLACKLIST">Blacklist (Block JIDs)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-muted-foreground">Control who can trigger bot commands.</p>
+                                </div>
                             </div>
 
-                            <div className="grid sm:grid-cols-2 gap-4 pt-2">
+                            {(botConfig.botMode === 'SPECIFIC' || botConfig.botMode === 'BLACKLIST') && (
+                                <div className="space-y-4 pt-4 border-t border-border/50 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <Label className="flex items-center gap-2">
+                                        <UserCheck className="h-4 w-4" />
+                                        {botConfig.botMode === 'SPECIFIC' ? "Whitelisted Numbers" : "Blacklisted Numbers"}
+                                    </Label>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            placeholder="628123456789@s.whatsapp.net"
+                                            value={newJid}
+                                            onChange={(e) => setNewJid(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && addJid(botConfig.botMode === 'SPECIFIC' ? 'botAllowedJids' : 'botBlockedJids')}
+                                        />
+                                        <Button variant="outline" size="icon" onClick={() => addJid(botConfig.botMode === 'SPECIFIC' ? 'botAllowedJids' : 'botBlockedJids')}>
+                                            <Plus className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                        {(botConfig.botMode === 'SPECIFIC' ? botConfig.botAllowedJids : botConfig.botBlockedJids).map(jid => (
+                                            <div key={jid} className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-xs font-medium">
+                                                {jid}
+                                                <button onClick={() => removeJid(botConfig.botMode === 'SPECIFIC' ? 'botAllowedJids' : 'botBlockedJids', jid)} className="text-muted-foreground hover:text-destructive transition-colors">
+                                                    <X className="h-3 w-3" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {(botConfig.botMode === 'SPECIFIC' ? botConfig.botAllowedJids : botConfig.botBlockedJids).length === 0 && (
+                                            <p className="text-xs text-muted-foreground italic">No numbers added yet.</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="grid sm:grid-cols-2 gap-4 pt-4 border-t border-border/50">
                                 <div className="flex items-center justify-between space-x-2 border p-3 rounded-lg">
-                                    <Label htmlFor="enable-ping" className="flex flex-col space-y-1">
-                                        <span>Ping Command</span>
-                                        <span className="font-normal text-xs text-muted-foreground">Respond to /ping</span>
+                                    <Label htmlFor="enable-ping" className="flex flex-col space-y-1 cursor-pointer">
+                                        <span className="font-medium">Ping Command</span>
+                                        <span className="font-normal text-[10px] text-muted-foreground">Respond to {botConfig.prefix}ping</span>
                                     </Label>
                                     <Switch id="enable-ping" checked={botConfig.enablePing}
                                         onCheckedChange={c => setBotConfig(prev => ({ ...prev, enablePing: c }))} />
                                 </div>
                                 <div className="flex items-center justify-between space-x-2 border p-3 rounded-lg">
-                                    <Label htmlFor="enable-uptime" className="flex flex-col space-y-1">
-                                        <span>Uptime Command</span>
-                                        <span className="font-normal text-xs text-muted-foreground">Respond to /uptime</span>
+                                    <Label htmlFor="enable-uptime" className="flex flex-col space-y-1 cursor-pointer">
+                                        <span className="font-medium">Uptime Command</span>
+                                        <span className="font-normal text-[10px] text-muted-foreground">Respond to {botConfig.prefix}uptime</span>
                                     </Label>
                                     <Switch id="enable-uptime" checked={botConfig.enableUptime}
                                         onCheckedChange={c => setBotConfig(prev => ({ ...prev, enableUptime: c }))} />
                                 </div>
                             </div>
 
+                            <div className="pt-2">
+                                <Button className="w-full sm:w-auto" onClick={handleSaveBot} disabled={botLoading || !sessionId}>
+                                    {botLoading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                    Save Bot Configuration
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Automation & Presence Section */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Zap className="h-5 w-5 text-yellow-500" />
+                                Automation & Presence
+                            </CardTitle>
+                            <CardDescription>Advanced bot automation and presence customization.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
                             <div className="grid sm:grid-cols-2 gap-4">
                                 <div className="flex items-center justify-between space-x-2 border p-3 rounded-lg">
-                                    <Label htmlFor="enable-sticker" className="flex flex-col space-y-1">
-                                        <span>Image to Sticker</span>
+                                    <Label htmlFor="always-online" className="flex flex-col space-y-1 cursor-pointer">
+                                        <span className="font-medium">Always Online</span>
+                                        <span className="font-normal text-[10px] text-muted-foreground">Stay "Online" even when inactive.</span>
+                                    </Label>
+                                    <Switch id="always-online" checked={botConfig.alwaysOnline}
+                                        onCheckedChange={c => setBotConfig(prev => ({ ...prev, alwaysOnline: c }))} />
+                                </div>
+                                <div className="flex items-center justify-between space-x-2 border p-3 rounded-lg">
+                                    <Label htmlFor="auto-read" className="flex flex-col space-y-1 cursor-pointer">
+                                        <span className="font-medium">Auto Read (Blue Ticks)</span>
+                                        <span className="font-normal text-[10px] text-muted-foreground">Automatically mark messages as read.</span>
+                                    </Label>
+                                    <Switch id="auto-read" checked={botConfig.autoRead}
+                                        onCheckedChange={c => setBotConfig(prev => ({ ...prev, autoRead: c }))} />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2 border-t border-border/50 pt-4">
+                                <Label className="flex items-center gap-2">
+                                    <MessageSquarePlus className="h-4 w-4 text-primary" />
+                                    Welcome Message (Beta)
+                                </Label>
+                                <Textarea
+                                    placeholder="Hello! Welcome to our WhatsApp Bot. How can I help you today?"
+                                    className="min-h-[100px]"
+                                    value={botConfig.welcomeMessage}
+                                    onChange={(e) => setBotConfig(prev => ({ ...prev, welcomeMessage: e.target.value }))}
+                                />
+                                <p className="text-[10px] text-muted-foreground">Sent automatically to users when they message this bot for the first time.</p>
+                            </div>
+
+                            <div className="pt-2">
+                                <Button className="w-full sm:w-auto" onClick={handleSaveBot} disabled={botLoading || !sessionId}>
+                                    {botLoading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                    Save Automation Settings
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Media & Stickers Section */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Media & Stickers</CardTitle>
+                            <CardDescription>Configure how the bot handles media and sticker conversion.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                <div className="flex items-center justify-between space-x-2 border p-3 rounded-lg">
+                                    <Label htmlFor="enable-sticker" className="flex flex-col space-y-1 cursor-pointer">
+                                        <span className="font-medium">Image to Sticker</span>
                                         <span className="font-normal text-xs text-muted-foreground">Auto-convert images</span>
                                     </Label>
                                     <Switch id="enable-sticker" checked={botConfig.enableSticker}
                                         onCheckedChange={c => setBotConfig(prev => ({ ...prev, enableSticker: c }))} />
                                 </div>
                                 <div className="flex items-center justify-between space-x-2 border p-3 rounded-lg">
-                                    <Label htmlFor="enable-video-sticker" className="flex flex-col space-y-1">
-                                        <span>Video to Sticker</span>
+                                    <Label htmlFor="enable-video-sticker" className="flex flex-col space-y-1 cursor-pointer">
+                                        <span className="font-medium">Video to Sticker</span>
                                         <span className="font-normal text-xs text-muted-foreground">Auto-convert short videos</span>
                                     </Label>
                                     <Switch id="enable-video-sticker" checked={botConfig.enableVideoSticker}
@@ -198,7 +371,7 @@ export default function BotSettingsPage() {
                                 </div>
                             </div>
 
-                            <div className="grid gap-2">
+                            <div className="grid gap-2 border-t border-border/50 pt-4">
                                 <Label>Max Sticker Video Duration: <strong>{botConfig.maxStickerDuration}s</strong></Label>
                                 <Slider
                                     value={[botConfig.maxStickerDuration]}
@@ -207,25 +380,24 @@ export default function BotSettingsPage() {
                                     max={30}
                                     step={1}
                                 />
-                                <p className="text-xs text-muted-foreground">Maximum video duration (in seconds) allowed for sticker conversion. Longer videos = larger file sizes.</p>
+                                <p className="text-xs text-muted-foreground">Maximum video duration (in seconds) allowed for sticker conversion.</p>
                             </div>
 
-                            <div className="grid gap-2 border-t pt-4 border-border/50">
+                            <div className="grid gap-2 border-t border-border/50 pt-4">
                                 <Label>Remove.bg API Key (Optional)</Label>
-                                <input
+                                <Input
                                     type="password"
-                                    className={inputClass}
                                     placeholder="Enter your Remove.bg API Key"
                                     value={botConfig.removeBgApiKey || ""}
                                     onChange={(e) => setBotConfig(prev => ({ ...prev, removeBgApiKey: e.target.value }))}
                                 />
-                                <p className="text-xs text-muted-foreground">Enables background removal for stickers (e.g. /sticker nocrop).</p>
+                                <p className="text-xs text-muted-foreground">Enables background removal for stickers (use <code className="bg-muted px-1 rounded">nobg</code> caption).</p>
                             </div>
 
                             <div className="pt-2">
-                                <Button onClick={handleSaveBot} disabled={botLoading || !sessionId}>
+                                <Button className="w-full sm:w-auto" onClick={handleSaveBot} disabled={botLoading || !sessionId}>
                                     {botLoading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                    Save Bot Configuration
+                                    Save Media Settings
                                 </Button>
                             </div>
                         </CardContent>

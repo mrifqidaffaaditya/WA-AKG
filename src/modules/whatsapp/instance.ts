@@ -36,9 +36,12 @@ export class WhatsAppInstance {
     }
 
     async init() {
-        this.isStopped = false; // Reset stop flag on init
-        const sessionData = await prisma.session.findUnique({ where: { sessionId: this.sessionId } });
+        const sessionData = await prisma.session.findUnique({
+            where: { sessionId: this.sessionId },
+            include: { botConfig: true }
+        });
         this.config = sessionData?.config || {};
+        const botConfig = (sessionData as any)?.botConfig;
 
         const { state, saveCreds } = await usePrismaAuthState(this.sessionId);
         const { version } = await fetchLatestBaileysVersion();
@@ -52,7 +55,7 @@ export class WhatsAppInstance {
                 keys: makeCacheableSignalKeyStore(state.keys, pino({ level: process.env.BAILEYS_LOG_LEVEL || "error" }) as any),
             },
             browser: ["WA-AKG", "Chrome", "1.0.0"],
-            markOnlineOnConnect: true,
+            markOnlineOnConnect: botConfig?.alwaysOnline ?? true,
             syncFullHistory: true, // Enable history sync to get contacts
         });
 

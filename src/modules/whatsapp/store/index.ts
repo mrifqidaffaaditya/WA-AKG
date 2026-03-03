@@ -50,9 +50,19 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server |
 
         const processedMessages = [];
 
+        // Fetch Bot Config for auto-read & welcome message
+        const config = await prisma.botConfig.findUnique({
+            where: { sessionId: dbSessionId }
+        });
+
         for (const msg of messages) {
             try {
-                const savedMessage = await processAndSaveMessage(msg, dbSessionId, sessionId, type === 'notify');
+                // Auto Read Logic
+                if (type === 'notify' && (config as any)?.autoRead && !msg.key.fromMe) {
+                    await sock.readMessages([msg.key]);
+                }
+
+                const savedMessage = await processAndSaveMessage(msg, dbSessionId, sessionId, type === 'notify', sock, config);
                 if (savedMessage) {
                     processedMessages.push(savedMessage);
                 }
@@ -89,7 +99,7 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server |
             console.log(`Syncing ${messages.length} historical messages...`);
             for (const msg of messages) {
                 try {
-                    await processAndSaveMessage(msg, dbSessionId, sessionId, false);
+                    await processAndSaveMessage(msg, dbSessionId, sessionId, false, sock);
                 } catch (error) {
                     console.error("Error saving historical message", error);
                 }
@@ -186,7 +196,14 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server |
     });
 };
 
-async function processAndSaveMessage(msg: WAMessage, dbSessionId: string, sessionId: string, triggerWebhook: boolean) {
+async function processAndSaveMessage(
+    msg: WAMessage,
+    dbSessionId: string,
+    sessionId: string,
+    triggerWebhook: boolean,
+    sock?: WASocket,
+    config?: any
+) {
     const keyId = msg.key.id;
     const remoteJid = msg.key.remoteJid;
     const fromMe = msg.key.fromMe;
@@ -328,7 +345,7 @@ async function processAndSaveMessage(msg: WAMessage, dbSessionId: string, sessio
             if (pushName) contactData.name = pushName;
         }
 
-        await prisma.contact.upsert({
+        const contact = await prisma.contact.upsert({
             where: { sessionId_jid: { sessionId: dbSessionId, jid: contactJid } },
             create: {
                 sessionId: dbSessionId,
@@ -344,6 +361,24 @@ async function processAndSaveMessage(msg: WAMessage, dbSessionId: string, sessio
                 remoteJidAlt: remoteJidAlt || undefined
             } : {}
         });
+
+        // Welcome Message Logic
+        if (!fromMe && triggerWebhook && config?.welcomeMessage && sock) {
+            // Check if this is a first-time interaction (contact created now)
+            // Or if we want to be more specific, check message counts.
+            // For simplicity, if the contact was just created (Prisma upsert returns the object).
+            // But we can't easily tell if it was 'created' or 'updated' from upsert result without checking timestamps or using separate calls.
+
+            // Let's check if message count for this contact is exactly 1 (the one we just saved)
+            const msgCount = await prisma.message.count({
+                where: { sessionId: dbSessionId, remoteJid: normalizedRemoteJid }
+            });
+
+            if (msgCount === 1) {
+                console.log(`Sending welcome message to ${normalizedRemoteJid}`);
+                await sock.sendMessage(normalizedRemoteJid, { text: config.welcomeMessage });
+            }
+        }
     }
 
     // Trigger webhook for new messages only (not history sync)

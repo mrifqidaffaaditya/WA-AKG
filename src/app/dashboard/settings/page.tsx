@@ -30,6 +30,8 @@ export default function SettingsPage() {
                     setSystemConfig({
                         appName: data.appName || "WA-AKG",
                         logoUrl: data.logoUrl || "",
+                        // @ts-ignore
+                        faviconUrl: data.faviconUrl || "/favicon.ico",
                         timezone: data.timezone || "Asia/Jakarta",
                         enableRegistration: data.enableRegistration !== undefined ? data.enableRegistration : true
                     });
@@ -92,32 +94,59 @@ export default function SettingsPage() {
                     <CardDescription>Global settings for the application branding and access control.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="grid gap-2">
-                        <Label>Application Name</Label>
-                        <input
-                            className={inputClass}
-                            placeholder="WA-AKG"
-                            value={systemConfig.appName}
-                            onChange={(e) => setSystemConfig(prev => ({ ...prev, appName: e.target.value }))}
-                            disabled={!isSuperAdmin}
-                        />
-                        <p className="text-xs text-muted-foreground">Changes the name in the sidebar and browser title.</p>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                            <Label>Application Name</Label>
+                            <input
+                                className={inputClass}
+                                placeholder="WA-AKG"
+                                value={systemConfig.appName}
+                                onChange={(e) => setSystemConfig(prev => ({ ...prev, appName: e.target.value }))}
+                                disabled={!isSuperAdmin}
+                            />
+                            <p className="text-xs text-muted-foreground">Changes the name in the sidebar and browser title.</p>
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label>Timezone</Label>
+                            <select
+                                className={inputClass}
+                                value={systemConfig.timezone}
+                                onChange={(e) => setSystemConfig(prev => ({ ...prev, timezone: e.target.value }))}
+                                disabled={!isSuperAdmin}
+                            >
+                                <option value="Asia/Jakarta">Asia/Jakarta (WIB)</option>
+                                <option value="Asia/Makassar">Asia/Makassar (WITA)</option>
+                                <option value="Asia/Jayapura">Asia/Jayapura (WIT)</option>
+                                <option value="UTC">UTC</option>
+                            </select>
+                            <p className="text-xs text-muted-foreground">Scheduler will use this timezone.</p>
+                        </div>
                     </div>
 
-                    <div className="grid gap-2">
-                        <Label>Timezone</Label>
-                        <select
-                            className={inputClass}
-                            value={systemConfig.timezone}
-                            onChange={(e) => setSystemConfig(prev => ({ ...prev, timezone: e.target.value }))}
-                            disabled={!isSuperAdmin}
-                        >
-                            <option value="Asia/Jakarta">Asia/Jakarta (WIB)</option>
-                            <option value="Asia/Makassar">Asia/Makassar (WITA)</option>
-                            <option value="Asia/Jayapura">Asia/Jayapura (WIT)</option>
-                            <option value="UTC">UTC</option>
-                        </select>
-                        <p className="text-xs text-muted-foreground">Scheduler will use this timezone to parse local times.</p>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                            <Label>Logo URL</Label>
+                            <input
+                                className={inputClass}
+                                placeholder="https://example.com/logo.png"
+                                value={systemConfig.logoUrl}
+                                onChange={(e) => setSystemConfig(prev => ({ ...prev, logoUrl: e.target.value }))}
+                                disabled={!isSuperAdmin}
+                            />
+                            <p className="text-xs text-muted-foreground">URL for the main dashboard logo.</p>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>Favicon URL</Label>
+                            <input
+                                className={inputClass}
+                                placeholder="/favicon.ico"
+                                value={(systemConfig as any).faviconUrl || ""}
+                                onChange={(e) => setSystemConfig(prev => ({ ...prev, faviconUrl: e.target.value }))}
+                                disabled={!isSuperAdmin}
+                            />
+                            <p className="text-xs text-muted-foreground">URL for the browser tab icon.</p>
+                        </div>
                     </div>
 
                     <div className="flex items-center justify-between space-x-2 pt-2 border-t border-border/50">

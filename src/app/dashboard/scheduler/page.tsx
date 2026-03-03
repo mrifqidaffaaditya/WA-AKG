@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Plus, CalendarClock, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import moment from "moment-timezone";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -40,6 +41,7 @@ export default function SchedulerPage() {
     const [messages, setMessages] = useState<ScheduledMessage[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [systemTimezone, setSystemTimezone] = useState("Asia/Jakarta");
 
     // Form state ...
     const [showForm, setShowForm] = useState(false);
@@ -58,6 +60,16 @@ export default function SchedulerPage() {
     // Remove local updateSession logic as it is handled by provider
 
     useEffect(() => {
+        // Fetch system timezone
+        fetch('/api/settings/system')
+            .then(res => res.json())
+            .then(data => {
+                if (data.status && data.data?.timezone) {
+                    setSystemTimezone(data.data.timezone);
+                }
+            })
+            .catch(() => { });
+
         if (selectedSessionId) {
             fetchMessages(selectedSessionId);
         } else {
@@ -89,12 +101,9 @@ export default function SchedulerPage() {
         setNewContent(msg.content);
         setNewMediaUrl(msg.mediaUrl || "");
         setNewMediaType(msg.mediaType || "image");
-        // Format date for datetime-local input (YYYY-MM-DDTHH:mm)
-        const date = new Date(msg.sendAt);
-        // Adjust to local ISO string roughly or use library. 
-        // Simple manual format to avoid timezone issues with toISOString() which is UTC.
-        // This is a basic implementation.
-        const localIso = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+
+        // Format date for datetime-local input using correct system timezone
+        const localIso = moment.tz(msg.sendAt, systemTimezone).format('YYYY-MM-DDTHH:mm');
         setNewSendAt(localIso);
 
         setShowForm(true);

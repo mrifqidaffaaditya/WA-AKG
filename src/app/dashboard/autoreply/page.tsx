@@ -30,6 +30,7 @@ interface AutoReply {
     matchType: string;
     isMedia: boolean;
     mediaUrl: string | null;
+    triggerType: string;
 }
 
 export default function AutoReplyPage() {
@@ -89,7 +90,7 @@ export default function AutoReplyPage() {
         setNewMatchType(rule.matchType);
         setNewIsMedia(rule.isMedia || false);
         setNewMediaUrl(rule.mediaUrl || "");
-        setNewTriggerType((rule as any).triggerType || "ALL");
+        setNewTriggerType(rule.triggerType || "ALL");
         setShowForm(true);
     };
 

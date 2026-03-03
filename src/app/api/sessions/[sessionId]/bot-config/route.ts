@@ -50,7 +50,10 @@ export async function GET(
             spamLimit: 5,
             spamInterval: 10,
             spamDelayMin: 1000,
-            spamDelayMax: 3000
+            spamDelayMax: 3000,
+            welcomeMessage: null,
+            autoRead: false,
+            alwaysOnline: false
         };
 
         return NextResponse.json({ status: true, message: "Bot config fetched successfully", data: session.botConfig });
@@ -109,6 +112,9 @@ export async function POST(
                 spamInterval: body.spamInterval || 10,
                 spamDelayMin: body.spamDelayMin || 1000,
                 spamDelayMax: body.spamDelayMax || 3000,
+                welcomeMessage: body.welcomeMessage || null,
+                autoRead: body.autoRead ?? false,
+                alwaysOnline: body.alwaysOnline ?? false,
             },
             update: {
                 botMode: body.botMode,
@@ -130,6 +136,9 @@ export async function POST(
                 spamInterval: body.spamInterval,
                 spamDelayMin: body.spamDelayMin,
                 spamDelayMax: body.spamDelayMax,
+                welcomeMessage: body.welcomeMessage,
+                autoRead: body.autoRead,
+                alwaysOnline: body.alwaysOnline,
             }
         });
 
