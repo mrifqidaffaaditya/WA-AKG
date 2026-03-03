@@ -1,10 +1,6 @@
 ## [v1.5.1] - 2026-03-03
 
 ### Added
-- **WA-AKG API Heartbeat Monitoring**: 
-    - Full transition to a dual-app architecture with a standalone `wa-akg-api` monitoring system.
-    - Automated background heartbeat system in the main app to detect active server instances.
-    - Persistent MySQL/MariaDB storage for monitoring data with premium dark-mode dashboard.
 - **Global System Resource Monitoring**:
     - Centralized "System Monitor" dashboard for Superadmins to track CPU (Live & Per-core), RAM, Disk, and Network health.
     - Detailed process-level memory tracking (Heap/RSS) for the Node.js application.
