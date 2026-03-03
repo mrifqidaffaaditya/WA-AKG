@@ -35,9 +35,9 @@ export async function GET(
         const dbSessionId = session.id;
 
         const messages = await prisma.message.findMany({
-            where: { 
+            where: {
                 sessionId: dbSessionId,
-                remoteJid: decodedJid 
+                remoteJid: decodedJid
             },
             orderBy: { timestamp: 'desc' }, // Fetch NEWEST first
             take: 100
@@ -60,24 +60,24 @@ export async function GET(
 
             if (group && group.participants) {
                 const parts = group.participants as any[];
-                
+
                 const enrichedMessages = messages.map((msg: any) => {
                     const sender = msg.senderJid || msg.remoteJid; // Fallback
                     const participant = parts.find(p => p.id === sender);
-                    
+
                     return {
                         ...msg,
                         sender: participant || sender // Replace or add sender field with object or string
                     };
                 });
-                
-                return NextResponse.json(enrichedMessages);
+
+                return NextResponse.json({ status: true, data: enrichedMessages });
             }
         }
 
-        return NextResponse.json(messages);
+        return NextResponse.json({ status: true, data: messages });
     } catch (error) {
         console.error("Fetch messages error:", error);
-        return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 });
+        return NextResponse.json({ status: false, message: 'Failed to fetch messages', error: 'Failed to fetch messages' }, { status: 500 });
     }
 }

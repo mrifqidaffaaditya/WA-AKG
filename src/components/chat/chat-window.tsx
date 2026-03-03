@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Paperclip, ArrowLeft, Phone, MoreVertical } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Image as ImageIcon, FileText, Music, Sticker as StickerIcon, Video } from "lucide-react";
+import { Image as ImageIcon, FileText, Music, Sticker as StickerIcon, Video, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
@@ -133,6 +133,24 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
         }
     };
 
+    const handleDownload = async (url: string, fileName: string) => {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(downloadUrl);
+        } catch (error) {
+            console.error("Download failed", error);
+            toast.error("Download failed");
+        }
+    };
+
     const triggerUpload = (type: string) => {
         setUploadType(type);
         if (fileInputRef.current) {
@@ -210,18 +228,76 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
 
                                         {/* Media */}
                                         {msg.type === 'IMAGE' && msg.mediaUrl && (
-                                            <img src={msg.mediaUrl} alt="Image" className="rounded-lg max-h-60 object-cover mb-1.5 w-full" />
+                                            <div className="relative group/media mb-1.5">
+                                                <img src={msg.mediaUrl} alt="Image" className="rounded-lg max-h-60 object-cover w-full cursor-pointer hover:opacity-95 transition-opacity" />
+                                                <Button
+                                                    size="icon"
+                                                    variant="secondary"
+                                                    className="absolute top-2 right-2 h-8 w-8 rounded-full opacity-0 group-hover/media:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm"
+                                                    onClick={() => handleDownload(msg.mediaUrl!, `IMAGE-${msg.keyId}.jpg`)}
+                                                >
+                                                    <Download className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        )}
+                                        {msg.type === 'VIDEO' && msg.mediaUrl && (
+                                            <div className="relative group/media mb-1.5">
+                                                <video src={msg.mediaUrl} controls className="rounded-lg max-h-60 w-full" />
+                                                <Button
+                                                    size="icon"
+                                                    variant="secondary"
+                                                    className="absolute top-2 right-2 h-8 w-8 rounded-full opacity-0 group-hover/media:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm z-10"
+                                                    onClick={() => handleDownload(msg.mediaUrl!, `VIDEO-${msg.keyId}.mp4`)}
+                                                >
+                                                    <Download className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        )}
+                                        {msg.type === 'AUDIO' && msg.mediaUrl && (
+                                            <div className="flex items-center gap-2 mb-1.5">
+                                                <audio src={msg.mediaUrl} controls className="h-8 max-w-[200px]" />
+                                                <Button
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    className="h-8 w-8 rounded-full"
+                                                    onClick={() => handleDownload(msg.mediaUrl!, `AUDIO-${msg.keyId}.mp3`)}
+                                                >
+                                                    <Download className="h-4 w-4" />
+                                                </Button>
+                                            </div>
                                         )}
                                         {msg.type === 'STICKER' && msg.mediaUrl && (
-                                            <img src={msg.mediaUrl} alt="Sticker" className="rounded-lg max-h-32 object-contain mb-1" />
+                                            <div className="relative group/media mb-1">
+                                                <img src={msg.mediaUrl} alt="Sticker" className="rounded-lg max-h-32 object-contain" />
+                                                <Button
+                                                    size="icon"
+                                                    variant="secondary"
+                                                    className="absolute -top-1 -right-1 h-6 w-6 rounded-full opacity-0 group-hover/media:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm"
+                                                    onClick={() => handleDownload(msg.mediaUrl!, `STICKER-${msg.keyId}.webp`)}
+                                                >
+                                                    <Download className="h-3 w-3" />
+                                                </Button>
+                                            </div>
                                         )}
-                                        {msg.type !== 'TEXT' && msg.type !== 'IMAGE' && msg.type !== 'STICKER' && (
+                                        {msg.type !== 'TEXT' && msg.type !== 'IMAGE' && msg.type !== 'STICKER' && msg.type !== 'VIDEO' && msg.type !== 'AUDIO' && (
                                             <div className={cn(
-                                                "flex items-center gap-2 py-1.5 px-2 rounded-lg mb-1 text-xs",
+                                                "flex items-center justify-between gap-2 py-1.5 px-2 rounded-lg mb-1 text-xs",
                                                 msg.fromMe ? "bg-white/15" : "bg-muted/50"
                                             )}>
-                                                <FileText className="h-3.5 w-3.5" />
-                                                <span className="font-medium">{msg.type}</span>
+                                                <div className="flex items-center gap-2 truncate">
+                                                    <FileText className="h-3.5 w-3.5 flex-shrink-0" />
+                                                    <span className="font-medium truncate">{msg.type} Message</span>
+                                                </div>
+                                                {msg.mediaUrl && (
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        className="h-7 w-7 rounded-full flex-shrink-0"
+                                                        onClick={() => handleDownload(msg.mediaUrl!, `${msg.type}-${msg.keyId}`)}
+                                                    >
+                                                        <Download className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                )}
                                             </div>
                                         )}
 
