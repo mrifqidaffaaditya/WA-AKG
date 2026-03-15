@@ -1,3 +1,43 @@
+## [v1.5.2-beta.1] - 2026-03-15
+
+### Added
+- **Broadcast Progress Monitoring**:
+    - Real-time progress panel on Broadcast page showing Sent / Failed / Waiting counts.
+    - Live animated progress bar with percentage indicator.
+    - Current recipient tracking and error log display for failed messages.
+    - Socket.IO `broadcast.progress` event emission from both broadcast API routes.
+- **Profile Management Page** (`/dashboard/profile`):
+    - View and edit WhatsApp Display Name, Status (About), and Profile Picture.
+    - New API routes: `GET /api/profile/[sessionId]`, `PUT .../name`, `PUT .../status`, `PUT/DELETE .../picture`.
+- **Labels Management Page** (`/dashboard/labels`):
+    - Create, view, and delete WhatsApp labels from the dashboard.
+- **Chat Service Module** (`src/modules/whatsapp/chat.service.ts`):
+    - Centralized chat logic (getChatsList, getMessages, sendTextMessage, sendMediaMessage) to eliminate code duplication across Server Actions and API routes.
+- **JID Normalization Utility**:
+    - New `normalizeJid()` function in `jid-utils.ts` that standardizes `@c.us` → `@s.whatsapp.net`.
+    - Applied consistently across Message storage, Contact upsert, and ChatService queries.
+
+### Fixed
+- **Chat List Not Syncing**:
+    - Fixed JID mismatch between Contact table (`@c.us`/`@lid`) and Message table (`@s.whatsapp.net`) that caused chats to not appear.
+    - Socket.IO `message.update` now serializes `timestamp` as ISO string instead of raw `Date` object.
+    - Added `useRef`-based JID tracking in ChatList for reliable new-chat detection via socket events.
+    - Added 800ms delay before refetching messages after send to allow Baileys to process `messages.upsert`.
+- **Session Stats Showing 0**:
+    - Fixed System Monitor API (`/api/system/monitor/[sessionId]`) to resolve session slug to database CUID before counting Contacts, Chats, and Messages.
+- **Profile Page "Failed to load"**:
+    - Implemented missing backend API routes for fetching WhatsApp profile data (name, status, picture) via Baileys socket methods.
+- **Duplicate Sidebar Links**:
+    - Removed redundant navigation entries for Auto Reply, Broadcasts, Contacts, and Groups.
+- **Labels Page Syntax Errors**:
+    - Fixed escaped backtick characters and missing imports that prevented the Labels page from compiling.
+
+### Changed
+- **Socket.IO Debug Logging**: Added detailed `[Socket]` console logs for `message.update` emissions showing keyId, remoteJid, and fromMe for easier debugging.
+- **ChatWindow**: Media send now uses the same delayed-refresh pattern as text send for consistency.
+
+---
+
 ## [v1.5.1] - 2026-03-03
 
 ### Added

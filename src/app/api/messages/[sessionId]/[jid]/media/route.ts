@@ -1,7 +1,7 @@
 
 import { NextResponse, NextRequest } from "next/server";
-import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
+import { ChatService } from "@/modules/whatsapp/chat.service";
 
 export async function POST(
     request: NextRequest,
@@ -29,42 +29,19 @@ export async function POST(
             return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
         }
 
-        const instance = waManager.getInstance(sessionId);
-        if (!instance?.socket) {
-            return NextResponse.json({ status: false, message: "Session not ready", error: "Session not ready" }, { status: 503 });
-        }
-
         const decodedJid = decodeURIComponent(jid);
-
-        // Convert File to Buffer
         const buffer = Buffer.from(await file.arrayBuffer());
 
-        const mimetype = file.type;
-        
-        const messageOptions: any = {};
-        if (caption) messageOptions.caption = caption;
-        messageOptions.mimetype = mimetype;
-        
-        // Handle different types
-        let content: any = {};
-
-        if (type === 'image') {
-            content = { image: buffer, ...messageOptions };
-        } else if (type === 'video') {
-             content = { video: buffer, ...messageOptions };
-        } else if (type === 'audio') {
-             content = { audio: buffer, mimetype: 'audio/mp4', ptt: false }; // ptt depends on needs
-        } else if (type === 'voice') {
-             content = { audio: buffer, mimetype: 'audio/mp4', ptt: true };
-        } else if (type === 'document') {
-             content = { document: buffer, mimetype, fileName: file.name, ...messageOptions };
-        } else {
-             // Default to document logic if unknown, or maybe image if implicit?
-             // Let's assume generic file is document
-             content = { document: buffer, mimetype, fileName: file.name, ...messageOptions };
-        }
-
-        const sent = await instance.socket.sendMessage(decodedJid, content);
+        // Send via ChatService
+        const sent = await ChatService.sendMediaMessage(
+             sessionId, 
+             decodedJid, 
+             buffer, 
+             type, 
+             file.type, 
+             file.name, 
+             caption
+        );
 
         return NextResponse.json({ status: true, message: "Operation successful", data: sent });
 

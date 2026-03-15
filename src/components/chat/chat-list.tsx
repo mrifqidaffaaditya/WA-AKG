@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { cn } from "@/lib/utils";
 import { io } from "socket.io-client";
+import { getChatsStatus } from "@/app/dashboard/chat/actions";
 
 interface ChatContact {
     jid: string;
@@ -35,31 +36,31 @@ export function ChatList({ sessionId, onSelectChat, selectedJid }: ChatListProps
     const [searchQuery, setSearchQuery] = useState("");
     const [isNewChatOpen, setIsNewChatOpen] = useState(false);
     const [newChatNumber, setNewChatNumber] = useState("");
+    
+    // Track JIDs in a ref for reliable real-time updates without depending on state closure
+    const jidsInList = useRef<Set<string>>(new Set());
+
+    const fetchChats = async () => {
+        try {
+            const rawChats = await getChatsStatus(sessionId);
+            
+            // Deduplicate by JID - keep the one with the latest message
+            const chatMap = new Map<string, ChatContact>();
+            rawChats.forEach((c: any) => {
+                const existing = chatMap.get(c.jid);
+                if (!existing || (c.lastMessage?.timestamp && (!existing.lastMessage?.timestamp || new Date(c.lastMessage.timestamp) > new Date(existing.lastMessage.timestamp)))) {
+                    chatMap.set(c.jid, c);
+                }
+            });
+            setChats(Array.from(chatMap.values()));
+        } catch (error) {
+            console.error("Failed to load chats via Server Action", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchChats = async () => {
-            try {
-                const res = await fetch(`/api/chat/${sessionId}`);
-                if (res.ok) {
-                    const responseData = await res.json();
-                    const rawChats = responseData?.data || [];
-                    // Deduplicate by JID - keep the one with the latest message
-                    const chatMap = new Map<string, ChatContact>();
-                    rawChats.forEach((c: ChatContact) => {
-                        const existing = chatMap.get(c.jid);
-                        if (!existing || (c.lastMessage?.timestamp && (!existing.lastMessage?.timestamp || new Date(c.lastMessage.timestamp) > new Date(existing.lastMessage.timestamp)))) {
-                            chatMap.set(c.jid, c);
-                        }
-                    });
-                    setChats(Array.from(chatMap.values()));
-                }
-            } catch (error) {
-                console.error("Failed to load chats", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         if (sessionId) {
             fetchChats();
 
@@ -72,13 +73,17 @@ export function ChatList({ sessionId, onSelectChat, selectedJid }: ChatListProps
                 socket.emit("join-session", sessionId);
             });
 
-            socket.on("message.update", (newMessages: any[]) => {
+            socket.on("message.update", async (newMessages: any[]) => {
+                let shouldFetchAll = false;
+
                 setChats((prevChats) => {
-                    let updatedChats = [...prevChats];
+                    const updatedChats = [...prevChats];
                     let needsReorder = false;
 
                     newMessages.forEach(msg => {
-                        const chatIndex = updatedChats.findIndex(c => c.jid === msg.remoteJid);
+                        const messageJid = msg.remoteJid;
+                        const chatIndex = updatedChats.findIndex(c => c.jid === messageJid);
+                        
                         if (chatIndex !== -1) {
                             updatedChats[chatIndex] = {
                                 ...updatedChats[chatIndex],
@@ -89,8 +94,9 @@ export function ChatList({ sessionId, onSelectChat, selectedJid }: ChatListProps
                                 }
                             };
                             needsReorder = true;
-                        } else {
-                            fetchChats();
+                        } else if (!jidsInList.current.has(messageJid)) {
+                            // Message from a JID not in our current list
+                            shouldFetchAll = true;
                         }
                     });
 
@@ -104,6 +110,10 @@ export function ChatList({ sessionId, onSelectChat, selectedJid }: ChatListProps
 
                     return updatedChats;
                 });
+
+                if (shouldFetchAll) {
+                    await fetchChats();
+                }
             });
 
             return () => {
@@ -111,6 +121,11 @@ export function ChatList({ sessionId, onSelectChat, selectedJid }: ChatListProps
             };
         }
     }, [sessionId]);
+
+    // Update the JID tracking ref whenever the chats list changes
+    useEffect(() => {
+        jidsInList.current = new Set(chats.map(c => c.jid));
+    }, [chats]);
 
     // Filter chats based on search query
     const filteredChats = useMemo(() => {
@@ -179,7 +194,7 @@ export function ChatList({ sessionId, onSelectChat, selectedJid }: ChatListProps
     }
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-hidden">
             {/* Header */}
             <div className="px-3 pt-3 pb-2 space-y-2 flex-shrink-0">
                 <div className="flex justify-between items-center">

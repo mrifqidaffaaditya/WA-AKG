@@ -2,6 +2,8 @@ import { NextResponse, NextRequest } from "next/server";
 import { getAuthenticatedUser } from "@/lib/api-auth";
 import { waManager } from "@/modules/whatsapp/manager";
 
+import { prisma } from "@/lib/prisma";
+
 export const dynamic = "force-dynamic";
 
 export async function GET(
@@ -17,39 +19,46 @@ export async function GET(
             return NextResponse.json({ status: false, message: "Unauthorized" }, { status: 401 });
         }
 
-        // Check if user has access to this session
-        // (Assuming you have a canAccessSession helper, or using role checks)
-        // For simplicity, we assume auth valid and checking manager directly
-
         const instance = waManager.getInstance(sessionId);
 
         if (!instance || instance.status !== "CONNECTED") {
             return NextResponse.json({
                 status: true,
                 message: "Session is not connected",
-                data: { status: instance?.status || "DISCONNECTED", uptime: 0, storeSize: 0 }
+                data: { status: instance?.status || "DISCONNECTED", uptime: 0, ping: "Offline", store: { contacts: 0, chats: 0, messages: 0 } }
             });
         }
 
-        // Store counting removed because Baileys MakeInMemoryStore is not exported via Manager.
-        // If needed in the future, we would expose instance.store or retrieve from DB instead.
-
         const uptime = instance.startTime ? Date.now() - instance.startTime.getTime() : 0;
 
-        // Perform a quick ping if possible using Baileys WA Socket
-        // WbSocket raw ping
         let pingStatus = "Unknown";
-        let pingMs: number | null = null;
-
         try {
             if (instance.socket && instance.socket.ws) {
-                // Attempt to read socket state
                 const ws = instance.socket.ws as any;
                 if (ws.readyState === 1) { // OPEN
                     pingStatus = "Online";
                 }
             }
         } catch (e) { }
+
+        // Resolve the database session ID (cuid) from the slug
+        const dbSession = await prisma.session.findUnique({
+            where: { sessionId },
+            select: { id: true }
+        });
+
+        if (!dbSession) {
+            return NextResponse.json({ status: false, message: "Session not found" }, { status: 404 });
+        }
+
+        const dbSessionId = dbSession.id;
+
+        // Fetch counts from database using the cuid
+        const [contactsCount, groupsCount, messagesCount] = await Promise.all([
+            prisma.contact.count({ where: { sessionId: dbSessionId } }),
+            prisma.group.count({ where: { sessionId: dbSessionId } }),
+            prisma.message.count({ where: { sessionId: dbSessionId } })
+        ]);
 
         return NextResponse.json({
             status: true,
@@ -58,7 +67,11 @@ export async function GET(
                 status: instance.status,
                 uptimeMs: uptime,
                 ping: pingStatus,
-                store: { contacts: 0, chats: 0, messages: 0 } // Legacy shape for UI compatibility
+                store: { 
+                    contacts: contactsCount, 
+                    chats: groupsCount + contactsCount, // Approximation of total chats
+                    messages: messagesCount 
+                } 
             }
         });
 

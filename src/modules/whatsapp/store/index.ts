@@ -3,7 +3,7 @@ import type { WASocket, WAMessage, Contact } from "@whiskeysockets/baileys";
 import { normalizeMessageContent } from "@whiskeysockets/baileys";
 import { onMessageReceived, onMessageSent, dispatchWebhook, downloadAndSaveMedia } from "@/lib/webhook";
 import { handleBotCommand, setSessionStartTime } from "../bot/command-handler";
-import { resolveToPhoneJid, isLidJid } from "@/lib/jid-utils";
+import { resolveToPhoneJid, isLidJid, normalizeJid } from "@/lib/jid-utils";
 
 import { Server } from "socket.io";
 
@@ -79,7 +79,13 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server |
 
         // Emit to socket room for real-time frontend updates
         if (processedMessages.length > 0) {
-            io?.to(sessionId).emit('message.update', processedMessages);
+            // Serialize for frontend: convert Date to ISO string
+            const serialized = processedMessages.map((m: any) => ({
+                ...m,
+                timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : m.timestamp
+            }));
+            console.log(`[Socket] Emitting message.update for ${serialized.length} messages in session ${sessionId}`, serialized.map((m: any) => ({ keyId: m.keyId, remoteJid: m.remoteJid, fromMe: m.fromMe })));
+            io?.to(sessionId).emit('message.update', serialized);
         }
     });
 
@@ -318,7 +324,7 @@ async function processAndSaveMessage(
     const newMessage = await prisma.message.create({
         data: {
             sessionId: dbSessionId,
-            remoteJid: normalizedRemoteJid,
+            remoteJid: normalizeJid(normalizedRemoteJid),
             senderJid,
             fromMe: fromMe || false,
             keyId,
@@ -332,8 +338,9 @@ async function processAndSaveMessage(
     });
 
     // Ensure contact exists (Upsert Contact)
+    const finalRemoteJid = normalizeJid(normalizedRemoteJid);
     if (remoteJid && !remoteJid.includes('@g.us') && !remoteJid.includes('status@broadcast')) {
-        const contactJid = normalizedRemoteJid; // Use normalized JID
+        const contactJid = finalRemoteJid; // Use fully normalized JID
         const contactData: any = {
             sessionId: dbSessionId,
             jid: contactJid
@@ -371,12 +378,12 @@ async function processAndSaveMessage(
 
             // Let's check if message count for this contact is exactly 1 (the one we just saved)
             const msgCount = await prisma.message.count({
-                where: { sessionId: dbSessionId, remoteJid: normalizedRemoteJid }
+                where: { sessionId: dbSessionId, remoteJid: finalRemoteJid }
             });
 
             if (msgCount === 1) {
-                console.log(`Sending welcome message to ${normalizedRemoteJid}`);
-                await sock.sendMessage(normalizedRemoteJid, { text: config.welcomeMessage });
+                console.log(`Sending welcome message to ${finalRemoteJid}`);
+                await sock.sendMessage(finalRemoteJid, { text: config.welcomeMessage });
             }
         }
     }
