@@ -37,77 +37,84 @@ export function ChatList({ sessionId, onSelectChat, selectedJid }: ChatListProps
     const [isNewChatOpen, setIsNewChatOpen] = useState(false);
     const [newChatNumber, setNewChatNumber] = useState("");
 
-    useEffect(() => {
-        const fetchChats = async () => {
-            try {
-                const rawChats = await getChatsStatus(sessionId);
-                
-                // Deduplicate by JID - keep the one with the latest message
-                const chatMap = new Map<string, ChatContact>();
-                rawChats.forEach((c: any) => {
-                    const existing = chatMap.get(c.jid);
-                    if (!existing || (c.lastMessage?.timestamp && (!existing.lastMessage?.timestamp || new Date(c.lastMessage.timestamp) > new Date(existing.lastMessage.timestamp)))) {
-                        chatMap.set(c.jid, c);
-                    }
-                });
-                setChats(Array.from(chatMap.values()));
-            } catch (error) {
-                console.error("Failed to load chats via Server Action", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (sessionId) {
-            fetchChats();
-
-            const socket = io({
-                path: "/api/socket/io",
-                addTrailingSlash: false,
+    const fetchChats = async () => {
+        try {
+            const rawChats = await getChatsStatus(sessionId);
+            
+            // Deduplicate by JID - keep the one with the latest message
+            const chatMap = new Map<string, ChatContact>();
+            rawChats.forEach((c: any) => {
+                const existing = chatMap.get(c.jid);
+                if (!existing || (c.lastMessage?.timestamp && (!existing.lastMessage?.timestamp || new Date(c.lastMessage.timestamp) > new Date(existing.lastMessage.timestamp)))) {
+                    chatMap.set(c.jid, c);
+                }
             });
-
-            socket.on("connect", () => {
-                socket.emit("join-session", sessionId);
-            });
-
-            socket.on("message.update", (newMessages: any[]) => {
-                setChats((prevChats) => {
-                    let updatedChats = [...prevChats];
-                    let needsReorder = false;
-
-                    newMessages.forEach(msg => {
-                        const chatIndex = updatedChats.findIndex(c => c.jid === msg.remoteJid);
-                        if (chatIndex !== -1) {
-                            updatedChats[chatIndex] = {
-                                ...updatedChats[chatIndex],
-                                lastMessage: {
-                                    content: msg.content,
-                                    timestamp: msg.timestamp,
-                                    type: msg.type
-                                }
-                            };
-                            needsReorder = true;
-                        } else {
-                            fetchChats();
-                        }
-                    });
-
-                    if (needsReorder) {
-                        updatedChats.sort((a, b) => {
-                            const tA = a.lastMessage?.timestamp ? new Date(a.lastMessage.timestamp).getTime() : 0;
-                            const tB = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : 0;
-                            return tB - tA;
-                        });
-                    }
-
-                    return updatedChats;
-                });
-            });
-
-            return () => {
-                socket.disconnect();
-            };
+            setChats(Array.from(chatMap.values()));
+        } catch (error) {
+            console.error("Failed to load chats via Server Action", error);
+        } finally {
+            setLoading(false);
         }
+    };
+
+    useEffect(() => {
+        if (!sessionId) return;
+
+        fetchChats();
+
+        const socket = io({
+            path: "/api/socket/io",
+            addTrailingSlash: false,
+        });
+
+        socket.on("connect", () => {
+            socket.emit("join-session", sessionId);
+        });
+
+        socket.on("message.update", (newMessages: any[]) => {
+            let shouldFetchAll = false;
+
+            setChats((prevChats) => {
+                const updatedChats = [...prevChats];
+                let needsReorder = false;
+
+                newMessages.forEach(msg => {
+                    const chatIndex = updatedChats.findIndex(c => c.jid === msg.remoteJid);
+                    if (chatIndex !== -1) {
+                        updatedChats[chatIndex] = {
+                            ...updatedChats[chatIndex],
+                            lastMessage: {
+                                content: msg.content,
+                                timestamp: msg.timestamp,
+                                type: msg.type
+                            }
+                        };
+                        needsReorder = true;
+                    } else {
+                        // Message from a JID not in our current list
+                        shouldFetchAll = true;
+                    }
+                });
+
+                if (needsReorder) {
+                    updatedChats.sort((a, b) => {
+                        const tA = a.lastMessage?.timestamp ? new Date(a.lastMessage.timestamp).getTime() : 0;
+                        const tB = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : 0;
+                        return tB - tA;
+                    });
+                }
+
+                return updatedChats;
+            });
+
+            if (shouldFetchAll) {
+                fetchChats();
+            }
+        });
+
+        return () => {
+            socket.disconnect();
+        };
     }, [sessionId]);
 
     // Filter chats based on search query
@@ -177,7 +184,7 @@ export function ChatList({ sessionId, onSelectChat, selectedJid }: ChatListProps
     }
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-hidden">
             {/* Header */}
             <div className="px-3 pt-3 pb-2 space-y-2 flex-shrink-0">
                 <div className="flex justify-between items-center">

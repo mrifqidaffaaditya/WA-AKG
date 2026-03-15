@@ -62,15 +62,15 @@ const navGroups: NavGroup[] = [
         items: [
             { href: "/dashboard/chat", label: "Chat", icon: MessageSquare },
             { href: "/dashboard/broadcast", label: "Broadcast", icon: Megaphone },
-            { href: "/dashboard/autoreply", label: "Auto Reply", icon: Send },
             { href: "/dashboard/sticker", label: "Sticker Maker", icon: ImageIcon },
         ],
     },
     {
         label: "Contacts",
         items: [
-            { href: "/dashboard/groups", label: "Groups", icon: Users },
             { href: "/dashboard/contacts", label: "Contacts", icon: UserCheck },
+            { href: "/dashboard/groups", label: "Groups", icon: Users },
+            { href: "/dashboard/labels", label: "Labels", icon: Tag },
         ],
     },
     {
@@ -88,15 +88,6 @@ const navGroups: NavGroup[] = [
         items: [
             { href: "/docs", label: "API Docs", icon: FileText },
             { href: "/swagger", label: "Swagger UI", icon: Code, external: true },
-        ],
-    },
-    {
-        label: "WhatsApp Features",
-        items: [
-            { href: "/dashboard/contacts", label: "Contacts", icon: Contact },
-            { href: "/dashboard/groups", label: "Groups", icon: Users },
-            { href: "/dashboard/broadcasts", label: "Broadcasts", icon: Megaphone },
-            { href: "/dashboard/labels", label: "Labels", icon: Tag },
         ],
     },
     {

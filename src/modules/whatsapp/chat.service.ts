@@ -8,43 +8,72 @@ export class ChatService {
      * Get the active chats list for a session, including last message preview.
      */
     static async getChatsList(dbSessionId: string) {
+        // 1. Get contacts
         const contacts = await prisma.contact.findMany({
             where: { sessionId: dbSessionId },
             orderBy: { updatedAt: 'desc' },
             select: { jid: true, name: true, notify: true, profilePic: true }
         });
 
-        const allJids = contacts.map(c => c.jid);
-        const jidMap = await batchResolveToPhoneJid(allJids, dbSessionId);
+        // 2. Get distinct remoteJids from messages (for chats without a saved contact)
+        const messagesWithDistinctJids = await prisma.message.findMany({
+            where: { sessionId: dbSessionId },
+            distinct: ['remoteJid'],
+            select: { remoteJid: true }
+        });
 
-        const chatList = await Promise.all(contacts.map(async (c) => {
-            const normalizedJid = jidMap.get(c.jid) || c.jid;
+        const allJids = new Set([
+            ...contacts.map(c => c.jid),
+            ...messagesWithDistinctJids.map(m => m.remoteJid)
+        ]);
+
+        const jidMap = await batchResolveToPhoneJid(Array.from(allJids), dbSessionId);
+        
+        // Map contacts for quick lookup
+        const contactMap = new Map(contacts.map(c => [c.jid, c]));
+
+        const chatList = await Promise.all(Array.from(allJids).map(async (originalJid) => {
+            const normalizedJid = jidMap.get(originalJid) || originalJid;
+            const contactInfo = contactMap.get(originalJid) || contactMap.get(normalizedJid) || { jid: normalizedJid, name: null, notify: null, profilePic: null };
+
             const lastMessage = await prisma.message.findFirst({
                 where: {
                     sessionId: dbSessionId,
-                    OR: [{ remoteJid: c.jid }, { remoteJid: normalizedJid }]
+                    OR: [{ remoteJid: originalJid }, { remoteJid: normalizedJid }]
                 },
                 orderBy: { timestamp: 'desc' },
                 select: { content: true, timestamp: true, type: true }
             });
+
             return {
-                ...c,
+                ...contactInfo,
                 jid: normalizedJid,
                 lastMessage: lastMessage ? {
                     content: lastMessage.content,
-                    timestamp: lastMessage.timestamp,
+                    timestamp: lastMessage.timestamp.toISOString(),
                     type: lastMessage.type
                 } : undefined
             };
         }));
 
-        chatList.sort((a, b) => {
+        // Deduplicate unified list
+        const uniqueChats = new Map();
+        chatList.forEach(chat => {
+            const existing = uniqueChats.get(chat.jid);
+            if (!existing || (chat.lastMessage?.timestamp && (!existing.lastMessage?.timestamp || new Date(chat.lastMessage.timestamp) > new Date(existing.lastMessage.timestamp)))) {
+                uniqueChats.set(chat.jid, chat);
+            }
+        });
+
+        const finalChats = Array.from(uniqueChats.values());
+
+        finalChats.sort((a, b) => {
             const tA = a.lastMessage?.timestamp ? new Date(a.lastMessage.timestamp).getTime() : 0;
             const tB = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : 0;
             return tB - tA;
         });
 
-        return chatList;
+        return finalChats;
     }
 
     /**
