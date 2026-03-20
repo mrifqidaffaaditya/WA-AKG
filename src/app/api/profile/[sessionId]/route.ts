@@ -1,57 +1,69 @@
 import { NextResponse, NextRequest } from "next/server";
-import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
+import { waManager } from "@/modules/whatsapp/manager";
 
-// GET: Fetch own profile
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ sessionId: string }> }
 ) {
     try {
         const { sessionId } = await params;
-
         const user = await getAuthenticatedUser(request);
         if (!user) {
-            return NextResponse.json({ status: false, message: "Unauthorized", error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Unauthorized" }, { status: 401 });
         }
 
-        // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
-        if (!instance?.socket) {
-            return NextResponse.json({ status: false, message: "Session not ready", error: "Session not ready" }, { status: 503 });
+        if (!instance || !instance.socket) {
+            return NextResponse.json({ status: false, message: "WhatsApp instance not connected" }, { status: 503 });
         }
 
-        // Get own JID
-        const meJid = instance.socket.user?.id;
-        if (!meJid) {
-            return NextResponse.json({ status: false, message: "Unable to get own JID", error: "Unable to get own JID" }, { status: 500 });
-        }
+        // Fetch display name from creds
+        const pushname = instance.socket.user?.name || "";
+        const myJid = instance.socket.user?.id || "";
 
-        // Fetch profile status
+        // Fetch status/about safely
+        let status = "Hey there! I am using WhatsApp.";
         try {
-            const statusInfo = await instance.socket.fetchStatus(meJid);
-            
-            return NextResponse.json({ 
-                success: true,
-                jid: meJid,
-                status: statusInfo || null
-            });
-        } catch (error) {
-            // If status fetch fails, return basic info
-            return NextResponse.json({ 
-                success: true,
-                jid: meJid,
-                status: null
-            });
+            const statusResult = await (instance.socket as any).fetchStatus(myJid);
+            if (statusResult) {
+                // Baileys might return an array or an object depending on version
+                if (Array.isArray(statusResult)) {
+                    const first = statusResult[0];
+                    if (first?.status) status = first.status;
+                } else if (statusResult.status) {
+                    status = statusResult.status;
+                }
+            }
+        } catch (e) {
+            console.log("Could not fetch own status:", e);
         }
 
-    } catch (error) {
+        // Fetch profile picture safely
+        let pictureUrl = "";
+        try {
+            pictureUrl = await instance.socket.profilePictureUrl(myJid, 'image') || "";
+        } catch (e) {
+            // No profile picture set
+        }
+
+        return NextResponse.json({
+            status: true,
+            data: {
+                name: pushname,
+                pushname: pushname,
+                status: status,
+                pictureUrl: pictureUrl
+            }
+        });
+
+    } catch (error: any) {
         console.error("Fetch profile error:", error);
-        return NextResponse.json({ status: false, message: "Failed to fetch profile", error: "Failed to fetch profile" }, { status: 500 });
+        return NextResponse.json({ status: false, message: error.message }, { status: 500 });
     }
 }

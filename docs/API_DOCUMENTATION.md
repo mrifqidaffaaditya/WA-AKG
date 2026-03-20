@@ -663,6 +663,201 @@ curl -X DELETE "http://localhost:3000/api/sessions/abc123/settings" \
 
 ---
 
+## 📂 Session Access
+
+### \[GET\] /sessions/{sessionId}/access
+
+**List users with shared access**
+
+Get all users who have been granted access to the specified session. Only the session owner or SUPERADMIN can use this endpoint.
+
+#### Parameters
+
+| Name | Located in | Required | Type | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `sessionId` | path | ✅ Yes | string | Session ID (slug or CUID) |
+
+#### Responses
+
+| Code | Description |
+| :--- | :--- |
+| `200` | Access list retrieved |
+| `401` | Unauthorized |
+| `403` | Forbidden - Only session owner can manage access |
+| `404` | Session not found |
+
+**Response Example (`200`):**
+
+```json
+{
+  "status": true,
+  "message": "Access list retrieved successfully",
+  "data": [
+    {
+      "id": "clx789def",
+      "sessionId": "clx123abc",
+      "userId": "clx456ghi",
+      "createdAt": "2026-03-20T15:00:00.000Z",
+      "user": {
+        "id": "clx456ghi",
+        "name": "Staff User",
+        "email": "staff@example.com",
+        "role": "STAFF"
+      }
+    }
+  ]
+}
+```
+
+#### cURL Example
+
+```bash
+curl -X GET "http://localhost:3000/api/sessions/marketing-1/access" \
+  -H "X-API-Key: your-api-key"
+```
+
+---
+
+### \[POST\] /sessions/{sessionId}/access
+
+**Grant access to another user**
+
+Grant session access to another registered user by email. Only the session owner or SUPERADMIN can use this endpoint. Cannot grant access to the session owner themselves or to SUPERADMINs (who already have access to all sessions).
+
+#### Parameters
+
+| Name | Located in | Required | Type | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `sessionId` | path | ✅ Yes | string | Session ID (slug or CUID) |
+
+#### Headers
+
+```
+X-API-Key: your-api-key
+Content-Type: application/json
+```
+
+#### Request Body (`application/json`)
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `email` | string | ✅ Yes | Email address of the user to grant access |
+
+**Example:**
+
+```json
+{
+  "email": "staff@example.com"
+}
+```
+
+#### Responses
+
+| Code | Description |
+| :--- | :--- |
+| `201` | Access granted successfully |
+| `400` | Validation error / Cannot grant to owner / SUPERADMIN already has access |
+| `401` | Unauthorized |
+| `403` | Forbidden - Only session owner can manage access |
+| `404` | Session or user not found |
+| `409` | User already has access |
+
+**Response Example (`201`):**
+
+```json
+{
+  "status": true,
+  "message": "Access granted to staff@example.com",
+  "data": {
+    "id": "clx789def",
+    "sessionId": "clx123abc",
+    "userId": "clx456ghi",
+    "createdAt": "2026-03-20T15:00:00.000Z",
+    "user": {
+      "id": "clx456ghi",
+      "name": "Staff User",
+      "email": "staff@example.com",
+      "role": "STAFF"
+    }
+  }
+}
+```
+
+#### cURL Example
+
+```bash
+curl -X POST "http://localhost:3000/api/sessions/marketing-1/access" \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"staff@example.com"}'
+```
+
+---
+
+### \[DELETE\] /sessions/{sessionId}/access
+
+**Revoke user access**
+
+Remove shared access for a user from the specified session. Only the session owner or SUPERADMIN can use this endpoint.
+
+#### Parameters
+
+| Name | Located in | Required | Type | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `sessionId` | path | ✅ Yes | string | Session ID (slug or CUID) |
+
+#### Headers
+
+```
+X-API-Key: your-api-key
+Content-Type: application/json
+```
+
+#### Request Body (`application/json`)
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `userId` | string | ✅ Yes | CUID of the user to revoke access from |
+
+**Example:**
+
+```json
+{
+  "userId": "clx456ghi"
+}
+```
+
+#### Responses
+
+| Code | Description |
+| :--- | :--- |
+| `200` | Access revoked successfully |
+| `400` | Validation error |
+| `401` | Unauthorized |
+| `403` | Forbidden - Only session owner can manage access |
+| `404` | Session or access record not found |
+
+**Response Example (`200`):**
+
+```json
+{
+  "status": true,
+  "message": "Access revoked successfully",
+  "data": null
+}
+```
+
+#### cURL Example
+
+```bash
+curl -X DELETE "http://localhost:3000/api/sessions/marketing-1/access" \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"userId":"clx456ghi"}'
+```
+
+---
+
 ## 📂 Messaging (Deprecated)
 
 ### ~~\[POST\] /chat/send~~

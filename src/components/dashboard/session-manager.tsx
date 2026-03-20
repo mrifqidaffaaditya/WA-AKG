@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription }
 import { useRouter } from 'next/navigation';
 import { toast } from "sonner";
 import { Label } from '@/components/ui/label';
-import { Smartphone, Plus, Trash2, Settings, RefreshCw, Power } from 'lucide-react';
+import { Smartphone, Plus, Trash2, Settings, RefreshCw, Power, UserPlus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 type Session = {
@@ -183,6 +183,9 @@ export function SessionManager({ user }: { user: any }) {
                                     </div>
                                 </CardContent>
                                 <CardFooter className="bg-slate-50/50 p-3 flex justify-end gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/sessions/access?session=${session.sessionId}`)}>
+                                        <UserPlus className="h-4 w-4 mr-1" /> Share
+                                    </Button>
                                     <Button variant="outline" size="sm" onClick={() => handleManageSession(session.sessionId)}>
                                         <Settings className="h-4 w-4 mr-1" /> Manage
                                     </Button>

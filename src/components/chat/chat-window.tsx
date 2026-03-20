@@ -10,6 +10,7 @@ import { Image as ImageIcon, FileText, Music, Sticker as StickerIcon, Video, Dow
 import { cn } from "@/lib/utils";
 import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
+import { getChatMessages, sendChatMessage, sendMediaMessage } from "@/app/dashboard/chat/actions";
 
 interface Message {
     keyId: string;
@@ -50,14 +51,11 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
 
     const fetchMessages = async () => {
         try {
-            const res = await fetch(`/api/chat/${sessionId}/${encodeURIComponent(jid)}`);
-            if (res.ok) {
-                const responseData = await res.json();
-                setMessages(responseData?.data || []);
-                setTimeout(() => scrollToBottom(false), 100);
-            }
+            const data = await getChatMessages(sessionId, jid);
+            setMessages((data as any) || []);
+            setTimeout(() => scrollToBottom(false), 100);
         } catch (error) {
-            console.error("Failed to load messages", error);
+            console.error("Failed to load messages via Server Action", error);
         }
     }
 
@@ -92,19 +90,13 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
         if (!newMessage.trim()) return;
 
         try {
-            await fetch(`/api/chat/send`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    sessionId,
-                    jid,
-                    message: { text: newMessage }
-                })
-            });
+            await sendChatMessage(sessionId, jid, newMessage);
             setNewMessage("");
-            fetchMessages();
-        } catch (e) {
+            // Give Baileys time to fire messages.upsert and save to DB
+            setTimeout(() => fetchMessages(), 800);
+        } catch (e: any) {
             console.error(e);
+            toast.error(e.message || "Failed to send message");
         }
     };
 
@@ -116,18 +108,17 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
         formData.append("file", file);
         formData.append("type", uploadType);
 
+        formData.append("sessionId", sessionId);
+        formData.append("jid", jid);
+
         try {
             toast.info("Sending...");
-            const res = await fetch(`/api/messages/${sessionId}/${encodeURIComponent(jid)}/media`, {
-                method: "POST",
-                body: formData
-            });
-
-            if (!res.ok) throw new Error("Failed to send media");
+            await sendMediaMessage(formData);
             toast.success("Sent!");
-        } catch (error) {
+            setTimeout(() => fetchMessages(), 800); // Delay to allow Baileys to save
+        } catch (error: any) {
             console.error(error);
-            toast.error("Failed to send media");
+            toast.error(error.message || "Failed to send media");
         } finally {
             if (fileInputRef.current) fileInputRef.current.value = "";
         }

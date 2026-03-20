@@ -28,12 +28,11 @@ export async function POST(
              return NextResponse.json({ error: parseResult.error.flatten() }, { status: 400 });
         }
         
-        const { recipients, message } = parseResult.data;
+        const { recipients, message, delay } = parseResult.data;
 
-        // Check if user can access this session
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
-            return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
+            return NextResponse.json({ status: false, message: "Forbidden", error: "Forbidden" }, { status: 403 });
         }
 
         const instance = waManager.getInstance(sessionId);
@@ -41,27 +40,76 @@ export async function POST(
             return NextResponse.json({ status: false, message: "Session not ready", error: "Session not ready" }, { status: 503 });
         }
 
-        // Convert string message to AnyMessageContent object
         const messageContent: AnyMessageContent = { text: message };
+        const io = (global as any).io;
+        const broadcastId = `bc_${Date.now()}`;
+        const total = recipients.length;
 
-        // Process in background to avoid timeout
+        // Emit initial state
+        if (io) {
+            io.to(sessionId).emit("broadcast.progress", {
+                broadcastId,
+                status: "running",
+                total,
+                sent: 0,
+                failed: 0,
+                current: null,
+                startedAt: new Date().toISOString()
+            });
+        }
+
+        // Process in background
         (async () => {
-             for (const jid of recipients) {
+            let sent = 0;
+            let failed = 0;
+            const errors: { jid: string; error: string }[] = [];
+
+             for (let i = 0; i < recipients.length; i++) {
+                 const jid = recipients[i];
                  try {
                      await instance.socket!.sendMessage(jid, messageContent);
-                     
-                     // Random delay between 10-20 seconds per message
-                     const randomDelay = Math.floor(Math.random() * 10000) + 10000;
-                     console.log(`Waiting ${randomDelay / 1000}s before next broadcast message`);
-                     await new Promise(r => setTimeout(r, randomDelay));
-                 } catch (e) {
+                     sent++;
+                 } catch (e: any) {
+                     failed++;
+                     errors.push({ jid, error: e.message || "Unknown error" });
                      console.error(`Failed to send broadcast to ${jid}`, e);
                  }
+
+                 if (io) {
+                     io.to(sessionId).emit("broadcast.progress", {
+                         broadcastId,
+                         status: "running",
+                         total,
+                         sent,
+                         failed,
+                         current: jid,
+                         progress: Math.round(((sent + failed) / total) * 100)
+                     });
+                 }
+
+                 if (i < recipients.length - 1) {
+                     const baseDelay = delay || 2000;
+                     const randomDelay = baseDelay + Math.floor(Math.random() * (baseDelay * 0.5));
+                     await new Promise(r => setTimeout(r, randomDelay));
+                 }
              }
-             console.log(`Broadcast completed for ${recipients.length} recipients`);
+
+             if (io) {
+                 io.to(sessionId).emit("broadcast.progress", {
+                     broadcastId,
+                     status: "completed",
+                     total,
+                     sent,
+                     failed,
+                     errors,
+                     progress: 100,
+                     completedAt: new Date().toISOString()
+                 });
+             }
+             console.log(`Broadcast ${broadcastId} completed: ${sent} sent, ${failed} failed out of ${total}`);
         })();
         
-        return NextResponse.json({ status: true, message: "Broadcast started in background" });
+        return NextResponse.json({ status: true, message: "Broadcast started", data: { broadcastId, total } });
 
     } catch (e) {
         console.error("Broadcast error", e);

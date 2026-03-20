@@ -9,6 +9,19 @@ export function isLidJid(jid: string | undefined | null): boolean {
 }
 
 /**
+ * Normalize a JID to standard format.
+ * Primarily ensures that @c.us is converted to @s.whatsapp.net.
+ * Does not touch @g.us or @broadcast.
+ */
+export function normalizeJid(jid: string | undefined | null): string {
+    if (!jid) return "";
+    if (jid.endsWith("@c.us")) {
+        return jid.replace("@c.us", "@s.whatsapp.net");
+    }
+    return jid;
+}
+
+/**
  * Resolve a @lid JID to @s.whatsapp.net phone number JID.
  * 
  * Resolution strategy:
