@@ -82,14 +82,59 @@ export function isAdmin(userRole: string): boolean {
 /**
  * Check if user can access a session
  * - SUPERADMIN can access all sessions
- * - Other users can only access their own sessions
+ * - Other users can access their own sessions OR sessions shared with them
  */
 export async function canAccessSession(userId: string, userRole: string, sessionId: string): Promise<boolean> {
     if (isAdmin(userRole)) {
         return true;
     }
 
-    // Check if session belongs to user
+    // Check if session belongs to user (ownership)
+    const session = await prisma.session.findFirst({
+        where: {
+            OR: [
+                { id: sessionId, userId },
+                { sessionId: sessionId, userId }
+            ]
+        }
+    });
+
+    if (session) return true;
+
+    // Check if user has shared access
+    const dbSession = await prisma.session.findFirst({
+        where: {
+            OR: [
+                { id: sessionId },
+                { sessionId: sessionId }
+            ]
+        },
+        select: { id: true }
+    });
+
+    if (!dbSession) return false;
+
+    const sharedAccess = await prisma.sessionAccess.findUnique({
+        where: {
+            sessionId_userId: {
+                sessionId: dbSession.id,
+                userId
+            }
+        }
+    });
+
+    return !!sharedAccess;
+}
+
+/**
+ * Check if user is the actual owner of a session (not just shared access)
+ * Used for protecting management endpoints (e.g. granting/revoking access)
+ */
+export async function isSessionOwner(userId: string, userRole: string, sessionId: string): Promise<boolean> {
+    if (isAdmin(userRole)) {
+        return true;
+    }
+
     const session = await prisma.session.findFirst({
         where: {
             OR: [
@@ -127,8 +172,41 @@ export async function getAccessibleSessions(userId: string, userRole: string) {
         });
     }
 
-    return prisma.session.findMany({
-        where: { userId },
+    // Get sessions owned by user + sessions shared with user
+    const [ownedSessions, sharedAccess] = await Promise.all([
+        prisma.session.findMany({
+            where: { userId },
+            orderBy: { createdAt: 'desc' },
+            include: {
+                botConfig: true,
+                webhooks: true,
+                _count: {
+                    select: {
+                        contacts: true,
+                        messages: true,
+                        groups: true,
+                        autoReplies: true,
+                        scheduledMessages: true
+                    }
+                }
+            }
+        }),
+        prisma.sessionAccess.findMany({
+            where: { userId },
+            select: { sessionId: true }
+        })
+    ]);
+
+    if (sharedAccess.length === 0) return ownedSessions;
+
+    const sharedSessionIds = sharedAccess.map(a => a.sessionId);
+    const ownedIds = new Set(ownedSessions.map(s => s.id));
+    const missingIds = sharedSessionIds.filter(id => !ownedIds.has(id));
+
+    if (missingIds.length === 0) return ownedSessions;
+
+    const sharedSessions = await prisma.session.findMany({
+        where: { id: { in: missingIds } },
         orderBy: { createdAt: 'desc' },
         include: {
             botConfig: true,
@@ -144,6 +222,8 @@ export async function getAccessibleSessions(userId: string, userRole: string) {
             }
         }
     });
+
+    return [...ownedSessions, ...sharedSessions];
 }
 
 /**

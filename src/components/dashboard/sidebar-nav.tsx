@@ -26,7 +26,8 @@ import {
     UserCircle,
     Tag,
     MessageCircleReply,
-    Contact
+    Contact,
+    UserPlus
 } from "lucide-react";
 import { useSidebar } from "./sidebar-context";
 import {
@@ -94,6 +95,7 @@ const navGroups: NavGroup[] = [
         label: "Administration",
         items: [
             { href: "/dashboard/media", label: "Media Manager", icon: HardDrive },
+            { href: "/dashboard/sessions/access", label: "Session Access", icon: UserPlus },
             { href: "/dashboard/users", label: "Users", icon: Users },
             { href: "/dashboard/settings", label: "Settings", icon: Settings },
             { href: "/dashboard/system-monitor", label: "System Monitor", icon: Activity, superadminOnly: true },

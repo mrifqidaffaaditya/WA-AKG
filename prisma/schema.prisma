@@ -48,6 +48,7 @@ model User {
   sessions  Session[]
   webhooks  Webhook[]
   notifications Notification[]
+  sessionAccesses SessionAccess[]
 }
 
 model Session {
@@ -70,6 +71,7 @@ model Session {
   scheduledMessages ScheduledMessage[]
   webhooks    Webhook[]
   botConfig   BotConfig?
+  sessionAccesses SessionAccess[]
 }
 
 model Contact {
@@ -310,4 +312,19 @@ model Notification {
   createdAt DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Shared session access — allows session owners to grant access to other users
+model SessionAccess {
+  id        String   @id @default(cuid())
+  sessionId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+  @@index([userId])
+  @@index([sessionId])
 }

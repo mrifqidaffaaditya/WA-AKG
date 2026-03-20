@@ -698,6 +698,155 @@ All endpoints require authentication via:
                     }
                 },
 
+                // ==================== SESSION ACCESS ====================
+                "/sessions/{sessionId}/access": {
+                    get: {
+                        tags: ["Session Access"],
+                        summary: "List users with shared access",
+                        description: "Get all users who have been granted access to the specified session. Only the session owner or SUPERADMIN can use this endpoint.",
+                        parameters: [
+                            { name: "sessionId", in: "path", required: true, schema: { type: "string" }, description: "Session ID (slug or CUID)", example: "marketing-1" }
+                        ],
+                        responses: {
+                            200: {
+                                description: "Access list retrieved",
+                                content: {
+                                    "application/json": {
+                                        schema: {
+                                            type: "object",
+                                            properties: {
+                                                status: { type: "boolean", example: true },
+                                                message: { type: "string", example: "Access list retrieved successfully" },
+                                                data: {
+                                                    type: "array",
+                                                    items: {
+                                                        type: "object",
+                                                        properties: {
+                                                            id: { type: "string" },
+                                                            sessionId: { type: "string" },
+                                                            userId: { type: "string" },
+                                                            createdAt: { type: "string", format: "date-time" },
+                                                            user: {
+                                                                type: "object",
+                                                                properties: {
+                                                                    id: { type: "string" },
+                                                                    name: { type: "string" },
+                                                                    email: { type: "string" },
+                                                                    role: { type: "string" }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            401: { $ref: "#/components/responses/Unauthorized" },
+                            403: { description: "Forbidden - Only session owner can manage access" },
+                            404: { description: "Session not found" }
+                        }
+                    },
+                    post: {
+                        tags: ["Session Access"],
+                        summary: "Grant access to another user",
+                        description: "Grant session access to another registered user by email. Only the session owner or SUPERADMIN can use this endpoint. Cannot grant access to the session owner or SUPERADMINs.",
+                        parameters: [
+                            { name: "sessionId", in: "path", required: true, schema: { type: "string" }, description: "Session ID (slug or CUID)", example: "marketing-1" }
+                        ],
+                        requestBody: {
+                            required: true,
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        required: ["email"],
+                                        properties: {
+                                            email: { type: "string", format: "email", description: "Email of the user to grant access", example: "staff@example.com" }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        responses: {
+                            201: {
+                                description: "Access granted successfully",
+                                content: {
+                                    "application/json": {
+                                        schema: {
+                                            type: "object",
+                                            properties: {
+                                                status: { type: "boolean", example: true },
+                                                message: { type: "string", example: "Access granted to staff@example.com" },
+                                                data: {
+                                                    type: "object",
+                                                    properties: {
+                                                        id: { type: "string" },
+                                                        sessionId: { type: "string" },
+                                                        userId: { type: "string" },
+                                                        createdAt: { type: "string", format: "date-time" },
+                                                        user: {
+                                                            type: "object",
+                                                            properties: {
+                                                                id: { type: "string" },
+                                                                name: { type: "string" },
+                                                                email: { type: "string" },
+                                                                role: { type: "string" }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            400: { description: "Validation error / Cannot grant to owner / SUPERADMIN already has access" },
+                            401: { $ref: "#/components/responses/Unauthorized" },
+                            403: { description: "Forbidden - Only session owner can manage access" },
+                            404: { description: "Session or user not found" },
+                            409: { description: "User already has access to this session" }
+                        }
+                    },
+                    delete: {
+                        tags: ["Session Access"],
+                        summary: "Revoke user access",
+                        description: "Remove shared access for a user from the specified session. Only the session owner or SUPERADMIN can use this endpoint.",
+                        parameters: [
+                            { name: "sessionId", in: "path", required: true, schema: { type: "string" }, description: "Session ID (slug or CUID)", example: "marketing-1" }
+                        ],
+                        requestBody: {
+                            required: true,
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        required: ["userId"],
+                                        properties: {
+                                            userId: { type: "string", description: "CUID of the user to revoke access from", example: "clx456ghi" }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        responses: {
+                            200: {
+                                description: "Access revoked successfully",
+                                content: {
+                                    "application/json": {
+                                        schema: { $ref: "#/components/schemas/Success" }
+                                    }
+                                }
+                            },
+                            400: { description: "Validation error" },
+                            401: { $ref: "#/components/responses/Unauthorized" },
+                            403: { description: "Forbidden - Only session owner can manage access" },
+                            404: { description: "Session or access record not found" }
+                        }
+                    }
+                },
+
                 // ==================== MESSAGING ====================
                 "/chat/send": {
                     post: {

@@ -1,3 +1,28 @@
+## [v1.5.2-beta.2] - 2026-03-20
+
+### Added
+- **Session Access Sharing**:
+    - Session owners can now grant access to other registered users, allowing them to view and use the session without full ownership.
+    - New Dashboard page (`/dashboard/sessions/access`) to manage shared access per session.
+    - New API endpoints:
+        - `GET /api/sessions/{sessionId}/access` — List users with shared access.
+        - `POST /api/sessions/{sessionId}/access` — Grant access by email.
+        - `DELETE /api/sessions/{sessionId}/access` — Revoke access by userId.
+    - Sidebar navigation entry "Session Access" added under Administration group.
+    - Security: Only session owners and SUPERADMINs can manage access. Prevents self-grant, owner-grant, and SUPERADMIN-grant.
+    - Revoke access action requires AlertDialog confirmation for safety.
+
+### Changed
+- **Auth System (`api-auth.ts`)**:
+    - `canAccessSession()` now checks `SessionAccess` records in addition to ownership.
+    - `getAccessibleSessions()` now returns both owned and shared sessions for non-SUPERADMIN users.
+    - New `isSessionOwner()` helper to distinguish ownership from shared access (used for protecting management endpoints).
+
+### Database
+- **New Model**: `SessionAccess` — many-to-many relationship between `User` and `Session` with cascade delete and unique `[sessionId, userId]` constraint.
+
+---
+
 ## [v1.5.2-beta.1] - 2026-03-15
 
 ### Added
