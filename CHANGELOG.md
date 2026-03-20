@@ -1,3 +1,61 @@
+## [v1.5.2] - 2026-03-20
+
+### Added
+- **Session Access Sharing**:
+    - Session owners can now grant access to other registered users, allowing them to view and use the session without full ownership.
+    - New Dashboard page (`/dashboard/sessions/access`) to manage shared access per session.
+    - Quick "Share" button on each session card in Session Manager for fast access.
+    - New API endpoints:
+        - `GET /api/sessions/{sessionId}/access` — List users with shared access.
+        - `POST /api/sessions/{sessionId}/access` — Grant access by email.
+        - `DELETE /api/sessions/{sessionId}/access` — Revoke access by userId.
+    - Sidebar navigation entry "Session Access" added under Administration group.
+    - Security: Only session owners and SUPERADMINs can manage access. Prevents self-grant, owner-grant, and SUPERADMIN-grant.
+    - Revoke access action requires AlertDialog confirmation for safety.
+- **Broadcast Progress Monitoring**:
+    - Real-time progress panel on Broadcast page showing Sent / Failed / Waiting counts.
+    - Live animated progress bar with percentage indicator.
+    - Current recipient tracking and error log display for failed messages.
+    - Socket.IO `broadcast.progress` event emission from both broadcast API routes.
+- **Profile Management Page** (`/dashboard/profile`):
+    - View and edit WhatsApp Display Name, Status (About), and Profile Picture.
+    - New API routes: `GET /api/profile/[sessionId]`, `PUT .../name`, `PUT .../status`, `PUT/DELETE .../picture`.
+- **Labels Management Page** (`/dashboard/labels`):
+    - Create, view, and delete WhatsApp labels from the dashboard.
+- **Chat Service Module** (`src/modules/whatsapp/chat.service.ts`):
+    - Centralized chat logic (getChatsList, getMessages, sendTextMessage, sendMediaMessage) to eliminate code duplication across Server Actions and API routes.
+- **JID Normalization Utility**:
+    - New `normalizeJid()` function in `jid-utils.ts` that standardizes `@c.us` → `@s.whatsapp.net`.
+    - Applied consistently across Message storage, Contact upsert, and ChatService queries.
+
+### Fixed
+- **Chat List Not Syncing**:
+    - Fixed JID mismatch between Contact table (`@c.us`/`@lid`) and Message table (`@s.whatsapp.net`) that caused chats to not appear.
+    - Socket.IO `message.update` now serializes `timestamp` as ISO string instead of raw `Date` object.
+    - Added `useRef`-based JID tracking in ChatList for reliable new-chat detection via socket events.
+    - Added 800ms delay before refetching messages after send to allow Baileys to process `messages.upsert`.
+- **Session Stats Showing 0**:
+    - Fixed System Monitor API (`/api/system/monitor/[sessionId]`) to resolve session slug to database CUID before counting Contacts, Chats, and Messages.
+- **Profile Page "Failed to load"**:
+    - Implemented missing backend API routes for fetching WhatsApp profile data (name, status, picture) via Baileys socket methods.
+- **Duplicate Sidebar Links**:
+    - Removed redundant navigation entries for Auto Reply, Broadcasts, Contacts, and Groups.
+- **Labels Page Syntax Errors**:
+    - Fixed escaped backtick characters and missing imports that prevented the Labels page from compiling.
+
+### Changed
+- **Auth System (`api-auth.ts`)**:
+    - `canAccessSession()` now checks `SessionAccess` records in addition to ownership.
+    - `getAccessibleSessions()` now returns both owned and shared sessions for non-SUPERADMIN users.
+    - New `isSessionOwner()` helper to distinguish ownership from shared access (used for protecting management endpoints).
+- **Socket.IO Debug Logging**: Added detailed `[Socket]` console logs for `message.update` emissions showing keyId, remoteJid, and fromMe for easier debugging.
+- **ChatWindow**: Media send now uses the same delayed-refresh pattern as text send for consistency.
+
+### Database
+- **New Model**: `SessionAccess` — many-to-many relationship between `User` and `Session` with cascade delete and unique `[sessionId, userId]` constraint.
+
+---
+
 ## [v1.5.2-beta.2] - 2026-03-20
 
 ### Added
