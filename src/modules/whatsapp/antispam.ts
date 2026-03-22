@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 interface AntiSpamConfig {
     antiSpamEnabled: boolean;
@@ -68,8 +69,8 @@ class AntiSpamManager {
             const queue = this.queues.get(sessionId)!;
             const position = queue.length;
 
-            console.log(
-                `[Anti-Spam] 📥 QUEUED  | Session: ${sessionId} | #${msgId} | To: ${this.formatJid(jid)} | Type: ${messageType} | Queue position: ${position}`
+            logger.debug("Anti-Spam", 
+                `📥 QUEUED  | Session: ${sessionId} | #${msgId} | To: ${this.formatJid(jid)} | Type: ${messageType} | Queue position: ${position}`
             );
 
             // Start processing if not already running
@@ -109,8 +110,8 @@ class AntiSpamManager {
                 const sendAt = new Date(now + delay);
                 const waitingSince = now - item.queuedAt;
 
-                console.log(
-                    `[Anti-Spam] ⏳ DELAY   | Session: ${sessionId} | #${item.id} | Rate: ${recentMessages.length}/${config.spamLimit} in ${config.spamInterval}s | Delay: ${delay}ms | Send at: ${sendAt.toLocaleTimeString()} | Waiting: ${waitingSince}ms | Queue: ${queue.length} remaining`
+                logger.warn("Anti-Spam", 
+                    `⏳ DELAY   | Session: ${sessionId} | #${item.id} | Rate: ${recentMessages.length}/${config.spamLimit} in ${config.spamInterval}s | Delay: ${delay}ms | Send at: ${sendAt.toLocaleTimeString()} | Waiting: ${waitingSince}ms | Queue: ${queue.length} remaining`
                 );
 
                 await this.sleep(delay);
@@ -119,7 +120,7 @@ class AntiSpamManager {
                 const freshConfig = await this.getAntiSpamConfig(sessionId);
                 if (!freshConfig || !freshConfig.antiSpamEnabled) {
                     // Anti-spam was disabled during delay, flush all
-                    console.log(`[Anti-Spam] ⚡ DISABLED | Session: ${sessionId} | Flushing ${queue.length} queued messages immediately`);
+                    logger.warn("Anti-Spam", `⚡ DISABLED | Session: ${sessionId} | Flushing ${queue.length} queued messages immediately`);
                     while (queue.length > 0) {
                         const q = queue.shift()!;
                         this.recordSend(sessionId);
@@ -138,12 +139,12 @@ class AntiSpamManager {
             const remainingInQueue = queue.length;
 
             if (totalWait > 50) {
-                console.log(
-                    `[Anti-Spam] ✅ SENDING | Session: ${sessionId} | #${item.id} | To: ${this.formatJid(item.jid)} | Type: ${item.messageType} | Waited: ${totalWait}ms | Queue: ${remainingInQueue} remaining`
+                logger.success("Anti-Spam", 
+                    `✅ SENDING | Session: ${sessionId} | #${item.id} | To: ${this.formatJid(item.jid)} | Type: ${item.messageType} | Waited: ${totalWait}ms | Queue: ${remainingInQueue} remaining`
                 );
             } else {
-                console.log(
-                    `[Anti-Spam] ✅ INSTANT | Session: ${sessionId} | #${item.id} | To: ${this.formatJid(item.jid)} | Type: ${item.messageType} | Rate: ${recentMessages.length + 1}/${config.spamLimit} | Queue: ${remainingInQueue} remaining`
+                logger.success("Anti-Spam", 
+                    `✅ INSTANT | Session: ${sessionId} | #${item.id} | To: ${this.formatJid(item.jid)} | Type: ${item.messageType} | Rate: ${recentMessages.length + 1}/${config.spamLimit} | Queue: ${remainingInQueue} remaining`
                 );
             }
 
@@ -228,7 +229,7 @@ class AntiSpamManager {
             this.configCache.set(sessionId, { config, cachedAt: Date.now() });
             return config;
         } catch (error) {
-            console.error(`[Anti-Spam] ❌ ERROR   | Config fetch failed for ${sessionId}:`, error);
+            logger.error("Anti-Spam", `❌ ERROR   | Config fetch failed for ${sessionId}:`, error);
             this.configCache.set(sessionId, { config: null, cachedAt: Date.now() });
             return null;
         }

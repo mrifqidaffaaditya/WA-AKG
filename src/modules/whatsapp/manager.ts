@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { WhatsAppInstance } from "./instance";
 import { Server } from "socket.io";
 import { initScheduler } from "@/lib/cron";
+import { logger } from "@/lib/logger";
 
 export class WhatsAppManager {
     private static instance: WhatsAppManager;
@@ -34,7 +35,7 @@ export class WhatsAppManager {
             this.sessions.set(session.sessionId, instance);
             await instance.init();
         }
-        console.log(`Loaded ${sessions.length} sessions.`);
+        logger.success("Manager", `Loaded ${sessions.length} sessions.`);
     }
 
     async createSession(userId: string, name: string, customSessionId?: string) {
@@ -44,7 +45,7 @@ export class WhatsAppManager {
         }
 
         if (!this.io) {
-            console.error("Socket.IO not initialized in WhatsAppManager, and global fallback failed.");
+            logger.error("Manager", "Socket.IO not initialized in WhatsAppManager, and global fallback failed.");
             throw new Error("Socket.IO not initialized");
         }
 

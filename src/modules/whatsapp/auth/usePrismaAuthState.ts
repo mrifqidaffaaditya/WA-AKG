@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { AuthenticationCreds, AuthenticationState, BufferJSON, initAuthCreds, SignalDataTypeMap } from "@whiskeysockets/baileys";
+import { logger } from "@/lib/logger";
 
 export const usePrismaAuthState = async (sessionId: string): Promise<{ state: AuthenticationState, saveCreds: () => Promise<void> }> => {
     
@@ -15,7 +16,7 @@ export const usePrismaAuthState = async (sessionId: string): Promise<{ state: Au
             }
             return null;
         } catch (error) {
-            console.error('Error reading auth state:', error);
+            logger.error("Auth", 'Error reading auth state:', error);
             return null;
         }
     };
@@ -32,7 +33,7 @@ export const usePrismaAuthState = async (sessionId: string): Promise<{ state: Au
                 update: { value }
             });
         } catch (error) {
-             console.error('Error writing auth state:', error);
+             logger.error("Auth", 'Error writing auth state:', error);
         }
     };
 

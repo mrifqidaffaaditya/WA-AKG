@@ -8,6 +8,7 @@ import path from "path";
 import os from "os";
 import { exec } from "child_process";
 import { promisify } from "util";
+import { logger } from "@/lib/logger";
 
 const execAsync = promisify(exec);
 
@@ -242,7 +243,7 @@ export async function handleBotCommand(
                                 })
                                 .toBuffer();
                         } catch (resizeErr) {
-                            console.error("Image Resize failed", resizeErr);
+                            logger.error("Bot", "Image Resize failed", resizeErr);
                         }
                     } else if (isVideo) {
                         try {
@@ -261,7 +262,7 @@ export async function handleBotCommand(
                             await fs.unlink(tempInput).catch(() => { });
                             await fs.unlink(tempOutput).catch(() => { });
                         } catch (videoErr) {
-                            console.error("Video Compression failed", videoErr);
+                            logger.error("Bot", "Video Compression failed", videoErr);
                             // Continue with original buffer if compression fails, or throw? 
                             // If it fails, likely original will fail too, but let's try.
                         }
@@ -295,7 +296,7 @@ export async function handleBotCommand(
                                 throw new Error(`RemoveBG Error: ${(err as any).errors?.[0]?.title || res.statusText}`);
                             }
                         } catch (bgError) {
-                            console.error("RemoveBG Failed:", bgError);
+                            logger.error("Bot", "RemoveBG Failed:", bgError);
                             await sock.sendMessage(remoteJid, { text: `⚠️ Remove BG failed: ${(bgError as any).message}. Sending normal sticker...` }, { quoted: msg });
                         }
                     } else if (isImage && isRemoveBg && !config.removeBgApiKey) {
@@ -318,7 +319,7 @@ export async function handleBotCommand(
                     await sock.sendMessage(remoteJid, { react: { text: "✅", key: msg.key } });
 
                 } catch (e) {
-                    console.error("Sticker generation failed", e);
+                    logger.error("Bot", "Sticker generation failed", e);
                     await sock.sendMessage(remoteJid, { text: "❌ Failed to create sticker. Error: " + (e as any).message }, { quoted: msg });
                 }
                 break;
@@ -349,6 +350,6 @@ _Made with ❤️_
                 break;
         }
     } catch (e) {
-        console.error("Bot command error", e);
+        logger.error("Bot", "Bot command error", e);
     }
 }

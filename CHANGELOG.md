@@ -11,6 +11,9 @@
 - **Labels Chat Assignment**: Enhanced Labels page with expandable cards showing assigned chats, contact picker to assign/unassign chats from labels.
 - **Label Chats API**: New `GET /api/labels/[sessionId]/chats?labelId=` endpoint to fetch chats assigned to a label with contact name enrichment.
 
+### Changed
+- **Beautiful Console Logger**: Replaced all standard `console.log`, `console.warn`, and `console.error` calls across the core WhatsApp engine, socket server, background jobs, and utility modules with a custom colored `logger`. This makes server logs much more readable and debugging significantly easier.
+
 ---
 
 ## [v1.5.2.1] - 2026-03-22

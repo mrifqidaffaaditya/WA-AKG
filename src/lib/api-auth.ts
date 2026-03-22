@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import { NextRequest } from "next/server";
 import { auth } from "./auth";
+import { logger } from "./logger";
 
 // Role hierarchy for permission checks
 const ROLE_HIERARCHY = {
@@ -29,7 +30,7 @@ export async function validateApiKey(request: NextRequest) {
 
         return user;
     } catch (error) {
-        console.error("API key validation error:", error);
+        logger.error("Auth", "API key validation error:", error);
         return null;
     }
 }

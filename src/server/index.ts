@@ -4,6 +4,8 @@ import next from "next";
 import { Server } from "socket.io";
 import { setupSocket } from "./socket";
 import { waManager } from "../modules/whatsapp/manager";
+import { logger } from "../lib/logger";
+import pkg from "../../package.json";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = process.env.HOSTNAME || "localhost";
@@ -19,7 +21,7 @@ app.prepare().then(() => {
       const parsedUrl = parse(req.url, true);
       await handle(req, res, parsedUrl);
     } catch (err) {
-      console.error("Error occurred handling", req.url, err);
+      logger.error("Server", "Error handling", req.url, err);
       res.statusCode = 500;
       res.end("internal server error");
     }
@@ -51,7 +53,7 @@ app.prepare().then(() => {
   server.headersTimeout = 120 * 1000; // 120 seconds
 
   server.listen(port, () => {
-    console.log(`> Ready on http://${hostname}:${port}`);
+    logger.banner(pkg.name.toUpperCase(), pkg.version, port);
 
     // --- WA-AKG Monitor Heartbeat ---
     // Sends a ping every 30 seconds to the monitoring server
@@ -80,7 +82,6 @@ app.prepare().then(() => {
         });
       } catch (error) {
         // Silently fail to not disturb the main application
-        // console.error("Heartbeat failed", error);
       }
     };
 

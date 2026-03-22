@@ -6,6 +6,7 @@ import { handleBotCommand, setSessionStartTime } from "../bot/command-handler";
 import { resolveToPhoneJid, isLidJid, normalizeJid } from "@/lib/jid-utils";
 
 import { Server } from "socket.io";
+import { logger } from "@/lib/logger";
 
 export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server | null) => {
     // Set start time for uptime command
@@ -22,9 +23,9 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server |
         });
         if (session) {
             dbSessionId = session.id;
-            console.log(`Message store initialized for session ${sessionId} (db: ${dbSessionId})`);
+            logger.info("Store", `Message store initialized for session ${sessionId} (db: ${dbSessionId})`);
         } else {
-            console.error(`Session ${sessionId} not found for message store`);
+            logger.error("Store", `Session ${sessionId} not found for message store`);
         }
     })();
 
@@ -33,7 +34,7 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server |
         // Process all message types: notify, append, and history sync
         if (type !== 'notify' && type !== 'append') {
             // For history sync, we still want to save messages
-            console.log(`Received ${messages.length} messages of type: ${type}`);
+            logger.debug("Store", `Received ${messages.length} messages of type: ${type}`);
         }
 
         // Emit to socket room for real-time frontend updates
@@ -70,10 +71,10 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server |
                 // Execute Bot Commands (Only for Notify / New Messages)
                 if (type === 'notify' && savedMessage) {
                     // Run in background, don't await strictly to not block saving
-                    handleBotCommand(sock, sessionId, msg).catch(e => console.error("Bot Handler Error", e));
+                    handleBotCommand(sock, sessionId, msg).catch(e => logger.error("Bot", "Bot Handler Error", e));
                 }
             } catch (error) {
-                console.error("Error saving message", error);
+                logger.error("Store", "Error saving message", error);
             }
         }
 
@@ -84,14 +85,14 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server |
                 ...m,
                 timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : m.timestamp
             }));
-            console.log(`[Socket] Emitting message.update for ${serialized.length} messages in session ${sessionId}`, serialized.map((m: any) => ({ keyId: m.keyId, remoteJid: m.remoteJid, fromMe: m.fromMe })));
+            logger.debug("Socket", `Emitting message.update for ${serialized.length} messages in session ${sessionId}`);
             io?.to(sessionId).emit('message.update', serialized);
         }
     });
 
     // Handle Message History Sync (when connecting for the first time or syncing)
     sock.ev.on('messaging-history.set', async ({ messages, chats, contacts, isLatest }) => {
-        console.log(`History sync: ${messages?.length || 0} messages, ${chats?.length || 0} chats, ${contacts?.length || 0} contacts, latest: ${isLatest}`);
+        logger.info("Store", `History sync: ${messages?.length || 0} messages, ${chats?.length || 0} chats, ${contacts?.length || 0} contacts, latest: ${isLatest}`);
 
         // Ensure we have the database session ID
         if (!dbSessionId) {
@@ -102,21 +103,21 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server |
 
         // Save all historical messages
         if (messages && messages.length > 0) {
-            console.log(`Syncing ${messages.length} historical messages...`);
+            logger.info("Store", `Syncing ${messages.length} historical messages...`);
             for (const msg of messages) {
                 try {
                     await processAndSaveMessage(msg, dbSessionId, sessionId, false, sock);
                 } catch (error) {
-                    console.error("Error saving historical message", error);
+                    logger.error("Store", "Error saving historical message", error);
                 }
             }
-            console.log(`Finished syncing ${messages.length} historical messages`);
+            logger.success("Store", `Finished syncing ${messages.length} historical messages`);
         }
 
 
         // Note: Contacts and Chats are synced by src/modules/whatsapp/store/contacts.ts
         // We only handle messages here to avoid P2002 Unique Constraint Race Conditions.
-        console.log(`Finished syncing ${messages.length} historical messages`);
+        logger.debug("Store", `Finished syncing messages`);
     });
 
     // Handle Contacts Upsert
@@ -160,7 +161,7 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server |
                 // Dispatch webhook for contact update
                 dispatchWebhook(sessionId, "contact.update", { jid: c.id, name: c.name, notify: c.notify });
             } catch (e) {
-                console.error("Error saving contact", e);
+                logger.error("Store", "Error saving contact", e);
             }
         }
     });
@@ -196,7 +197,7 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server |
                     status
                 });
             } catch (e) {
-                console.error("Error updating message status", e);
+                logger.error("Store", "Error updating message status", e);
             }
         }
     });
@@ -233,7 +234,7 @@ async function processAndSaveMessage(
 
     // If message only contains ignored types, skip
     if (messageKeys.every(k => ignoredTypes.includes(k))) {
-        console.log(`Skipping technical message: ${keyId} (${messageKeys.join(', ')})`);
+        logger.debug("Store", `Skipping technical message: ${keyId} (${messageKeys.join(', ')})`);
         return null;
     }
 
@@ -259,7 +260,7 @@ async function processAndSaveMessage(
 
     // Debug fromMe issue (Keep this for a while)
     if (fromMe === undefined || fromMe === null) {
-        console.log(`[DEBUG] Message ${keyId} has fromMe=${fromMe}. Key:`, JSON.stringify(msg.key));
+        logger.warn("Store", `[DEBUG] Message ${keyId} has fromMe=${fromMe}. Key:`, msg.key);
     }
 
     const messageContent = normalizeMessageContent(msg.message);
@@ -318,7 +319,7 @@ async function processAndSaveMessage(
     try {
         fileUrl = await downloadAndSaveMedia(msg, sessionId);
     } catch (e) {
-        console.error("Error downloading media in store", e);
+        logger.error("Store", "Error downloading media in store", e);
     }
 
     const newMessage = await prisma.message.create({
@@ -382,7 +383,7 @@ async function processAndSaveMessage(
             });
 
             if (msgCount === 1) {
-                console.log(`Sending welcome message to ${finalRemoteJid}`);
+                logger.info("Store", `Sending welcome message to ${finalRemoteJid}`);
                 await sock.sendMessage(finalRemoteJid, { text: config.welcomeMessage });
             }
         }
@@ -392,10 +393,10 @@ async function processAndSaveMessage(
     // AND filter duplicates is implicitly done because we return 'false' above if existing
     if (triggerWebhook) {
         if (fromMe) {
-            onMessageSent(sessionId, msg, fileUrl).catch(e => console.error("Error in onMessageSent", e));
+            onMessageSent(sessionId, msg, fileUrl).catch(e => logger.error("Webhook", "Error in onMessageSent", e));
         } else {
             // Pass the fileUrl we just downloaded
-            onMessageReceived(sessionId, msg, fileUrl).catch(e => console.error("Error in onMessageReceived", e));
+            onMessageReceived(sessionId, msg, fileUrl).catch(e => logger.error("Webhook", "Error in onMessageReceived", e));
         }
     }
 

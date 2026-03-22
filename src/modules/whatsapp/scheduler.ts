@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { waManager } from "./manager";
+import { logger } from "@/lib/logger";
 
 const checkScheduledMessages = async () => {
     try {
         const now = new Date();
-        console.log(`[Scheduler] Checking for messages due before ${now.toISOString()}...`);
+        logger.debug("Scheduler", `Checking for messages due before ${now.toISOString()}...`);
 
         const pendingMessages = await prisma.scheduledMessage.findMany({
             where: {
@@ -14,7 +15,7 @@ const checkScheduledMessages = async () => {
         });
 
         if (pendingMessages.length > 0) {
-            console.log(`[Scheduler] Found ${pendingMessages.length} pending messages.`);
+            logger.info("Scheduler", `Found ${pendingMessages.length} pending messages.`);
         }
 
         for (const msg of pendingMessages) {
@@ -45,27 +46,27 @@ const checkScheduledMessages = async () => {
                         where: { id: msg.id },
                         data: { status: "SENT" }
                     });
-                    console.log(`[Scheduler] Msg ${msg.id} sent to ${msg.jid}`);
+                    logger.success("Scheduler", `Msg ${msg.id} sent to ${msg.jid}`);
 
                 } catch (err) {
-                    console.error(`[Scheduler] Failed to send scheduled msg ${msg.id}`, err);
+                    logger.error("Scheduler", `Failed to send scheduled msg ${msg.id}`, err);
                     await prisma.scheduledMessage.update({
                         where: { id: msg.id },
                         data: { status: "FAILED" }
                     });
                 }
             } else {
-                console.log(`[Scheduler] Session ${msg.sessionId} not connected for scheduled msg ${msg.id}`);
+                logger.warn("Scheduler", `Session ${msg.sessionId} not connected for scheduled msg ${msg.id}`);
                 // Optionally mark as failed or leave pending
             }
         }
     } catch (e) {
-        console.error("[Scheduler] Error:", e);
+        logger.error("Scheduler", "Error executing scheduler loop:", e);
     }
 };
 
 export function startScheduler() {
-    console.log("Starting Message Scheduler...");
+    logger.info("Scheduler", "Starting Message Scheduler...");
 
     // Run immediately on start
     checkScheduledMessages();

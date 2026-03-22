@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 
 export async function getLatestRelease(owner: string, repo: string) {
     try {
@@ -12,7 +13,7 @@ export async function getLatestRelease(owner: string, repo: string) {
         
         if (!res.ok) {
             const errorText = await res.text();
-            console.error(`GitHub API Error: ${res.status} ${res.statusText} - ${errorText}`);
+            logger.error("GitHub", `API Error: ${res.status} ${res.statusText} - ${errorText}`);
             return null;
         }
         
@@ -25,7 +26,7 @@ export async function getLatestRelease(owner: string, repo: string) {
             published_at: data.published_at
         };
     } catch (e) {
-        console.error("Error fetching GitHub release:", e);
+        logger.error("GitHub", "Error fetching GitHub release:", e);
         return null;
     }
 }

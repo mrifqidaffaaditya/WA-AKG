@@ -1,5 +1,6 @@
 import { auth } from "./auth";
 import { prisma } from "./prisma";
+import { logger } from "./logger";
 
 /**
  * Gets the currently authenticated user from Next Auth without requiring a Request object.
@@ -22,7 +23,7 @@ export async function getAuthenticatedUserForAction() {
         }
         return null;
     } catch (error) {
-        console.error("Error getting authenticated user for action:", error);
+        logger.error("Auth", "Error getting authenticated user for action:", error);
         return null;
     }
 }
