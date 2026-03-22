@@ -1,3 +1,21 @@
+## [v1.5.3-beta.1] - 2026-03-22
+
+### Fixed
+- **SheetContent Accessibility Warning**: Replaced `<p>` with `<SheetDescription>` in mobile nav to fix Radix `aria-describedby` warning.
+- **Navbar Overflow on Mobile**: Hidden clock and divider on small screens, reduced session selector width.
+- **Session Detail Page Header**: Made responsive with flex-wrap for mobile.
+- **Disconnect Stats Returning Zeros**: System monitor API now queries real DB counts even when session is offline.
+- **Contacts Page Pagination**: Replaced unreasonable limit options (up to 3000) with 10/25/50/100/Show All. API now supports `limit=all`.
+
+### Added
+- **Labels Chat Assignment**: Enhanced Labels page with expandable cards showing assigned chats, contact picker to assign/unassign chats from labels.
+- **Label Chats API**: New `GET /api/labels/[sessionId]/chats?labelId=` endpoint to fetch chats assigned to a label with contact name enrichment.
+
+### Changed
+- **Beautiful Console Logger**: Replaced all standard `console.log`, `console.warn`, and `console.error` calls across the core WhatsApp engine, socket server, background jobs, and utility modules with a custom colored `logger`. This makes server logs much more readable and debugging significantly easier.
+
+---
+
 ## [v1.5.2.1] - 2026-03-22
 
 ### Fixed

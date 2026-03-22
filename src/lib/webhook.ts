@@ -5,6 +5,7 @@ import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import pino from "pino";
 import { resolveToPhoneJidBySessionId as resolveToPhoneJid, isLidJid } from "./jid-utils";
+import { logger } from "./logger";
 
 // Event types that can trigger webhooks
 export type WebhookEventType =
@@ -39,7 +40,7 @@ export async function dispatchWebhook(
         });
 
         if (!session) {
-            console.warn(`Webhook dispatch: Session ${sessionId} not found`);
+            logger.warn("Webhook", `Dispatch: Session ${sessionId} not found`);
             return;
         }
 
@@ -74,11 +75,11 @@ export async function dispatchWebhook(
 
             // Send webhook in background
             sendWebhookRequest(webhook.url, payload, webhook.secret).catch(err => {
-                console.error(`Webhook ${webhook.id} failed:`, err);
+                logger.error("Webhook", `Webhook ${webhook.id} failed:`, err);
             });
         }
     } catch (error) {
-        console.error("Webhook dispatch error:", error);
+        logger.error("Webhook", "Dispatch error:", error);
     }
 }
 
@@ -150,19 +151,18 @@ export async function downloadAndSaveMedia(message: WAMessage, sessionId: string
     try {
         const messageContent = normalizeMessageContent(message.message);
         if (!messageContent) {
-            console.log("MediaDownload: No content normalized");
+            logger.debug("Media", "No content normalized");
             return null;
         }
 
         const messageType = Object.keys(messageContent)[0];
-        console.log(`MediaDownload: Types checking... Found: ${messageType}`);
 
         if (!['imageMessage', 'videoMessage', 'audioMessage', 'documentMessage', 'stickerMessage'].includes(messageType)) {
-            console.log(`MediaDownload: Message type ${messageType} is not a downloadable media.`);
+            logger.debug("Media", `Message type ${messageType} is not a downloadable media.`);
             return null;
         }
 
-        console.log(`MediaDownload: Attempting to download ${messageType}...`);
+        logger.info("Media", `Attempting to download ${messageType}...`);
 
         const buffer = await downloadMediaMessage(
             message,
@@ -171,11 +171,11 @@ export async function downloadAndSaveMedia(message: WAMessage, sessionId: string
         ) as Buffer;
 
         if (!buffer) {
-            console.log("MediaDownload: Buffer is empty/null");
+            logger.warn("Media", "Buffer is empty/null");
             return null;
         }
 
-        console.log(`MediaDownload: Downloaded ${buffer.length} bytes.`);
+        logger.success("Media", `Downloaded ${buffer.length} bytes.`);
 
         // Generate filename
         const extMap: Record<string, string> = {
@@ -198,8 +198,6 @@ export async function downloadAndSaveMedia(message: WAMessage, sessionId: string
         const filename = `${sessionId}-${message.key.id}.${ext}`;
         const filePath = path.join(process.cwd(), "data", "media", filename);
 
-        console.log(`MediaDownload: Saving to ${filePath}`);
-
         // Ensure directory exists (redundant if handled by OS, but safe)
         await mkdir(path.dirname(filePath), { recursive: true });
 
@@ -207,11 +205,11 @@ export async function downloadAndSaveMedia(message: WAMessage, sessionId: string
 
         // Return URL path using API route for reliable serving
         const fileUrl = `/api/media/${filename}`;
-        console.log(`MediaDownload: Success. URL: ${fileUrl}`);
+        logger.success("Media", `Success. URL: ${fileUrl}`);
         return fileUrl;
 
     } catch (e) {
-        console.error("Failed to download media:", e);
+        logger.error("Media", "Failed to download media:", e);
         return null;
     }
 }
@@ -270,7 +268,7 @@ export async function onMessageReceived(sessionId: string, message: any, existin
                 }
             }
         } catch (e) {
-            console.error("Failed to enrich participant", e);
+            logger.error("Store", "Failed to enrich participant", e);
         }
     }
 
@@ -280,7 +278,7 @@ export async function onMessageReceived(sessionId: string, message: any, existin
         try {
             fileUrl = await downloadAndSaveMedia(message, sessionId);
         } catch (e) {
-            console.error("Error handling media download", e);
+            logger.error("Media", "Error handling media download", e);
         }
     }
 
@@ -497,7 +495,7 @@ async function extractQuotedMessageAsync(msg: any, sessionId: string): Promise<a
                     }
                 }
             } catch (e) {
-                console.error("Failed to lookup quoted media url", e);
+                logger.error("Media", "Failed to lookup quoted media url", e);
             }
         }
 

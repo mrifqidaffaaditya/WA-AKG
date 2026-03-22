@@ -11,7 +11,7 @@ export function SessionSelector() {
     return (
         <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-muted-foreground hidden md:inline">Session:</span>
-            <div className="w-[180px]">
+            <div className="w-[130px] sm:w-[180px]">
                 <Select value={sessionId} onValueChange={setSessionId} disabled={loading || sessions.length === 0}>
                     <SelectTrigger className="h-9">
                         <SelectValue placeholder={loading ? "Loading..." : "Select Session"} />

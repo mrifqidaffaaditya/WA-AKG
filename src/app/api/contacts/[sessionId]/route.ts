@@ -17,7 +17,9 @@ export async function GET(
         const { sessionId } = await params;
         const { searchParams } = new URL(req.url);
         const page = parseInt(searchParams.get("page") || "1");
-        const limit = parseInt(searchParams.get("limit") || "10");
+        const limitParam = searchParams.get("limit") || "10";
+        const isAll = limitParam === "all";
+        const limit = isAll ? 0 : parseInt(limitParam) || 10;
         const search = searchParams.get("search") || "";
 
         // Check if user can access this session
@@ -53,8 +55,7 @@ export async function GET(
         const [contacts, total] = await Promise.all([
             prisma.contact.findMany({
                 where,
-                skip: (page - 1) * limit,
-                take: limit,
+                ...(isAll ? {} : { skip: (page - 1) * limit, take: limit }),
                 orderBy: { name: 'asc' },
                 include: {
                     _count: {
@@ -71,9 +72,9 @@ export async function GET(
             data: contacts,
             meta: {
                 total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit)
+                page: isAll ? 1 : page,
+                limit: isAll ? total : limit,
+                totalPages: isAll ? 1 : Math.ceil(total / limit)
             }
         });
     } catch (error) {

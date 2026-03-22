@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { logger } from "./logger";
 
 /**
  * Check if a JID is in @lid format (WhatsApp Linked ID)
@@ -71,7 +72,7 @@ export async function resolveToPhoneJid(
             }
         }
     } catch (e) {
-        console.error(`resolveToPhoneJid: DB lookup failed for ${jid}`, e);
+        logger.error("JID", `resolveToPhoneJid: DB lookup failed for ${jid}`, e);
     }
 
     // 3. Fallback: return original JID
@@ -104,7 +105,7 @@ export async function resolveToPhoneJidBySessionId(
             return resolveToPhoneJid(jid, session.id, inlineAlt);
         }
     } catch (e) {
-        console.error(`resolveToPhoneJidBySessionId: Session lookup failed for ${sessionId}`, e);
+        logger.error("JID", `resolveToPhoneJidBySessionId: Session lookup failed for ${sessionId}`, e);
     }
 
     return jid;
@@ -159,7 +160,7 @@ export async function batchResolveToPhoneJid(
             }
         }
     } catch (e) {
-        console.error(`batchResolveToPhoneJid: DB query failed`, e);
+        logger.error("JID", `batchResolveToPhoneJid: DB query failed`, e);
     }
 
     // Fill in any un-resolved JIDs with themselves

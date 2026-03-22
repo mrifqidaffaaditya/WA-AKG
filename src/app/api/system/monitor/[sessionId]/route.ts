@@ -21,11 +21,39 @@ export async function GET(
 
         const instance = waManager.getInstance(sessionId);
 
+        // Always resolve the database session ID to fetch real counts
+        const dbSession = await prisma.session.findUnique({
+            where: { sessionId },
+            select: { id: true }
+        });
+
+        if (!dbSession) {
+            return NextResponse.json({ status: false, message: "Session not found" }, { status: 404 });
+        }
+
+        const dbSessionId = dbSession.id;
+
+        // Always fetch real counts from database, even when disconnected
+        const [contactsCount, groupsCount, messagesCount] = await Promise.all([
+            prisma.contact.count({ where: { sessionId: dbSessionId } }),
+            prisma.group.count({ where: { sessionId: dbSessionId } }),
+            prisma.message.count({ where: { sessionId: dbSessionId } })
+        ]);
+
         if (!instance || instance.status !== "CONNECTED") {
             return NextResponse.json({
                 status: true,
                 message: "Session is not connected",
-                data: { status: instance?.status || "DISCONNECTED", uptime: 0, ping: "Offline", store: { contacts: 0, chats: 0, messages: 0 } }
+                data: { 
+                    status: instance?.status || "DISCONNECTED", 
+                    uptime: 0, 
+                    ping: "Offline", 
+                    store: { 
+                        contacts: contactsCount, 
+                        chats: groupsCount + contactsCount, 
+                        messages: messagesCount 
+                    } 
+                }
             });
         }
 
@@ -41,24 +69,8 @@ export async function GET(
             }
         } catch (e) { }
 
-        // Resolve the database session ID (cuid) from the slug
-        const dbSession = await prisma.session.findUnique({
-            where: { sessionId },
-            select: { id: true }
-        });
 
-        if (!dbSession) {
-            return NextResponse.json({ status: false, message: "Session not found" }, { status: 404 });
-        }
 
-        const dbSessionId = dbSession.id;
-
-        // Fetch counts from database using the cuid
-        const [contactsCount, groupsCount, messagesCount] = await Promise.all([
-            prisma.contact.count({ where: { sessionId: dbSessionId } }),
-            prisma.group.count({ where: { sessionId: dbSessionId } }),
-            prisma.message.count({ where: { sessionId: dbSessionId } })
-        ]);
 
         return NextResponse.json({
             status: true,

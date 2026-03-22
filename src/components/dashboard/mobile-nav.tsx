@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu, ChevronDown } from "lucide-react";
 import Link from "next/link";
@@ -114,7 +114,7 @@ export function MobileNav({ appName = "WA-AKG" }: { appName?: string }) {
             <SheetContent side="left" className="w-[85vw] sm:w-[320px] p-0 flex flex-col">
                 <SheetHeader className="px-5 py-4 text-left border-b border-slate-100">
                     <SheetTitle className="text-xl font-bold text-slate-800">{appName}</SheetTitle>
-                    <p className="text-[11px] text-slate-400 -mt-1">WhatsApp Gateway</p>
+                    <SheetDescription className="text-[11px] text-slate-400 -mt-1">WhatsApp Gateway</SheetDescription>
                 </SheetHeader>
 
                 <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-1">

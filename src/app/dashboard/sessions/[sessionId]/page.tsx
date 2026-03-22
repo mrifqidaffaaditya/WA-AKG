@@ -206,13 +206,15 @@ export default function SessionDetailPage() {
 
     return (
         <div className="max-w-4xl mx-auto space-y-6">
-            <div className="flex items-center space-x-4 mb-6">
-                <Button variant="ghost" asChild>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+                <Button variant="ghost" asChild className="self-start">
                     <Link href="/dashboard/sessions">
                         <ArrowLeft className="mr-2 h-4 w-4" /> Back to Sessions
                     </Link>
                 </Button>
-                <h1 className="text-2xl font-bold">{session.name} <span className="text-gray-400 font-normal text-sm">({session.sessionId})</span></h1>
+                <h1 className="text-xl sm:text-2xl font-bold truncate">
+                    {session.name} <span className="text-gray-400 font-normal text-xs sm:text-sm block sm:inline mt-1 sm:mt-0">({session.sessionId})</span>
+                </h1>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

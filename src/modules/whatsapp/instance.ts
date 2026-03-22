@@ -15,6 +15,7 @@ import { bindContactSync } from "./store/contacts";
 import { bindAutoReply } from "./store/autoreply";
 import { bindPpGuard } from "./store/ppguard";
 import { antispam } from "./antispam";
+import { logger } from "@/lib/logger";
 
 export class WhatsAppInstance {
     socket: WASocket | null = null;
@@ -134,7 +135,7 @@ export class WhatsAppInstance {
                     this.init();
                 } else if (isLoggedOut) {
                     // Explicit logout: delete credentials
-                    console.log(`Session ${this.sessionId} logged out. Deleting credentials...`);
+                    logger.info("Instance", `Session ${this.sessionId} logged out. Deleting credentials...`);
                     try {
                         await prisma.$transaction([
                             prisma.session.update({
@@ -148,10 +149,10 @@ export class WhatsAppInstance {
                     } catch (e) { /* ignore */ }
                     this.socket = null;
                     this.config = {}; // Clear config cache
-                    console.log(`Session ${this.sessionId} credentials deleted.`);
+                    logger.success("Instance", `Session ${this.sessionId} credentials deleted.`);
                 } else if (this.isStopped) {
                     // Stopped: preserve credentials for future restart
-                    console.log(`Session ${this.sessionId} stopped. Credentials preserved for auto-login.`);
+                    logger.warn("Instance", `Session ${this.sessionId} stopped. Credentials preserved for auto-login.`);
                     this.socket = null;
                 }
             }
@@ -168,7 +169,7 @@ export class WhatsAppInstance {
                 try {
                     await syncGroups(this.socket as WASocket, this.sessionId);
                 } catch (e) {
-                    console.error("Group sync failed:", e);
+                    logger.error("Instance", "Group sync failed:", e);
                 }
 
                 // Bind Auto Reply
@@ -182,16 +183,16 @@ export class WhatsAppInstance {
                     data: { status: "CONNECTED", qr: null }
                 });
 
-                console.log(`Session ${this.sessionId} connected and synced successfully`);
+                logger.success("Instance", `Session ${this.sessionId} connected and synced successfully`);
             }
         } catch (error: any) {
             // Catch global errors in handler (like Record Not Found if session deleted mid-process)
             if (error.code === 'P2025') {
-                console.warn(`Session ${this.sessionId} record not found during update. Stopping instance.`);
+                logger.warn("Instance", `Session ${this.sessionId} record not found during update. Stopping instance.`);
                 this.socket?.end(undefined);
                 this.socket = null;
             } else {
-                console.error("Error in handleConnectionUpdate:", error);
+                logger.error("Instance", "Error in handleConnectionUpdate:", error);
             }
         }
     }
@@ -219,7 +220,7 @@ export class WhatsAppInstance {
 
             return code;
         } catch (error) {
-            console.error("Pairing code error:", error);
+            logger.error("Instance", "Pairing code error:", error);
             throw error;
         }
     }

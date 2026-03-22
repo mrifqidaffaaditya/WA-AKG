@@ -143,10 +143,10 @@ export function Navbar({ appName }: NavbarProps) {
                 <MobileNav appName={appName} />
             </div>
 
-            <div className="flex items-center gap-4">
-                <RealtimeClock />
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+                <span className="hidden sm:inline"><RealtimeClock /></span>
                 <SessionSelector />
-                <div className="h-6 w-px bg-border/50 mx-2" />
+                <div className="h-6 w-px bg-border/50 hidden sm:block" />
 
                 <Popover open={isOpen} onOpenChange={setIsOpen}>
                     <PopoverTrigger asChild>

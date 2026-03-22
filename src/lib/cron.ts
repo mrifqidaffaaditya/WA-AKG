@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import { prisma } from "@/lib/prisma";
 import { waManager } from "@/modules/whatsapp/manager";
+import { logger } from "./logger";
 
 export function initScheduler() {
     // Run every minute
@@ -23,13 +24,14 @@ export function initScheduler() {
 
             if (pendingMessages.length === 0) return;
 
-            console.log(`Scheduler: Found ${pendingMessages.length} messages to send`);
+            // Only log if we're actually processing things to reduce noise
+            logger.info("Cron", `Found ${pendingMessages.length} messages to send`);
 
             for (const msg of pendingMessages) {
                 const instance = waManager.getInstance(msg.session.sessionId);
 
                 if (!instance || !instance.socket) {
-                    console.log(`Scheduler: Session ${msg.session.sessionId} not connected. Skipping.`);
+                    logger.warn("Cron", `Session ${msg.session.sessionId} not connected. Skipping.`);
                     // Optionally mark as FAILED or retry later
                     // keeping PENDING will define behavior (retry next minute)
                     // But if session is dead for long time, it piles up.
@@ -38,7 +40,7 @@ export function initScheduler() {
                 }
 
                 try {
-                    console.log(`Scheduler: Sending to ${msg.jid}`);
+                    logger.info("Cron", `Sending to ${msg.jid}`);
                     
                     if (msg.mediaUrl) {
                         // TODO: Handle media sending
@@ -57,7 +59,7 @@ export function initScheduler() {
                     });
 
                 } catch (error) {
-                    console.error(`Scheduler: Check failed for ${msg.id}`, error);
+                    logger.error("Cron", `Check failed for ${msg.id}`, error);
                     await prisma.scheduledMessage.update({
                         where: { id: msg.id },
                         data: { status: "FAILED" } // Failed to send
@@ -66,9 +68,9 @@ export function initScheduler() {
             }
 
         } catch (error) {
-            console.error("Scheduler error:", error);
+            logger.error("Cron", "Scheduler error:", error);
         }
     });
     
-    console.log("Scheduler initialized");
+    logger.info("Cron", "Scheduler initialized");
 }

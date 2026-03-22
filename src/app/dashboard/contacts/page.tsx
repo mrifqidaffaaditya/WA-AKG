@@ -116,15 +116,16 @@ export default function ContactListPage() {
                         </div>
                         <div className="flex items-center gap-2 w-full md:w-auto">
                             <Select value={limit} onValueChange={(val) => { setLimit(val); setPage(1); }}>
-                                <SelectTrigger className="w-[100px]">
-                                    <SelectValue placeholder="Limit" />
+                                <SelectTrigger className="w-[120px]">
+                                    <SelectValue placeholder="Per page" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {[5, 10, 25, 50, 100, 200, 250, 500, 1000, 2000, 3000].map((l) => (
+                                    {[10, 25, 50, 100].map((l) => (
                                         <SelectItem key={l} value={l.toString()}>
-                                            {l}
+                                            {l} / page
                                         </SelectItem>
                                     ))}
+                                    <SelectItem value="all">Show All</SelectItem>
                                 </SelectContent>
                             </Select>
                             <div className="relative w-full md:w-64">

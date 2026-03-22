@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { WASocket } from "@whiskeysockets/baileys";
 import { normalizeMessageContent } from "@whiskeysockets/baileys";
+import { logger } from "@/lib/logger";
 
 // Helper for permission check (Deduplicate from command-handler if possible, but keep simple here)
 function canAutoReply(config: any, fromMe: boolean, senderJid: string): boolean {
@@ -67,7 +68,7 @@ export async function bindAutoReply(sock: WASocket, sessionId: string) {
         let config = (session as any).botConfig;
 
         if (!config) {
-            console.log("AutoReply: No config found, creating default...");
+            logger.warn("AutoReply", "No config found, creating default...");
             config = await prisma.botConfig.create({
                 data: {
                     sessionId: session.id,
@@ -78,7 +79,7 @@ export async function bindAutoReply(sock: WASocket, sessionId: string) {
             });
         }
 
-        console.log(`AutoReply: Processing for ${sessionId}. Config:`, config ? "Found" : "Missing", config?.enabled ? "Enabled" : "Disabled");
+        logger.debug("AutoReply", `Processing for ${sessionId}. Config: ${config ? "Found" : "Missing"}, ${config?.enabled ? "Enabled" : "Disabled"}`);
 
         if (!config || !config.enabled) return;
 
@@ -132,7 +133,7 @@ export async function bindAutoReply(sock: WASocket, sessionId: string) {
                                 const regex = new RegExp(rule.keyword, 'i');
                                 match = regex.test(text); // Use original case for regex
                             } catch (e) {
-                                console.error("Invalid regex in auto-reply", rule.keyword);
+                                logger.error("AutoReply", "Invalid regex in auto-reply", rule.keyword);
                             }
                             break;
                     }
@@ -145,7 +146,7 @@ export async function bindAutoReply(sock: WASocket, sessionId: string) {
                         if (triggerType === 'GROUP' && !isGroup) continue;
                         if (triggerType === 'PRIVATE' && isGroup) continue;
 
-                        console.log(`Auto-reply match: ${rule.keyword} -> ${remoteJid}`);
+                        logger.info("AutoReply", `Match: ${rule.keyword} -> ${remoteJid}`);
 
                         if (rule.isMedia && rule.mediaUrl) {
                             const url = rule.mediaUrl;
@@ -180,7 +181,7 @@ export async function bindAutoReply(sock: WASocket, sessionId: string) {
                 }
 
             } catch (e) {
-                console.error("Auto-reply error", e);
+                logger.error("AutoReply", "Error executing auto-reply", e);
             }
         }
     });

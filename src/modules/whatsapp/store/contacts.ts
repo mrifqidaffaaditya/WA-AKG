@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { WASocket } from "@whiskeysockets/baileys";
+import { logger } from "@/lib/logger";
 
 /**
  * Sync contacts from WhatsApp to database.
@@ -17,9 +18,9 @@ export function bindContactSync(sock: WASocket, sessionId: string) {
         });
         if (session) {
             dbSessionId = session.id;
-            console.log(`Contact sync initialized for session ${sessionId} (db: ${dbSessionId})`);
+            logger.info("Store", `Contact sync initialized for session ${sessionId} (db: ${dbSessionId})`);
         } else {
-            console.error(`Session ${sessionId} not found for contact sync`);
+            logger.error("Store", `Session ${sessionId} not found for contact sync`);
         }
     })();
 
@@ -31,7 +32,7 @@ export function bindContactSync(sock: WASocket, sessionId: string) {
             dbSessionId = session.id;
         }
         
-        console.log(`Received ${updates.length} contact updates for session ${sessionId}`);
+        logger.debug("Store", `Received ${updates.length} contact updates for session ${sessionId}`);
         for (const update of updates) {
             try {
                 if (!update.id) continue;
@@ -52,7 +53,7 @@ export function bindContactSync(sock: WASocket, sessionId: string) {
                     }
                 });
             } catch (e) {
-                console.error(`Failed to sync contact ${update.id}`, e);
+                logger.error("Store", `Failed to sync contact ${update.id}`, e);
             }
         }
     });
@@ -65,7 +66,7 @@ export function bindContactSync(sock: WASocket, sessionId: string) {
             dbSessionId = session.id;
         }
         
-        console.log(`Received messaging history: ${chats.length} chats, ${contacts?.length || 0} contacts, ${messages.length} messages`);
+        logger.info("Store", `Received messaging history: ${chats.length} chats, ${contacts?.length || 0} contacts, ${messages.length} messages`);
         
         // Sync chats as contacts (for personal chats)
         for (const chat of chats) {
@@ -85,7 +86,7 @@ export function bindContactSync(sock: WASocket, sessionId: string) {
                     }
                 });
             } catch (e) {
-                console.error(`Failed to sync chat contact ${chat.id}`, e);
+                logger.error("Store", `Failed to sync chat contact ${chat.id}`, e);
             }
         }
         
@@ -109,11 +110,11 @@ export function bindContactSync(sock: WASocket, sessionId: string) {
                         }
                     });
                 } catch (e) {
-                    console.error(`Failed to sync contact ${contact.id}`, e);
+                    logger.error("Store", `Failed to sync contact ${contact.id}`, e);
                 }
             }
         }
         
-        console.log(`Synced contacts from messaging history for session ${sessionId}`);
+        logger.success("Store", `Synced contacts from messaging history for session ${sessionId}`);
     });
 }
