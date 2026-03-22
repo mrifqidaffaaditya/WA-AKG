@@ -1,3 +1,16 @@
+## [v1.5.2.1] - 2026-03-22 ⚠️ Emergency Fix
+
+### Fixed
+- **ChunkLoadError / Cloudflare 520 on All Dashboard Pages**:
+    - All pages including the Login screen returned `ChunkLoadError` and HTTP 520 errors after the v1.5.2 update.
+    - **Root Cause 1**: Next.js 16 Turbopack detected the wrong workspace root directory, fixed via `turbopack.root` in `next.config.ts`.
+    - **Root Cause 2**: Next.js 16 deprecated `middleware.ts`, which caused routing conflicts leading to Cloudflare rejecting static chunks (`_next/static`).
+    - **Fix 1**: Added explicit `turbopack.root` configuration in `next.config.ts`.
+    - **Fix 2**: Renamed `src/middleware.ts` to `src/proxy.ts` to comply with Next.js 16 standards and prevent 520 routing errors.
+    - **Action Required**: Because I am restricted from building, you must run `npm run build` manually, and then perform a **Cloudflare Cache Purge** (Purge Everything).
+
+---
+
 ## [v1.5.2] - 2026-03-20
 
 ### Added
