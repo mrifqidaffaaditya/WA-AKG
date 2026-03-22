@@ -1,13 +1,12 @@
-## [v1.5.2.1] - 2026-03-22 ⚠️ Emergency Fix
+## [v1.5.2.1] - 2026-03-22
 
 ### Fixed
-- **ChunkLoadError / Cloudflare 520 on All Dashboard Pages**:
-    - All pages including the Login screen returned `ChunkLoadError` and HTTP 520 errors (`net::ERR_ABORTED 520`) after the v1.5.2 update.
-    - **Root Cause**: The custom Next.js server (`server/index.ts`) relied on Node.js default keep-alive timeouts (5s) which clashed with Cloudflare's connection reuse strategy (100s). Cloudflare would reuse a connection that Node.js had already started dropping, leading to interrupted static chunk downloads.
-    - **Fix 1**: Added `keepAliveTimeout=120s` and `headersTimeout` in `src/server/index.ts` to match Cloudflare's topology correctly.
-    - **Fix 2**: Renamed `src/middleware.ts` to `src/proxy.ts` to comply with Next.js 16 standards and prevent proxy 520 routing errors.
-    - **Note about Zaraz**: The `net::ERR_BLOCKED_BY_CLIENT` on `zaraz/s.js` is caused by your local adblocker and does **not** affect the application's functionality.
-    - **Action Required**: Because I am restricted from restarting the server, you must **restart the server process** manually so the new `keepAliveTimeout` takes effect.
+- **Mobile Sidebar Navigation Out of Sync**:
+    - Synced mobile sidebar (`mobile-nav.tsx`) to match desktop sidebar (`sidebar-nav.tsx`).
+    - Added missing pages: **Labels**, **Bot Profile**, **Session Access**.
+    - Moved **Sessions / QR** from Administration to Main group.
+    - Moved **Auto Reply** from Messaging to Automation group.
+    - Fixed icon mismatches (Auto Reply now uses `MessageCircleReply` icon on both mobile and desktop).
 
 ---
 

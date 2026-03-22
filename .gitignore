@@ -45,3 +45,4 @@ next-env.d.ts
 /data/media/*
 !/data/media/.gitkeep
 /public/media/*
+server.log
