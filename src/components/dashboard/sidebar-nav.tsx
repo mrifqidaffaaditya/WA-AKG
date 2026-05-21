@@ -130,7 +130,7 @@ export function SidebarNav() {
                 {navGroups.map((group) => {
                     const visibleItems = group.items.filter((item) => {
                         if (item.superadminOnly && userRole !== "SUPERADMIN") return false;
-                        if (item.allowedRoles && !item.allowedRoles.includes(userRole)) return false;
+                        if (item.allowedRoles && (!userRole || !item.allowedRoles.includes(userRole))) return false;
                         return true;
                     });
                     if (visibleItems.length === 0) return null;
