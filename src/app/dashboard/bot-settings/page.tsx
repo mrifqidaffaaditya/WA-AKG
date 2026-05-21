@@ -550,6 +550,7 @@ export default function BotSettingsPage() {
                                     Save Privacy Settings
                                 </Button>
                             </div>
+                        </CardContent>
                     </Card>
                 </div>
             </SessionGuard>
