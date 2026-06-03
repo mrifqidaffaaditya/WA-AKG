@@ -981,7 +981,22 @@ All endpoints require authentication via:
                                 description: "Message sent successfully",
                                 content: {
                                     "application/json": {
-                                        schema: { $ref: "#/components/schemas/Success" }
+                                        schema: { $ref: "#/components/schemas/Success" },
+                                        example: {
+                                            status: true,
+                                            message: "Message sent successfully",
+                                            data: {
+                                                key: {
+                                                    remoteJid: "628123456789@s.whatsapp.net",
+                                                    fromMe: true,
+                                                    id: "3EB01234567890"
+                                                },
+                                                message: {
+                                                    conversation: "Hello from WA-AKG!"
+                                                },
+                                                messageTimestamp: "1678901234"
+                                            }
+                                        }
                                     }
                                 }
                             },

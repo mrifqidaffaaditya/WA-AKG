@@ -1976,9 +1976,17 @@ Content-Type: application/json
 ```json
 {
   "status": true,
-  "message": "Operation successful",
+  "message": "Message sent successfully",
   "data": {
-    "text": "Hello from WA-AKG!"
+    "key": {
+      "remoteJid": "628123456789@s.whatsapp.net",
+      "fromMe": true,
+      "id": "3EB01234567890"
+    },
+    "message": {
+      "conversation": "Hello from WA-AKG!"
+    },
+    "messageTimestamp": "1678901234"
   }
 }
 ```
