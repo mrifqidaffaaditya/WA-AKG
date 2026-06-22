@@ -46,8 +46,27 @@ export async function GET(
             });
         }
 
+        // Mode: Get all chat-label assignments (batch for label dots)
+        if (!labelId && !jid) {
+            const chatLabels = await prisma.chatLabel.findMany({
+                where: { label: { sessionId } },
+                include: {
+                    label: { select: { colorHex: true, name: true } }
+                }
+            });
+            return NextResponse.json({
+                status: true,
+                data: chatLabels.map(cl => ({
+                    chatJid: cl.chatJid,
+                    labelId: cl.labelId,
+                    colorHex: cl.label.colorHex,
+                    labelName: cl.label.name
+                }))
+            });
+        }
+
         if (!labelId) {
-            return NextResponse.json({ status: false, message: "labelId or jid query param is required" }, { status: 400 });
+            return NextResponse.json({ status: false, message: "labelId query param is required" }, { status: 400 });
         }
 
         // Verify label belongs to session

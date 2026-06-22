@@ -343,23 +343,15 @@ export function ChatList({ sessionId, onSelectChat, selectedJid }: ChatListProps
         if (!sessionId) return;
         (async () => {
             try {
-                // Get all labels
-                const labelRes = await fetch(`/api/labels/${sessionId}`);
-                const labelData = await labelRes.json();
-                const allLabels: LabelData[] = labelData.data?.labels || [];
-                if (allLabels.length === 0) return;
-
-                // Build map: jid → label colors
+                // Batch fetch all chat-label assignments in 1 call
+                const res = await fetch(`/api/labels/${sessionId}/chats`);
+                if (!res.ok) return;
+                const data = await res.json();
                 const map = new Map<string, { colorHex: string }[]>();
-                for (const label of allLabels) {
-                    const res = await fetch(`/api/labels/${sessionId}/chats?labelId=${label.id}`);
-                    if (!res.ok) continue;
-                    const data = await res.json();
-                    for (const cl of (data.data || [])) {
-                        const jid = cl.chatJid;
-                        if (!map.has(jid)) map.set(jid, []);
-                        map.get(jid)!.push({ colorHex: label.colorHex });
-                    }
+                for (const cl of (data.data || [])) {
+                    const jid = cl.chatJid;
+                    if (!map.has(jid)) map.set(jid, []);
+                    map.get(jid)!.push({ colorHex: cl.colorHex });
                 }
                 setChatLabelMap(map);
             } catch (e) {
