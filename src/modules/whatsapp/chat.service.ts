@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { batchResolveToPhoneJid, normalizeJid } from "@/lib/jid-utils";
+import { normalizeJid } from "@/lib/jid-utils";
 import { waManager } from "@/modules/whatsapp/manager";
 import Sticker from "wa-sticker-formatter";
 
@@ -15,25 +15,8 @@ export class ChatService {
         offset = 0,
         search?: string
     ) {
-        // 1. Get contacts & groups in parallel (fast, small queries)
-        const [contacts, groups] = await Promise.all([
-            prisma.contact.findMany({
-                where: { sessionId: dbSessionId },
-                select: { jid: true, name: true, notify: true, profilePic: true }
-            }),
-            prisma.group.findMany({
-                where: { sessionId: dbSessionId },
-                select: { jid: true, subject: true }
-            })
-        ]);
-
-        // Build contact/subject lookup maps
-        const infoMap = new Map<string, { name: string | null; notify: string | null; profilePic: string | null }>();
-        contacts.forEach(c => infoMap.set(c.jid, { name: c.name, notify: c.notify, profilePic: c.profilePic }));
-        groups.forEach(g => infoMap.set(g.jid, { name: g.subject, notify: g.subject, profilePic: null }));
-
-        // 2. Single raw query: get latest message per remoteJid via GROUP BY
-        // Replaces N individual findFirst() calls — critical RAM/speed fix
+        // 1. Get latest message per remoteJid with pagination directly in SQL
+        // Fast path: only fetch the latest messages for the requested page
         const rawLastMessages = await prisma.$queryRawUnsafe<Array<{
             remoteJid: string;
             content: string | null;
@@ -50,69 +33,60 @@ export class ChatService {
             ) m2 ON m1.remoteJid = m2.remoteJid AND m1.timestamp = m2.max_ts
             WHERE m1.sessionId = ?
             ORDER BY m1.timestamp DESC
-        `, dbSessionId, dbSessionId);
+            LIMIT ? OFFSET ?
+        `, dbSessionId, dbSessionId, limit, offset);
 
-        // 3. Build result map from raw messages
-        const resultMap = new Map<string, any>();
+        // Fast return if no messages
+        if (rawLastMessages.length === 0) return [];
+
+        // 2. Batch fetch contacts & groups ONLY for JIDs that have messages
+        const jids = rawLastMessages.map(m => m.remoteJid);
+        const [contacts, groups] = await Promise.all([
+            prisma.contact.findMany({
+                where: { sessionId: dbSessionId, jid: { in: jids } },
+                select: { jid: true, name: true, notify: true, profilePic: true }
+            }),
+            prisma.group.findMany({
+                where: { sessionId: dbSessionId, jid: { in: jids } },
+                select: { jid: true, subject: true }
+            })
+        ]);
+
+        // Build lookup map
+        const infoMap = new Map<string, { name: string | null; notify: string | null; profilePic: string | null }>();
+        contacts.forEach(c => infoMap.set(c.jid, { name: c.name, notify: c.notify, profilePic: c.profilePic }));
+        groups.forEach(g => infoMap.set(g.jid, { name: g.subject, notify: g.subject, profilePic: null }));
+
+        // 3. Build result array (already sorted by SQL)
+        const result: any[] = [];
         for (const msg of rawLastMessages) {
-            if (!resultMap.has(msg.remoteJid)) {
-                const info = infoMap.get(msg.remoteJid);
-                resultMap.set(msg.remoteJid, {
-                    jid: msg.remoteJid,
-                    name: info?.name || null,
-                    notify: info?.notify || null,
-                    profilePic: info?.profilePic || null,
-                    lastMessage: {
-                        content: msg.content,
-                        timestamp: msg.timestamp instanceof Date
-                            ? msg.timestamp.toISOString()
-                            : String(msg.timestamp),
-                        type: msg.type
-                    }
-                });
-            }
-        }
-
-        // 4. Add contacts/groups that have NO messages (no last message, but still in contact list)
-        for (const [jid, info] of infoMap) {
-            if (!resultMap.has(jid)) {
-                // Resolve LID to phone JID for contact lookup
-                const resolvedMap = await batchResolveToPhoneJid([jid], dbSessionId);
-                const resolvedJid = resolvedMap.get(jid) || jid;
-                if (!resultMap.has(resolvedJid)) {
-                    resultMap.set(resolvedJid, {
-                        jid: normalizeJid(resolvedJid),
-                        name: info.name,
-                        notify: info.notify,
-                        profilePic: info.profilePic
-                    });
+            const info = infoMap.get(msg.remoteJid);
+            result.push({
+                jid: msg.remoteJid,
+                name: info?.name || null,
+                notify: info?.notify || null,
+                profilePic: info?.profilePic || null,
+                lastMessage: {
+                    content: msg.content,
+                    timestamp: msg.timestamp instanceof Date
+                        ? msg.timestamp.toISOString()
+                        : String(msg.timestamp),
+                    type: msg.type
                 }
-            }
+            });
         }
 
-        // 5. Sort by last message timestamp desc
-        const finalChats = Array.from(resultMap.values());
-        finalChats.sort((a, b) => {
-            const tA = a.lastMessage?.timestamp ? new Date(a.lastMessage.timestamp).getTime() : 0;
-            const tB = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : 0;
-            return tB - tA;
-        });
-
-        // 6. Apply search filter if provided
-        let filtered = finalChats;
+        // 4. Apply in-memory search filter if needed (small set — max `limit` items)
         if (search && search.trim()) {
             const q = search.toLowerCase();
-            filtered = finalChats.filter(c =>
+            return result.filter(c =>
                 (c.name || '').toLowerCase().includes(q) ||
                 (c.notify || '').toLowerCase().includes(q) ||
                 c.jid.toLowerCase().includes(q)
             );
         }
 
-        // 7. Apply pagination
-        const paged = filtered.slice(offset, offset + limit);
-
-        return paged;
+        return result;
     }
 
     /**
