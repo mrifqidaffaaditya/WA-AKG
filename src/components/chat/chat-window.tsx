@@ -375,7 +375,7 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
                                 <div className={cn("flex gap-2 group", msg.fromMe ? "justify-end" : "justify-start")}>
                                     {/* Message bubble */}
                                     <div className={cn(
-                                        "flex flex-col max-w-[85%] sm:max-w-[70%] rounded-2xl px-3 py-2 shadow-sm",
+                                        "flex flex-col max-w-[85%] sm:max-w-[70%] rounded-2xl px-3 py-2 shadow-sm overflow-hidden",
                                         msg.fromMe
                                             ? "bg-primary text-primary-foreground rounded-br-sm"
                                             : "bg-background border border-border/40 rounded-bl-sm"
@@ -460,7 +460,7 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
 
                                         {/* Text content + time */}
                                         <div className="flex items-end gap-2">
-                                            <span className="flex-1 text-sm break-words whitespace-pre-wrap">{msg.content}</span>
+                                            <span className="flex-1 text-sm break-all whitespace-pre-wrap">{msg.content}</span>
                                             <span className={cn(
                                                 "text-[9px] shrink-0 leading-none",
                                                 msg.fromMe ? "text-primary-foreground/60" : "text-muted-foreground"
