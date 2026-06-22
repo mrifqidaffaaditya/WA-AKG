@@ -1,3 +1,21 @@
+## [v1.6.1] - 2026-06-23
+
+### Fixed
+- **Chat List Pagination**: Replaced OFFSET-based pagination with cursor-based (timestamp). OFFSET broke when new messages arrived, causing duplicate/missing chats. Now uses `m1.timestamp < ?` cursor for consistent infinite scroll.
+- **Chat List CPU Spike**: SQL query had no LIMIT — fetched ALL messages then processed in JS. Added `LIMIT ?` directly in SQL, reduced contacts/groups lookup to only JIDs in result set.
+- **Label Fetch N+1**: Chat list was fetching labels one-by-one (1 API call per label). Now uses single batch endpoint returning all chat-label assignments.
+- **Build Error**: Removed `normalizeJid` import that was still needed by `getMessages()`. Re-added.
+- **Favicon Disappeared**: Explicit icon paths (`/favicon.ico`, etc.) didn't exist — removed, Next.js auto-generates again.
+
+### Added
+- **Configurable Pagination Size**: `NEXT_PUBLIC_CHAT_PAGE_SIZE` env variable controls chats loaded per page (default 50).
+
+### Changed
+- **Chat Service**: `getChatsList` param `offset` → `before` (cursor string). SQL uses `WHERE m1.timestamp < ?` for pagination.
+- **Batch Label API**: `GET /api/labels/[sessionId]/chats` without params returns all assignments in 1 query.
+
+---
+
 ## [v1.6.0] - 2026-06-23
 
 ### Added
