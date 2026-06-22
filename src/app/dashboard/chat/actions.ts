@@ -5,11 +5,13 @@ import { ChatService } from "@/modules/whatsapp/chat.service";
 import { getAuthenticatedUserForAction } from "@/lib/server-action-auth";
 import { canAccessSession } from "@/lib/api-auth";
 
-// Fetch chat list with pagination & search
+const CHAT_PAGE_SIZE = parseInt(process.env.NEXT_PUBLIC_CHAT_PAGE_SIZE || "50", 10);
+
+// Fetch chat list with cursor-based pagination & search
 export async function getChatsStatus(
     sessionId: string,
-    limit = 50,
-    offset = 0,
+    limit = CHAT_PAGE_SIZE,
+    before?: string,
     search?: string
 ) {
     const user = await getAuthenticatedUserForAction();
@@ -25,7 +27,7 @@ export async function getChatsStatus(
 
     if (!session) throw new Error("Session not found");
 
-    return await ChatService.getChatsList(session.id, limit, offset, search);
+    return await ChatService.getChatsList(session.id, limit, before, search);
 }
 
 // Fetch messages for a specific chat with cursor pagination
