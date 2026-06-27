@@ -420,11 +420,17 @@ export async function fireSentWebhook(
     sessionId: string,
     jid: string,
     payload: { type?: string; text?: string; caption?: string; fileName?: string; mimetype?: string; ptt?: boolean },
-    sendResult: { id: string; remoteJid?: string; fromMe?: boolean }
+    sendResult: any
 ) {
     try {
+        // Handle WAMessage vs MessageKey — Baileys can return either
+        const key = sendResult?.key || sendResult || {};
         const webhookMsg: any = {
-            key: { ...sendResult, remoteJid: sendResult.remoteJid || jid, fromMe: true },
+            key: {
+                id: key.id || sendResult?.id,
+                remoteJid: key.remoteJid || sendResult?.remoteJid || jid,
+                fromMe: true
+            },
             message: { conversation: payload.text || payload.caption || "" },
             messageTimestamp: Math.floor(Date.now() / 1000)
         };
