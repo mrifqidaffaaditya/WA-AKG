@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY patches ./patches/
 COPY prisma ./prisma/
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Copy the rest of the application files
 COPY . .
