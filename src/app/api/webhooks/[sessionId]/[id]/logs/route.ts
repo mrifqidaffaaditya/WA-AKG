@@ -1,7 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAuthenticatedUser } from "@/lib/api-auth";
-
+import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ sessionId: string; id: string }> }
@@ -15,6 +14,11 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 200);
     const offset = Math.max(parseInt(searchParams.get("offset") || "0"), 0);
+
+    const hasAccess = await canAccessSession(user.id, user.role, sessionId);
+    if (!hasAccess) {
+        return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
+    }
 
     // Resolve session by either CUID or WhatsApp sessionId
     const session = await prisma.session.findFirst({
@@ -31,14 +35,13 @@ export async function GET(
         return NextResponse.json({ status: false, message: "Session not found", error: "Session not found" }, { status: 404 });
     }
 
-    // Verify webhook ownership — only owner can view logs
+    // Verify webhook access
     const webhook = await prisma.webhook.findFirst({
         where: {
             id,
-            userId: user.id,
             OR: [
                 { sessionId: session.id },
-                { sessionId: null }
+                { sessionId: null, userId: user.id }
             ]
         }
     });

@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAuthenticatedUser } from "@/lib/api-auth";
+import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 import { testWebhook } from "@/lib/webhook";
 
 export async function POST(
@@ -13,6 +13,11 @@ export async function POST(
     }
 
     const { sessionId, id } = await params;
+
+    const hasAccess = await canAccessSession(user.id, user.role, sessionId);
+    if (!hasAccess) {
+        return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session", error: "Forbidden - Cannot access this session" }, { status: 403 });
+    }
 
     // Resolve session by either CUID or WhatsApp sessionId
     const session = await prisma.session.findFirst({
@@ -29,14 +34,13 @@ export async function POST(
         return NextResponse.json({ status: false, message: "Session not found", error: "Session not found" }, { status: 404 });
     }
 
-    // Verify webhook ownership — only owner can test
+    // Verify webhook access
     const webhook = await prisma.webhook.findFirst({
         where: {
             id,
-            userId: user.id,
             OR: [
                 { sessionId: session.id },
-                { sessionId: null }
+                { sessionId: null, userId: user.id }
             ]
         }
     });
