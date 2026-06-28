@@ -1,0 +1,43 @@
+# Git
+.git
+.gitattributes
+.gitignore
+
+# Node
+node_modules
+npm-debug.log*
+.yarn
+
+# Build artifacts
+.next
+out
+
+# Source control / logs
+*.log
+tmp-*.txt
+ts_errors*.log
+test-*.ts
+test-*.js
+fix_test.js
+*.patch
+
+# Environment
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose*.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
