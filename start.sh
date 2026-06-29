@@ -15,7 +15,7 @@ echo -e "${BLUE}====================================================${NC}"
 echo -e "${BLUE}       ⚡ WA-AKG PM2 AUTO STARTUP SCRIPT ⚡        ${NC}"
 echo -e "${BLUE}====================================================${NC}"
 
-# Step 1: Check for .env file
+# Step 1: Check for .env file & Security Auditing
 echo -e "\n${BLUE}[1/6] Checking configuration file...${NC}"
 if [ ! -f .env ]; then
     echo -e "${RED}❌ Error: .env file not found!${NC}"
@@ -24,9 +24,40 @@ if [ ! -f .env ]; then
 fi
 echo -e "${GREEN}✓ .env configuration file found.${NC}"
 
-# Read PORT from .env
+# Read configurations
 PORT=$(grep -E "^PORT=" .env | cut -d'=' -f2 | tr -d '"' | tr -d "'" | tr -d ' ')
-PORT=${PORT:-3000} # default to 3000 if not specified
+PORT=${PORT:-3000}
+
+AUTH_SEC=$(grep -E "^AUTH_SECRET=" .env | cut -d'=' -f2 | tr -d '"' | tr -d "'" | tr -d ' ')
+SWAG_PASS=$(grep -E "^NEXT_PUBLIC_SWAGGER_PASSWORD=" .env | cut -d'=' -f2 | tr -d '"' | tr -d "'" | tr -d ' ')
+ADM_PASS=$(grep -E "^ADMIN_PASSWORD=" .env | cut -d'=' -f2 | tr -d '"' | tr -d "'" | tr -d ' ')
+ROOT_DB_PASS=$(grep -E "^MYSQL_ROOT_PASSWORD=" .env | cut -d'=' -f2 | tr -d '"' | tr -d "'" | tr -d ' ')
+
+# Security audit check
+USING_DEFAULTS=0
+if [ "$AUTH_SEC" = "your-super-secret-key-at-least-32-chars-change-this-in-production" ] || [ -z "$AUTH_SEC" ]; then
+    USING_DEFAULTS=1
+fi
+if [ "$SWAG_PASS" = "admin123" ] || [ "$SWAG_PASS" = "change-this-in-production" ]; then
+    USING_DEFAULTS=1
+fi
+if [ "$ADM_PASS" = "change-this-in-production" ]; then
+    USING_DEFAULTS=1
+fi
+if [ "$ROOT_DB_PASS" = "change-this-in-production" ]; then
+    USING_DEFAULTS=1
+fi
+
+if [ $USING_DEFAULTS -eq 1 ]; then
+    echo -e "${RED}======================================================================${NC}"
+    echo -e "${RED} ⚠️  SECURITY WARNING: INSECURE / DEFAULT VALUES DETECTED IN .env!${NC}"
+    echo -e "${RED}======================================================================${NC}"
+    echo -e "${YELLOW} It looks like you are using default values for AUTH_SECRET, Swagger,${NC}"
+    echo -e "${YELLOW} admin, or MySQL root passwords. Keeping these defaults makes your${NC}"
+    echo -e "${YELLOW} gateway highly vulnerable to unauthorized access and exploits!${NC}"
+    echo -e "${YELLOW} Please update your .env file with secure unique values immediately.${NC}"
+    echo -e "${RED}======================================================================${NC}"
+fi
 
 # Step 2: Check if port is already in use (Fail early before build)
 echo -e "\n${BLUE}[2/6] Checking port $PORT availability...${NC}"
@@ -154,9 +185,17 @@ echo -e "\n${GREEN}====================================================${NC}"
 echo -e "${GREEN}       🎉 WA-AKG DEPLOYED SUCCESSFULLY! 🎉         ${NC}"
 echo -e "${GREEN}====================================================${NC}"
 echo -e "\n${BLUE}Useful PM2 Commands:${NC}"
-echo -e "  - View status:  ${YELLOW}pm2 status${NC}"
-echo -e "  - View logs:    ${YELLOW}pm2 logs wa-akg${NC}"
-echo -e "  - Stop service: ${YELLOW}pm2 stop wa-akg${NC}"
+echo -e "  - View status:           ${YELLOW}pm2 status${NC}"
+echo -e "  - View real-time logs:   ${YELLOW}pm2 logs wa-akg${NC}"
+echo -e "  - Monitor resources:     ${YELLOW}pm2 monit${NC}"
+echo -e "  - Stop gateway service:  ${YELLOW}pm2 stop wa-akg${NC}"
+echo -e "  - Restart service:       ${YELLOW}pm2 restart wa-akg${NC}"
+
+echo -e "\n${BLUE}Useful Project Script Commands:${NC}"
+echo -e "  - Run Dev Mode:          ${YELLOW}npm run dev${NC}"
+echo -e "  - Create/Promote Admin:  ${YELLOW}npm run make-admin <email> <password>${NC}"
+echo -e "  - Open Database Studio:  ${YELLOW}npm run db:studio${NC}"
+
 echo -e "\n${YELLOW}To enable auto-start on server reboot, run:${NC}"
 echo -e "  ${GREEN}pm2 startup${NC}"
 echo -e "  ${GREEN}pm2 save${NC}"
