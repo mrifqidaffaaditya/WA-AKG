@@ -5,11 +5,12 @@ This guide will help you set up the database for **WA-AKG**. The project uses **
 ## 1. Prerequisites
 
 Ensure you have a database server running.
--   **Docker Stack (Recommended)**: You can use the included Docker Compose configuration to automatically spin up a MySQL database alongside the Next.js gateway application.
+-   **PM2 Stack (Recommended)**: Run MySQL/PostgreSQL directly on the host, configure `.env`, and manage using PM2.
+-   **Docker Stack (Alternative)**: You can use the included Docker Compose configuration to spin up a MySQL database alongside the Next.js gateway application.
 -   **Local Development (Bare-metal)**: You can run MySQL or PostgreSQL locally on your machine.
 -   **Production**: Use a managed database service (e.g., Supabase, Neon, AWS RDS).
 
-## 2. Docker Compose Setup
+## 2. Docker Compose Setup (Alternative)
 
 WA-AKG menyertakan `docker-compose.yml` di root project yang mendefinisikan container MySQL 8.0 (`wa-akg-db`) dan aplikasi (`wa-akg-app`).
 

@@ -11,6 +11,14 @@ import { toast } from "sonner";
 import { Label } from '@/components/ui/label';
 import { Smartphone, Plus, Trash2, Settings, RefreshCw, Power, UserPlus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 
 type Session = {
     id: string;
@@ -18,6 +26,10 @@ type Session = {
     sessionId: string;
     status: string;
     qr?: string | null;
+    user?: {
+        name: string | null;
+        email: string;
+    } | null;
 };
 
 export function SessionManager({ user }: { user: any }) {
@@ -156,43 +168,90 @@ export function SessionManager({ user }: { user: any }) {
                 </CardContent>
             </Card>
 
-            {/* Sessions Grid */}
+            {/* Sessions Table Card */}
             <div>
-                <h2 className="text-xl font-semibold mb-4 text-slate-800">Active Sessions ({sessions.length})</h2>
                 {sessions.length === 0 ? (
-                    <div className="text-center py-10 text-muted-foreground bg-slate-50 rounded-lg border">
+                    <div className="text-center py-10 text-muted-foreground bg-slate-50 dark:bg-slate-900 rounded-lg border border-border/50">
                         No sessions found. Create one above to get started.
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {sessions.map(session => (
-                            <Card key={session.id} className="hover:shadow-md transition-shadow">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-base font-medium truncate">
-                                        {session.name}
-                                    </CardTitle>
-                                    <Smartphone className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold truncate mb-2">{session.sessionId}</div>
-                                    <div className="flex items-center space-x-2">
-                                        <Badge variant={session.status === 'CONNECTED' ? 'default' : 'secondary'}
-                                            className={session.status === 'CONNECTED' ? 'bg-green-500 hover:bg-green-600' : ''}>
-                                            {session.status}
-                                        </Badge>
-                                    </div>
-                                </CardContent>
-                                <CardFooter className="bg-slate-50/50 p-3 flex justify-end gap-2">
-                                    <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/sessions/access?session=${session.sessionId}`)}>
-                                        <UserPlus className="h-4 w-4 mr-1" /> Share
-                                    </Button>
-                                    <Button variant="outline" size="sm" onClick={() => handleManageSession(session.sessionId)}>
-                                        <Settings className="h-4 w-4 mr-1" /> Manage
-                                    </Button>
-                                </CardFooter>
-                            </Card>
-                        ))}
-                    </div>
+                    <Card className="glass-panel border-border/50 shadow-sm overflow-hidden">
+                        <CardHeader className="pb-3 pt-5 px-5">
+                            <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                Active Sessions ({sessions.length})
+                            </CardTitle>
+                            <CardDescription>
+                                List of active WhatsApp sessions and their current connection status.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-0 overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="hover:bg-transparent">
+                                        <TableHead className="px-5 text-xs uppercase tracking-wider font-semibold">Session / Device</TableHead>
+                                        <TableHead className="text-xs uppercase tracking-wider font-semibold">Status</TableHead>
+                                        <TableHead className="text-xs uppercase tracking-wider font-semibold">Owner</TableHead>
+                                        <TableHead className="text-right px-5 text-xs uppercase tracking-wider font-semibold">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {sessions.map(session => (
+                                        <TableRow key={session.id} className="hover:bg-muted/20 dark:hover:bg-muted/5 transition-colors">
+                                            <TableCell className="px-5 py-3 font-medium">
+                                                <div className="font-semibold text-slate-800 dark:text-slate-200 text-sm">{session.name}</div>
+                                                <div className="text-[11px] text-muted-foreground font-mono mt-0.5">{session.sessionId}</div>
+                                            </TableCell>
+                                            <TableCell className="py-3">
+                                                <Badge 
+                                                    variant={session.status === 'CONNECTED' ? 'default' : 'secondary'}
+                                                    className={`text-[10px] font-semibold transition-all px-2 py-0.5 shrink-0 inline-flex items-center ${
+                                                        session.status === 'CONNECTED' 
+                                                            ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 hover:bg-emerald-500/20' 
+                                                            : 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 hover:bg-slate-100'
+                                                    }`}
+                                                >
+                                                    <span className={`h-1.5 w-1.5 rounded-full mr-1.5 ${
+                                                        session.status === 'CONNECTED' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+                                                    }`} />
+                                                    {session.status}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="py-3">
+                                                {session.user ? (
+                                                    <div className="leading-tight">
+                                                        <div className="font-semibold text-slate-700 dark:text-slate-300 text-xs">{session.user.name || "No Name"}</div>
+                                                        <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{session.user.email}</div>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground/50">-</span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="py-3 text-right px-5">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm" 
+                                                        className="h-8 px-2.5 text-xs rounded-lg hover:bg-primary/5 transition-colors border-border/50"
+                                                        onClick={() => router.push(`/dashboard/sessions/access?session=${session.sessionId}`)}
+                                                    >
+                                                        <UserPlus className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" /> Share
+                                                    </Button>
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm" 
+                                                        className="h-8 px-2.5 text-xs rounded-lg hover:bg-primary/5 transition-colors border-border/50"
+                                                        onClick={() => handleManageSession(session.sessionId)}
+                                                    >
+                                                        <Settings className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" /> Manage
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
                 )}
             </div>
         </div>

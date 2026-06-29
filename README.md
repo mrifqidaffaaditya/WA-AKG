@@ -106,12 +106,12 @@ WA-AKG natively supports **n8n**! You can build complex, no-code/low-code WhatsA
 ## 🚀 Quick Installation
 
 ### 1. Prerequisites
-- Node.js 20+
-- PostgreSQL or MySQL
+- Node.js 20+ (Node.js 22 recommended)
+- MySQL or PostgreSQL
 - Git
-- Docker & Docker Compose (Optional, for Docker deployment)
+- PM2 (Installed globally: `npm install -g pm2`)
 
-### 2. Setup (Standard Setup)
+### 2. Setup
 ```bash
 # Clone and install
 git clone https://github.com/mrifqidaffaaditya/WA-AKG.git
@@ -120,40 +120,70 @@ npm install
 
 # Configure environment
 cp .env.example .env
-# Edit .env with your DATABASE_URL, AUTH_SECRET, NEXTAUTH_URL etc.
+# Edit .env with your DATABASE_URL, AUTH_SECRET, PORT, etc.
 
-# Push schema and create admin
+# Push schema and generate Prisma Client
 npm run db:push
+
+# Create SuperAdmin account
 npm run make-admin admin@example.com password123
 ```
 
-### 3. Run
+### 3. Run (Development)
 ```bash
-# Development
 npm run dev
-
-# Production
-npm run build && npm start
 ```
 
-### 🐋 Docker Deployment
+### 4. Run (Production with PM2 - Recommended)
+We recommend deploying with **PM2** to run the app in the background and ensure it restarts automatically if the server rebooted or crashed.
 
-Deploy WA-AKG and MySQL together using Docker Compose:
+#### Option A: Automatic Setup Script (Easiest)
+We provide a built-in [start.sh](file:///home/aditya/project/WA-AKG/start.sh) script that automates everything: checking the configuration, installing dependencies, syncing the database schema, compiling production assets, and starting or reloading PM2:
+```bash
+./start.sh
+```
+
+#### Option B: Manual Setup
+1. **Build the application**:
+   ```bash
+   npm run build
+   ```
+
+2. **Start with PM2**:
+   Using the built-in [ecosystem.config.js](file:///home/aditya/project/WA-AKG/ecosystem.config.js) configuration file:
+   ```bash
+   pm2 start ecosystem.config.js
+   ```
+
+3. **Manage the process**:
+   - View status: `pm2 status`
+   - View logs: `pm2 logs wa-akg`
+   - Stop process: `pm2 stop wa-akg`
+   - Restart process: `pm2 restart wa-akg`
+
+4. **Enable auto-start on server boot**:
+   ```bash
+   pm2 startup
+   # Copy-paste the command outputted by the command above
+   pm2 save
+   ```
+
+---
+
+### 🐋 Alternative: Docker Deployment
+Although **PM2 is highly recommended**, you can also deploy using Docker Compose:
 
 1. **Prepare Environment**:
    ```bash
    cp .env.example .env
    ```
-   Edit `.env` — set `AUTH_SECRET`, `MYSQL_ROOT_PASSWORD`, `ADMIN_PASSWORD`, and `NEXT_PUBLIC_SWAGGER_PASSWORD` with strong unique values.
+   Edit `.env` — set `DATABASE_URL` (points to the MySQL container), `AUTH_SECRET`, and other branding settings.
 
 2. **Start Services**:
    ```bash
    docker compose up -d
    ```
-   This builds the app, pulls MySQL 8.0, creates tables, and provisions a SuperAdmin user using the credentials from your `.env` file.
-
-3. **Customization**:
-   See [Environment Variables Guide](docs/ENVIRONMENT_VARIABLES.md) for all available options.
+   This spins up the MySQL database container alongside the Next.js gateway application.
 
 ---
 

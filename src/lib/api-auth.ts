@@ -158,6 +158,12 @@ export async function getAccessibleSessions(userId: string, userRole: string) {
         return prisma.session.findMany({
             orderBy: { createdAt: 'desc' },
             include: {
+                user: {
+                    select: {
+                        name: true,
+                        email: true
+                    }
+                },
                 botConfig: true,
                 webhooks: true,
                 _count: {
@@ -179,6 +185,12 @@ export async function getAccessibleSessions(userId: string, userRole: string) {
             where: { userId },
             orderBy: { createdAt: 'desc' },
             include: {
+                user: {
+                    select: {
+                        name: true,
+                        email: true
+                    }
+                },
                 botConfig: true,
                 webhooks: true,
                 _count: {
@@ -210,6 +222,12 @@ export async function getAccessibleSessions(userId: string, userRole: string) {
         where: { id: { in: missingIds } },
         orderBy: { createdAt: 'desc' },
         include: {
+            user: {
+                select: {
+                    name: true,
+                    email: true
+                }
+            },
             botConfig: true,
             webhooks: true,
             _count: {

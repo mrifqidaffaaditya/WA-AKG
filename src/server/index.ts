@@ -1,3 +1,7 @@
+import { loadEnvConfig } from "@next/env";
+// Load environment variables before any other imports/logic
+loadEnvConfig(process.cwd());
+
 import { createServer } from "http";
 import { parse } from "url";
 import next from "next";

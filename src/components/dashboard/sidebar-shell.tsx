@@ -48,10 +48,13 @@ export function SidebarShell({ appName, userName, userEmail, version }: SidebarS
             <SidebarNav />
 
             {/* User Footer */}
-            <div className={`border-t border-border/30 bg-background/40 transition-all duration-300 ${isCollapsed ? "p-2" : "p-4"}`}>
+            <div 
+                suppressHydrationWarning={true}
+                className={`border-t border-border/30 bg-background/40 transition-all duration-300 ${isCollapsed ? "p-2" : "p-4"}`}
+            >
                 {isCollapsed ? (
-                    <div className="flex flex-col items-center gap-2">
-                        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-blue-500/20 flex items-center justify-center text-xs font-bold text-primary">
+                    <div suppressHydrationWarning={true} className="flex flex-col items-center gap-2">
+                        <div suppressHydrationWarning={true} className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-blue-500/20 flex items-center justify-center text-xs font-bold text-primary">
                             {userName?.charAt(0)?.toUpperCase() || "U"}
                         </div>
                         <button
@@ -63,11 +66,14 @@ export function SidebarShell({ appName, userName, userEmail, version }: SidebarS
                     </div>
                 ) : (
                     <>
-                        <div className="flex items-center gap-2.5 mb-3">
-                            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-blue-500/20 flex items-center justify-center text-xs font-bold text-primary border border-primary/10">
+                        <div suppressHydrationWarning={true} className="flex items-center gap-2.5 mb-3">
+                            <div 
+                                suppressHydrationWarning={true}
+                                className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-blue-500/20 flex items-center justify-center text-xs font-bold text-primary border border-primary/10"
+                            >
                                 {userName?.charAt(0)?.toUpperCase() || "U"}
                             </div>
-                            <div className="flex-1 min-w-0">
+                            <div suppressHydrationWarning={true} className="flex-1 min-w-0">
                                 <p className="text-sm font-semibold text-foreground truncate">{userName || "User"}</p>
                                 <p className="text-[10px] text-muted-foreground truncate">{userEmail}</p>
                             </div>
