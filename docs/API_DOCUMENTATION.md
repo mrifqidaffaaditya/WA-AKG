@@ -1190,6 +1190,10 @@ Get all sessions accessible to the authenticated user (role-based filtering)
     "sessionId": "marketing-1",
     "status": "Connected",
     "userId": "string",
+    "user": {
+      "name": "User Name",
+      "email": "user@example.com"
+    },
     "botConfig": {
       "text": "Hello from WA-AKG!"
     },
