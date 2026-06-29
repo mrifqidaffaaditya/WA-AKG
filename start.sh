@@ -33,7 +33,7 @@ SWAG_PASS=$(grep -E "^NEXT_PUBLIC_SWAGGER_PASSWORD=" .env | cut -d'=' -f2 | tr -
 ADM_PASS=$(grep -E "^ADMIN_PASSWORD=" .env | cut -d'=' -f2 | tr -d '"' | tr -d "'" | tr -d ' ')
 ROOT_DB_PASS=$(grep -E "^MYSQL_ROOT_PASSWORD=" .env | cut -d'=' -f2 | tr -d '"' | tr -d "'" | tr -d ' ')
 
-# Security audit check
+# Security audit check (results will be printed at the end)
 USING_DEFAULTS=0
 if [ "$AUTH_SEC" = "your-super-secret-key-at-least-32-chars-change-this-in-production" ] || [ -z "$AUTH_SEC" ]; then
     USING_DEFAULTS=1
@@ -46,17 +46,6 @@ if [ "$ADM_PASS" = "change-this-in-production" ]; then
 fi
 if [ "$ROOT_DB_PASS" = "change-this-in-production" ]; then
     USING_DEFAULTS=1
-fi
-
-if [ $USING_DEFAULTS -eq 1 ]; then
-    echo -e "${RED}======================================================================${NC}"
-    echo -e "${RED} ⚠️  SECURITY WARNING: INSECURE / DEFAULT VALUES DETECTED IN .env!${NC}"
-    echo -e "${RED}======================================================================${NC}"
-    echo -e "${YELLOW} It looks like you are using default values for AUTH_SECRET, Swagger,${NC}"
-    echo -e "${YELLOW} admin, or MySQL root passwords. Keeping these defaults makes your${NC}"
-    echo -e "${YELLOW} gateway highly vulnerable to unauthorized access and exploits!${NC}"
-    echo -e "${YELLOW} Please update your .env file with secure unique values immediately.${NC}"
-    echo -e "${RED}======================================================================${NC}"
 fi
 
 # Step 2: Check if port is already in use (Fail early before build)
@@ -199,4 +188,18 @@ echo -e "  - Open Database Studio:  ${YELLOW}npm run db:studio${NC}"
 echo -e "\n${YELLOW}To enable auto-start on server reboot, run:${NC}"
 echo -e "  ${GREEN}pm2 startup${NC}"
 echo -e "  ${GREEN}pm2 save${NC}"
-echo -e "${BLUE}====================================================${NC}\n"
+echo -e "${BLUE}====================================================${NC}"
+
+# Display Security Warning at the very end so it is not buried by logs
+if [ $USING_DEFAULTS -eq 1 ]; then
+    echo -e "\n${RED}======================================================================${NC}"
+    echo -e "${RED} ⚠️  SECURITY WARNING: INSECURE / DEFAULT VALUES DETECTED IN .env!${NC}"
+    echo -e "${RED}======================================================================${NC}"
+    echo -e "${YELLOW} It looks like you are using default values for AUTH_SECRET, Swagger,${NC}"
+    echo -e "${YELLOW} admin, or MySQL root passwords. Keeping these defaults makes your${NC}"
+    echo -e "${YELLOW} gateway highly vulnerable to unauthorized access and exploits!${NC}"
+    echo -e "${YELLOW} Please update your .env file with secure unique values immediately.${NC}"
+    echo -e "${RED}======================================================================${NC}\n"
+else
+    echo -e ""
+fi
