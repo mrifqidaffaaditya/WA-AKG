@@ -71,14 +71,15 @@ function ErrorContent() {
     colorTheme: 'primary',
   };
 
-  // Maps to standard classes so Tailwind compiler statically detects them
-  const colorMap = {
+  const COLOR_THEMES = {
     amber: { text: 'text-amber-500', bg: 'bg-amber-500', bgSoft: 'bg-amber-500/10', border: 'border-amber-500/20', borderDark: 'border-amber-500', hoverBg: 'hover:bg-amber-500/10', hoverText: 'hover:text-amber-500', from: 'from-amber-500/10', ring: 'ring-amber-500/5', shadow: 'shadow-amber-500/5', btnShadow: 'shadow-amber-500/20' },
     rose: { text: 'text-rose-500', bg: 'bg-rose-500', bgSoft: 'bg-rose-500/10', border: 'border-rose-500/20', borderDark: 'border-rose-500', hoverBg: 'hover:bg-rose-500/10', hoverText: 'hover:text-rose-500', from: 'from-rose-500/10', ring: 'ring-rose-500/5', shadow: 'shadow-rose-500/5', btnShadow: 'shadow-rose-500/20' },
     destructive: { text: 'text-destructive', bg: 'bg-destructive', bgSoft: 'bg-destructive/10', border: 'border-destructive/20', borderDark: 'border-destructive', hoverBg: 'hover:bg-destructive/10', hoverText: 'hover:text-destructive', from: 'from-destructive/10', ring: 'ring-destructive/5', shadow: 'shadow-destructive/5', btnShadow: 'shadow-destructive/20' },
     indigo: { text: 'text-indigo-500', bg: 'bg-indigo-500', bgSoft: 'bg-indigo-500/10', border: 'border-indigo-500/20', borderDark: 'border-indigo-500', hoverBg: 'hover:bg-indigo-500/10', hoverText: 'hover:text-indigo-500', from: 'from-indigo-500/10', ring: 'ring-indigo-500/5', shadow: 'shadow-indigo-500/5', btnShadow: 'shadow-indigo-500/20' },
     primary: { text: 'text-primary', bg: 'bg-primary', bgSoft: 'bg-primary/10', border: 'border-primary/20', borderDark: 'border-primary', hoverBg: 'hover:bg-primary/10', hoverText: 'hover:text-primary', from: 'from-primary/10', ring: 'ring-primary/5', shadow: 'shadow-primary/5', btnShadow: 'shadow-primary/20' },
-  }[config.colorTheme as keyof typeof colorMap] || colorMap['primary'];
+  };
+  
+  const colorMap = COLOR_THEMES[config.colorTheme as keyof typeof COLOR_THEMES] || COLOR_THEMES['primary'];
 
   if (!mounted) {
     return (
