@@ -8,17 +8,30 @@ Keep your **WA-AKG** instance up-to-date with the latest features, security patc
 
 Follow these steps to update your application safely.
 
-### 1. Pull Latest Changes
+### Option A: Automatic Update (Recommended)
+If you are deploying with PM2 and using the built-in [start.sh](file:///home/aditya/project/WA-AKG/start.sh) script, updating is as simple as:
 ```bash
-git pull origin main
+git pull
+./start.sh
+```
+This script will automatically pull the environment, install any new dependencies, sync the Prisma database schema, build Next.js assets, and safely reload the PM2 process without downtime.
+
+---
+
+### Option B: Manual Update Process
+If you prefer running commands manually:
+
+#### 1. Pull Latest Changes
+```bash
+git pull
 ```
 
-### 2. Update Dependencies
+#### 2. Update Dependencies
 ```bash
 npm install
 ```
 
-### 3. Sync Database Schema
+#### 3. Sync Database Schema
 If the update includes database changes, run:
 ```bash
 npm run db:push
@@ -26,12 +39,12 @@ npm run db:push
 > [!NOTE]
 > For production environments requiring strict migration history, use `npx prisma migrate deploy` instead.
 
-### 4. Build & Restart
+#### 4. Build & Restart
 ```bash
 # Build the optimized production bundle
 npm run build
 
-# Restart your process (example using PM2)
+# Restart your process using PM2
 pm2 restart wa-akg
 ```
 
