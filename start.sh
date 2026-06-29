@@ -68,7 +68,7 @@ if [ $? -ne 0 ]; then
 fi
 echo -e "${GREEN}✓ Dependencies installed successfully.${NC}"
 
-# Step 4: Run Database Schema Sync
+# Step 4: Run Database Schema Sync & Check Admin
 echo -e "\n${BLUE}[4/6] Syncing database schema with Prisma...${NC}"
 npx prisma db push
 if [ $? -ne 0 ]; then
@@ -77,6 +77,46 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 echo -e "${GREEN}✓ Database schema is up to date.${NC}"
+
+# Check if admin user exists in the database
+echo -e "\n${BLUE}[*] Checking database for existing admin accounts...${NC}"
+node scripts/check-admin-exists.js
+CHECK_STATUS=$?
+
+if [ $CHECK_STATUS -eq 2 ]; then
+    echo -e "${YELLOW}⚠️ No admin user found in the database. Initializing default admin setup...${NC}"
+    
+    # Try reading from .env file
+    ENV_ADMIN_EMAIL=$(grep -E "^ADMIN_EMAIL=" .env | cut -d'=' -f2 | tr -d '"' | tr -d "'" | tr -d ' ')
+    ENV_ADMIN_PASSWORD=$(grep -E "^ADMIN_PASSWORD=" .env | cut -d'=' -f2 | tr -d '"' | tr -d "'" | tr -d ' ')
+    
+    if [ -n "$ENV_ADMIN_EMAIL" ] && [ -n "$ENV_ADMIN_PASSWORD" ]; then
+        echo -e "${GREEN}✓ Found ADMIN_EMAIL and ADMIN_PASSWORD in .env. Creating SuperAdmin automatically...${NC}"
+        npm run make-admin "$ENV_ADMIN_EMAIL" "$ENV_ADMIN_PASSWORD"
+    else
+        # Check if stdin is connected to a terminal (interactive TTY)
+        if [ -t 0 ]; then
+            echo -e "${BLUE}Please enter credentials to create the default SUPERADMIN account:${NC}"
+            read -p "Enter Admin Email: " INPUT_EMAIL
+            read -sp "Enter Admin Password: " INPUT_PASSWORD
+            echo "" # New line after hidden password
+            
+            if [ -n "$INPUT_EMAIL" ] && [ -n "$INPUT_PASSWORD" ]; then
+                npm run make-admin "$INPUT_EMAIL" "$INPUT_PASSWORD"
+            else
+                echo -e "${RED}❌ Error: Email and password cannot be empty. Skipping admin creation.${NC}"
+            fi
+        else
+            echo -e "${RED}❌ Warning: No admin user found, and no ADMIN_EMAIL/ADMIN_PASSWORD defined in .env.${NC}"
+            echo -e "${YELLOW}Please run the following command manually to create your admin account later:${NC}"
+            echo -e "  ${GREEN}npm run make-admin <email> <password>${NC}"
+        fi
+    fi
+elif [ $CHECK_STATUS -eq 0 ]; then
+    echo -e "${GREEN}✓ Existing admin account detected. Skipping admin setup.${NC}"
+else
+    echo -e "${RED}⚠️ Warning: Could not verify admin status (database connection issue). Skipping admin setup.${NC}"
+fi
 
 # Step 5: Build Next.js Production Assets
 echo -e "\n${BLUE}[5/6] Building Next.js production assets...${NC}"
