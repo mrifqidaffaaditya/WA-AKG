@@ -29,9 +29,9 @@ export default async function DashboardLayout({
                     role={session?.user?.role as string}
                     registrationEnabled={registrationEnabled}
                 />
-                <div className="flex h-screen bg-background relative overflow-hidden">
+                <div className="flex h-screen bg-background relative overflow-hidden" suppressHydrationWarning={true}>
                     {/* Subtle ambient background */}
-                    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" suppressHydrationWarning={true}>
                         <div className="absolute -top-[20%] -left-[10%] w-[35rem] h-[35rem] bg-primary/[0.03] rounded-full blur-[100px]" />
                         <div className="absolute -bottom-[20%] -right-[10%] w-[25rem] h-[25rem] bg-blue-500/[0.03] rounded-full blur-[80px]" />
                     </div>
@@ -45,7 +45,7 @@ export default async function DashboardLayout({
                     />
 
                     {/* Main Content */}
-                    <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative z-10">
+                    <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative z-10" suppressHydrationWarning={true}>
                         <Navbar appName={appName} />
                         <main className="flex-1 overflow-auto p-3 sm:p-4 lg:p-6 styled-scrollbar">
                             {children}
