@@ -2,6 +2,7 @@
   "name": "wa-akg",
   "version": "1.6.2",
   "private": false,
+  "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "dev": "npx tsx src/server/index.ts",
     "build": "next build",

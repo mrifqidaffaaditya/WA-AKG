@@ -242,5 +242,5 @@ curl -X POST http://localhost:3000/api/messages/session_01/62812345678@s.whatsap
 
 <div align="center">
   Built with ❤️ by <a href="https://github.com/mrifqidaffaaditya">Aditya</a>  
-  Licensed under <a href="LICENSE">MIT</a>
+  Licensed under <a href="LICENSE">Custom Non-Commercial License</a>
 </div>
