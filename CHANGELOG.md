@@ -1,4 +1,4 @@
-## [Unreleased]
+## [v1.6.3] - 2026-06-30
 
 ### Added
 - **Automated Deployment**: Added `start.sh` deployment script that features PM2 startup configuration, early port conflict checks, existing admin verification, and end-of-script security warnings for default `.env` credentials.
