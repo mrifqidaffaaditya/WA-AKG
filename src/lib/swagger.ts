@@ -2666,13 +2666,14 @@ All endpoints require authentication via:
                                 "application/json": {
                                     schema: {
                                         type: "object",
-                                        required: ["keyword", "response"],
+                                        required: ["keyword"],
                                         properties: {
                                             keyword: { type: "string" },
                                             response: { type: "string" },
                                             matchType: { type: "string", enum: ["EXACT", "CONTAINS", "STARTS_WITH", "REGEX"] },
                                             isMedia: { type: "boolean" },
                                             mediaUrl: { type: "string" },
+                                            mediaType: { type: "string", enum: ["image", "video", "document", "audio"] },
                                             triggerType: { type: "string", enum: ["ALL", "GROUP", "PRIVATE"] }
                                         }
                                     },
@@ -2681,7 +2682,9 @@ All endpoints require authentication via:
                                         response: "Hi there! How can I help?",
                                         matchType: "EXACT",
                                         triggerType: "ALL",
-                                        isMedia: false
+                                        isMedia: false,
+                                        mediaUrl: null,
+                                        mediaType: null
                                     }
                                 }
                             }
@@ -2737,12 +2740,13 @@ All endpoints require authentication via:
                                 "application/json": {
                                     schema: {
                                         type: "object",
-                                        required: ["keyword", "response"],
+                                        required: ["keyword"],
                                         properties: {
                                             keyword: { type: "string" },
                                             response: { type: "string" },
                                             isMedia: { type: "boolean" },
                                             mediaUrl: { type: "string" },
+                                            mediaType: { type: "string", enum: ["image", "video", "document", "audio"] },
                                             triggerType: { type: "string", enum: ["ALL", "GROUP", "PRIVATE"] }
                                         }
                                     },
@@ -2751,7 +2755,9 @@ All endpoints require authentication via:
                                         response: "Hi there! How can I help?",
                                         matchType: "EXACT",
                                         triggerType: "ALL",
-                                        isMedia: false
+                                        isMedia: false,
+                                        mediaUrl: null,
+                                        mediaType: null
                                     }
                                 }
                             }
@@ -2827,13 +2833,15 @@ All endpoints require authentication via:
                                 "application/json": {
                                     schema: {
                                         type: "object",
-                                        required: ["jid", "content", "sendAt"],
+                                        required: ["jid", "sendAt"],
                                         properties: {
                                             jid: { type: "string" },
                                             content: { type: "string" },
                                             sendAt: { type: "string", format: "date-time" },
                                             mediaUrl: { type: "string" },
-                                            mediaType: { type: "string", enum: ["image", "video", "document"] }
+                                            mediaType: { type: "string", enum: ["image", "video", "document", "audio"] },
+                                            cronExpression: { type: "string" },
+                                            recurrenceRule: { type: "string" }
                                         }
                                     },
                                     example: {
@@ -2841,7 +2849,9 @@ All endpoints require authentication via:
                                         content: "Reminder: Meeting in 10 mins",
                                         sendAt: "2024-12-25T10:00:00.000Z",
                                         mediaUrl: "https://example.com/image.jpg",
-                                        mediaType: "image"
+                                        mediaType: "image",
+                                        cronExpression: "*/10 * * * *",
+                                        recurrenceRule: "{\"type\":\"minutes\",\"value\":10}"
                                     }
                                 }
                             }
@@ -2897,13 +2907,15 @@ All endpoints require authentication via:
                                 "application/json": {
                                     schema: {
                                         type: "object",
-                                        required: ["jid", "content", "sendAt"],
+                                        required: ["jid", "sendAt"],
                                         properties: {
                                             jid: { type: "string" },
                                             content: { type: "string" },
                                             sendAt: { type: "string", format: "date-time" },
                                             mediaUrl: { type: "string" },
-                                            mediaType: { type: "string", enum: ["image", "video", "document"] }
+                                            mediaType: { type: "string", enum: ["image", "video", "document", "audio"] },
+                                            cronExpression: { type: "string" },
+                                            recurrenceRule: { type: "string" }
                                         }
                                     },
                                     example: {
@@ -2911,7 +2923,9 @@ All endpoints require authentication via:
                                         content: "Updated meeting reminder",
                                         sendAt: "2024-12-25T11:00:00.000Z",
                                         mediaUrl: "https://example.com/image.jpg",
-                                        mediaType: "image"
+                                        mediaType: "image",
+                                        cronExpression: null,
+                                        recurrenceRule: null
                                     }
                                 }
                             }

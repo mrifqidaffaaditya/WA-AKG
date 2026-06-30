@@ -41,6 +41,7 @@ interface AutoReply {
     response: string;
     isMedia: boolean;
     mediaUrl: string | null;
+    mediaType: string | null;
     triggerType: string;
     createdAt: Date;
 }
@@ -58,6 +59,8 @@ export default function AutoReplyPage() {
     const [response, setResponse] = useState("");
     const [matchType, setMatchType] = useState("EXACT");
     const [triggerType, setTriggerType] = useState("ALL");
+    const [mediaUrl, setMediaUrl] = useState("");
+    const [mediaType, setMediaType] = useState("image");
 
     // Edit states
     const [isEditOpen, setIsEditOpen] = useState(false);
@@ -66,6 +69,8 @@ export default function AutoReplyPage() {
     const [editResponse, setEditResponse] = useState("");
     const [editMatchType, setEditMatchType] = useState("EXACT");
     const [editTriggerType, setEditTriggerType] = useState("ALL");
+    const [editMediaUrl, setEditMediaUrl] = useState("");
+    const [editMediaType, setEditMediaType] = useState("image");
 
     useEffect(() => {
         if (sessionId) {
@@ -90,8 +95,8 @@ export default function AutoReplyPage() {
 
     const handleCreate = async () => {
         if (!sessionId) return;
-        if (!keyword.trim() || !response.trim()) {
-            toast.error("Keyword and response are required");
+        if (!keyword.trim() || (!response.trim() && !mediaUrl.trim())) {
+            toast.error("Keyword and either response or media URL are required");
             return;
         }
 
@@ -103,8 +108,9 @@ export default function AutoReplyPage() {
                 response: response.trim(),
                 matchType,
                 triggerType,
-                isMedia: false, // For simplicity in this V1 UI
-                mediaUrl: null
+                isMedia: !!mediaUrl.trim(),
+                mediaUrl: mediaUrl.trim() || null,
+                mediaType: mediaType || null
             });
 
             toast.success("Auto-reply rule created");
@@ -137,21 +143,25 @@ export default function AutoReplyPage() {
         setResponse("");
         setMatchType("EXACT");
         setTriggerType("ALL");
+        setMediaUrl("");
+        setMediaType("image");
     };
 
     const handleEdit = (rule: AutoReply) => {
         setEditId(rule.id);
         setEditKeyword(rule.keyword);
-        setEditResponse(rule.response);
+        setEditResponse(rule.response || "");
         setEditMatchType(rule.matchType);
         setEditTriggerType(rule.triggerType);
+        setEditMediaUrl(rule.mediaUrl || "");
+        setEditMediaType(rule.mediaType || "image");
         setIsEditOpen(true);
     };
 
     const handleUpdate = async () => {
         if (!sessionId || !editId) return;
-        if (!editKeyword.trim() || !editResponse.trim()) {
-            toast.error("Keyword and response are required");
+        if (!editKeyword.trim() || (!editResponse.trim() && !editMediaUrl.trim())) {
+            toast.error("Keyword and either response or media URL are required");
             return;
         }
 
@@ -162,8 +172,9 @@ export default function AutoReplyPage() {
                 response: editResponse.trim(),
                 matchType: editMatchType,
                 triggerType: editTriggerType,
-                isMedia: false,
-                mediaUrl: null
+                isMedia: !!editMediaUrl.trim(),
+                mediaUrl: editMediaUrl.trim() || null,
+                mediaType: editMediaType || null
             });
 
             toast.success("Auto-reply rule updated");
@@ -242,7 +253,7 @@ export default function AutoReplyPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Reply Message</Label>
+                                <Label>Reply Message (Optional)</Label>
                                 <Textarea 
                                     value={response} 
                                     onChange={(e) => setResponse(e.target.value)} 
@@ -251,10 +262,34 @@ export default function AutoReplyPage() {
                                 />
                                 <p className="text-xs text-muted-foreground">You can use standard WhatsApp formatting (*bold*, _italic_, ~strikethrough~)</p>
                             </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Media URL (Optional)</Label>
+                                    <Input 
+                                        value={mediaUrl} 
+                                        onChange={(e) => setMediaUrl(e.target.value)} 
+                                        placeholder="https://example.com/image.jpg" 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Media Type</Label>
+                                    <Select value={mediaType} onValueChange={setMediaType}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="image">Image</SelectItem>
+                                            <SelectItem value="video">Video</SelectItem>
+                                            <SelectItem value="document">Document</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
                         </div>
                         <DialogFooter>
                             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-                            <Button onClick={handleCreate} disabled={submitting || !keyword.trim() || !response.trim()}>
+                            <Button onClick={handleCreate} disabled={submitting || !keyword.trim() || (!response.trim() && !mediaUrl.trim())}>
                                 {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Save Rule"}
                             </Button>
                         </DialogFooter>
@@ -384,7 +419,7 @@ export default function AutoReplyPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Reply Message</Label>
+                            <Label>Reply Message (Optional)</Label>
                             <Textarea 
                                 value={editResponse} 
                                 onChange={(e) => setEditResponse(e.target.value)} 
@@ -393,10 +428,33 @@ export default function AutoReplyPage() {
                             />
                             <p className="text-xs text-muted-foreground">You can use standard WhatsApp formatting (*bold*, _italic_, ~strikethrough~)</p>
                         </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Media URL (Optional)</Label>
+                                <Input 
+                                    value={editMediaUrl} 
+                                    onChange={(e) => setEditMediaUrl(e.target.value)} 
+                                    placeholder="https://example.com/image.jpg" 
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Media Type</Label>
+                                <Select value={editMediaType} onValueChange={setEditMediaType}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="image">Image</SelectItem>
+                                        <SelectItem value="video">Video</SelectItem>
+                                        <SelectItem value="document">Document</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
-                        <Button onClick={handleUpdate} disabled={submitting || !editKeyword.trim() || !editResponse.trim()}>
+                        <Button onClick={handleUpdate} disabled={submitting || !editKeyword.trim() || (!editResponse.trim() && !editMediaUrl.trim())}>
                             {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Save Changes"}
                         </Button>
                     </DialogFooter>

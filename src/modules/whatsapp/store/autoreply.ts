@@ -150,37 +150,34 @@ export async function bindAutoReply(sock: WASocket, sessionId: string) {
 
                         if (rule.isMedia && rule.mediaUrl) {
                             const url = rule.mediaUrl;
-                            const isVideo = url.endsWith('.mp4') || url.endsWith('.avi') || url.endsWith('.mov');
-                            const isDocument = url.endsWith('.pdf') || url.endsWith('.doc') || url.endsWith('.docx') || url.endsWith('.zip');
-
-                            try {
-                                const res = await fetch(url);
-                                if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-                                const buffer = Buffer.from(await res.arrayBuffer());
-
-                                if (isVideo) {
-                                    await sock.sendMessage(remoteJid, {
-                                        video: buffer,
-                                        caption: rule.response
-                                    }, { quoted: msg });
-                                } else if (isDocument) {
-                                    await sock.sendMessage(remoteJid, {
-                                        document: buffer,
-                                        caption: rule.response,
-                                        mimetype: 'application/octet-stream',
-                                        fileName: url.split('/').pop() || 'document'
-                                    }, { quoted: msg });
-                                } else {
-                                    await sock.sendMessage(remoteJid, {
-                                        image: buffer,
-                                        caption: rule.response
-                                    }, { quoted: msg });
-                                }
-                            } catch (err: any) {
-                                logger.error("AutoReply", `Failed to send media auto-reply from URL: ${err.message}. Falling back to text.`);
-                                await sock.sendMessage(remoteJid, { text: rule.response }, { quoted: msg });
+                            const type = (rule as any).mediaType || "document";
+                            
+                            let payload: any = {};
+                            if (rule.response) {
+                                payload.caption = rule.response;
                             }
-                        } else {
+
+                            if (type === "image") {
+                                payload.image = { url };
+                            } else if (type === "video") {
+                                payload.video = { url };
+                            } else if (type === "audio") {
+                                payload = { audio: { url } };
+                            } else {
+                                payload.document = { url };
+                                payload.mimetype = 'application/octet-stream';
+                                payload.fileName = url.split('/').pop() || 'document';
+                            }
+                            
+                            try {
+                                await sock.sendMessage(remoteJid, payload, { quoted: msg });
+                            } catch (err: any) {
+                                logger.error("AutoReply", `Failed to send media auto-reply from URL: ${err.message}. Falling back to text if response exists.`);
+                                if (rule.response) {
+                                    await sock.sendMessage(remoteJid, { text: rule.response }, { quoted: msg });
+                                }
+                            }
+                        } else if (rule.response) {
                             await sock.sendMessage(remoteJid, { text: rule.response }, { quoted: msg });
                         }
 

@@ -1,8 +1,8 @@
 import cron from "node-cron";
+import cronParser from "cron-parser";
 import { prisma } from "@/lib/prisma";
 import { waManager } from "@/modules/whatsapp/manager";
 import { logger } from "./logger";
-
 export function initScheduler() {
     // Run every minute
     cron.schedule("* * * * *", async () => {
@@ -43,27 +43,54 @@ export function initScheduler() {
                     logger.info("Cron", `Sending to ${msg.jid}`);
                     
                     if (msg.mediaUrl) {
-                        // TODO: Handle media sending
-                        await instance.socket.sendMessage(msg.jid, { 
-                            text: msg.content // Caption for now if mediaUrl exists but logic not fully impl
-                            // image: { url: msg.mediaUrl }
-                        });
+                        const type = msg.mediaType || "document";
+                        let payload: any = { caption: msg.content };
+                        
+                        if (type === "image") {
+                            payload.image = { url: msg.mediaUrl };
+                        } else if (type === "video") {
+                            payload.video = { url: msg.mediaUrl };
+                        } else if (type === "audio") {
+                            payload = { audio: { url: msg.mediaUrl } };
+                        } else {
+                            payload.document = { url: msg.mediaUrl };
+                            payload.mimetype = "application/octet-stream";
+                            payload.fileName = msg.mediaUrl.split('/').pop() || "file";
+                        }
+                        await instance.socket.sendMessage(msg.jid, payload);
                     } else {
                         await instance.socket.sendMessage(msg.jid, { text: msg.content });
                     }
 
-                    // Update status
-                    await prisma.scheduledMessage.update({
-                        where: { id: msg.id },
-                        data: { status: "SENT" }
-                    });
+                    // Update status or compute next sendAt if recurring
+                    if (msg.cronExpression) {
+                        const interval = cronParser.parseExpression(msg.cronExpression, { tz: "Asia/Jakarta" });
+                        const nextDate = interval.next().toDate();
+                        await prisma.scheduledMessage.update({
+                            where: { id: msg.id },
+                            data: { sendAt: nextDate } // Keep status as PENDING
+                        });
+                    } else {
+                        await prisma.scheduledMessage.update({
+                            where: { id: msg.id },
+                            data: { status: "SENT" }
+                        });
+                    }
 
                 } catch (error) {
                     logger.error("Cron", `Check failed for ${msg.id}`, error);
-                    await prisma.scheduledMessage.update({
-                        where: { id: msg.id },
-                        data: { status: "FAILED" } // Failed to send
-                    });
+                    if (!msg.cronExpression) {
+                        await prisma.scheduledMessage.update({
+                            where: { id: msg.id },
+                            data: { status: "FAILED" } // Failed to send
+                        });
+                    } else {
+                        const interval = cronParser.parseExpression(msg.cronExpression, { tz: "Asia/Jakarta" });
+                        await prisma.scheduledMessage.update({
+                            where: { id: msg.id },
+                            data: { sendAt: interval.next().toDate() }
+                        });
+                    }
                 }
             }
 

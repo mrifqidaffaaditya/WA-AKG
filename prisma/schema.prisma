@@ -152,9 +152,10 @@ model AutoReply {
   sessionId   String
   keyword     String
   matchType   String   // EXACT, CONTAINS, REGEX
-  response    String   @db.Text
+  response    String?  @db.Text
   isMedia     Boolean  @default(false)
   mediaUrl    String?
+  mediaType   String?
   triggerType String   @default("ALL") // ALL, GROUP, PRIVATE
   createdAt   DateTime @default(now())
 
@@ -178,10 +179,12 @@ model ScheduledMessage {
   id          String   @id @default(cuid())
   sessionId   String
   jid         String
-  content     String   @db.Text
+  content     String?  @db.Text
   mediaUrl    String?
   mediaType   String?  // image, video, document, etc.
   sendAt      DateTime
+  cronExpression String? // e.g., '*/5 * * * *'
+  recurrenceRule String? @db.Text // UI JSON state
   status      String   @default("PENDING") // PENDING, SENT, FAILED
   createdAt   DateTime @default(now())
 

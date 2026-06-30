@@ -19,10 +19,10 @@ export async function PUT(
         }
 
         const body = await request.json();
-        const { keyword, response, matchType, triggerType, isMedia, mediaUrl } = body;
+        const { keyword, response, matchType, triggerType, isMedia, mediaUrl, mediaType } = body;
 
-        if (!keyword || !response) {
-            return NextResponse.json({ status: false, message: "Keyword and response are required", error: "Keyword and response are required" }, { status: 400 });
+        if (!keyword || (!response && !mediaUrl)) {
+            return NextResponse.json({ status: false, message: "Keyword and either response or media are required", error: "Keyword and response are required" }, { status: 400 });
         }
 
         const updated = await prisma.autoReply.update({
@@ -33,7 +33,8 @@ export async function PUT(
                 matchType: matchType || "EXACT",
                 triggerType: triggerType || "ALL",
                 isMedia: isMedia || false,
-                mediaUrl: mediaUrl || null
+                mediaUrl: mediaUrl || null,
+                mediaType: mediaType || null
             }
         });
 

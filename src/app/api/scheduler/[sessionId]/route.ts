@@ -30,10 +30,23 @@ export async function GET(
             return NextResponse.json({ status: false, message: "Session not found", error: "Session not found" }, { status: 404 });
         }
 
+        const url = new URL(request.url);
+        const tab = url.searchParams.get("tab") || "pending";
+        
+        const whereClause: any = { sessionId: session.id };
+        let orderByClause: any = { sendAt: 'asc' };
+        
+        if (tab === "history") {
+            whereClause.status = { in: ["SENT", "FAILED"] };
+            orderByClause = { sendAt: 'desc' };
+        } else {
+            whereClause.status = "PENDING";
+        }
+
         const messages = await prisma.scheduledMessage.findMany({
-            where: { sessionId: session.id },
+            where: whereClause,
             include: { session: true },
-            orderBy: { sendAt: 'asc' }
+            orderBy: orderByClause
         });
 
         return NextResponse.json({ status: true, message: "Scheduled messages retrieved successfully", data: messages });
@@ -57,10 +70,10 @@ export async function POST(
         }
 
         const body = await request.json();
-        const { jid, content, sendAt, mediaUrl, mediaType } = body;
+        const { jid, content, sendAt, mediaUrl, mediaType, cronExpression, recurrenceRule } = body;
 
-        if (!jid || !content || !sendAt) {
-            return NextResponse.json({ status: false, message: "Missing required fields", error: "Missing required fields" }, { status: 400 });
+        if (!jid || (!content && !mediaUrl) || !sendAt) {
+            return NextResponse.json({ status: false, message: "Missing required fields (JID, Content/Media, SendAt)", error: "Missing required fields" }, { status: 400 });
         }
 
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
@@ -93,6 +106,8 @@ export async function POST(
                 content,
                 mediaUrl,
                 mediaType,
+                cronExpression,
+                recurrenceRule,
                 sendAt: utcDate,
                 status: "PENDING"
             }

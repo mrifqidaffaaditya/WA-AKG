@@ -20,10 +20,10 @@ export async function PUT(
         }
 
         const body = await request.json();
-        const { jid, content, sendAt, mediaUrl, mediaType } = body;
+        const { jid, content, sendAt, mediaUrl, mediaType, cronExpression, recurrenceRule } = body;
 
-        if (!jid || !content || !sendAt) {
-            return NextResponse.json({ status: false, message: "JID, content, and sendAt are required", error: "JID, content, and sendAt are required" }, { status: 400 });
+        if (!jid || (!content && !mediaUrl) || !sendAt) {
+            return NextResponse.json({ status: false, message: "Missing required fields (JID, Content/Media, SendAt)", error: "Missing required fields" }, { status: 400 });
         }
 
         // Fetch system timezone
@@ -56,7 +56,9 @@ export async function PUT(
                 content,
                 sendAt: utcDate,
                 mediaUrl: mediaUrl || null,
-                mediaType: mediaType || null
+                mediaType: mediaType || null,
+                cronExpression: cronExpression !== undefined ? cronExpression : msg.cronExpression,
+                recurrenceRule: recurrenceRule !== undefined ? recurrenceRule : msg.recurrenceRule
             }
         });
 
