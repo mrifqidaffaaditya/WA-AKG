@@ -44,7 +44,8 @@ export function initScheduler() {
                     
                     if (msg.mediaUrl) {
                         const type = msg.mediaType || "document";
-                        let payload: any = { caption: msg.content };
+                        let payload: any = {};
+                        if (msg.content) payload.caption = msg.content;
                         
                         if (type === "image") {
                             payload.image = { url: msg.mediaUrl };
@@ -59,12 +60,12 @@ export function initScheduler() {
                         }
                         await instance.socket.sendMessage(msg.jid, payload);
                     } else {
-                        await instance.socket.sendMessage(msg.jid, { text: msg.content });
+                        await instance.socket.sendMessage(msg.jid, { text: msg.content || "" });
                     }
 
                     // Update status or compute next sendAt if recurring
                     if (msg.cronExpression) {
-                        const interval = cronParser.parseExpression(msg.cronExpression, { tz: "Asia/Jakarta" });
+                        const interval = cronParser.parse(msg.cronExpression, { tz: "Asia/Jakarta" });
                         const nextDate = interval.next().toDate();
                         await prisma.scheduledMessage.update({
                             where: { id: msg.id },
@@ -85,7 +86,7 @@ export function initScheduler() {
                             data: { status: "FAILED" } // Failed to send
                         });
                     } else {
-                        const interval = cronParser.parseExpression(msg.cronExpression, { tz: "Asia/Jakarta" });
+                        const interval = cronParser.parse(msg.cronExpression, { tz: "Asia/Jakarta" });
                         await prisma.scheduledMessage.update({
                             where: { id: msg.id },
                             data: { sendAt: interval.next().toDate() }
