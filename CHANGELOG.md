@@ -1,16 +1,22 @@
 ## [Unreleased]
 
 ### Added
+- **Automated Deployment**: Added `start.sh` deployment script that features PM2 startup configuration, early port conflict checks, existing admin verification, and end-of-script security warnings for default `.env` credentials.
 - **Recurring Schedules**: The Scheduler now supports recurring messages with interval options: Every X Minutes, Every X Hours, Specific Days of Week, or Custom Cron Expressions.
 - **Scheduler JID Types**: Added a radio selector on the Scheduler UI to quickly target Personal chats, WhatsApp Groups, or Newsletters (Channels) without manually typing domain suffixes (`@s.whatsapp.net`, `@g.us`, `@newsletter`).
 - **Media-only Auto Replies & Schedules**: Both Auto Reply and Scheduler features now allow sending messages containing only media (images, videos, documents) without requiring text content.
 
 ### Changed
+- **UI Redesign**: Modernized the Session List table and redesigned application Error Pages for a cleaner and more professional user experience.
 - **Scheduler UX Redesign**: The "Send At" form fields are now dynamically hidden or adjusted based on the selected schedule type (One-time vs. Recurring vs. Specific Days) for a cleaner and more intuitive experience.
-- **API Documentation**: Updated Swagger specs and `API_DOCUMENTATION.md` to document the new `cronExpression` and `recurrenceRule` fields, and to mark `content` as conditionally optional.
+- **Environment & PM2 Config**: Removed hardcoded `PORT` from `ecosystem.config.js` to strictly prioritize `.env` configs, and reorganized `.env.example`.
+- **License**: Switched the project license to standard MIT.
+- **Documentation**: Updated Swagger specs, `API_DOCUMENTATION.md`, and `UPDATE_GUIDE.md` to document the new `start.sh` workflow, session API responses, and the new schedule properties.
 
 ### Fixed
-- **API 400 Validation Error**: Fixed a backend validation bug that rejected POST/PUT requests to the Scheduler API with `400 Bad Request` if the text content was empty despite a media URL being provided.
+- **API Validation Error**: Fixed a backend validation bug that rejected POST/PUT requests to the Scheduler API with `400 Bad Request` if the text content was empty despite a media URL being provided.
+- **Environment Loading**: Fixed a bug where environment variables were not loaded correctly in development mode.
+- **React Hydration**: Resolved hydration mismatch bugs and TypeScript inference errors in error pages.
 
 ## [v1.6.2] - 2026-06-28
 
