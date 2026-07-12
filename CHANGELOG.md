@@ -3,6 +3,9 @@
 ### Added
 - **Direct Chat URL** (#85): Added `/dashboard/chat/[jid]` route to open a chat directly by phone number. URL path syncs when selecting chat from list.
 
+### Changed
+- **Webhook Log Optimization**: Removed `raw: message` from webhook payload to reduce storage. Truncated `responseBody` to max 1KB. Added auto-cleanup that deletes logs older than 30 days and caps at 500 logs per webhook.
+
 ### Fixed
 - **Reply Input Focus** (#84): Reply text box now automatically gains focus when clicking the reply arrow or using context menu reply.
 
