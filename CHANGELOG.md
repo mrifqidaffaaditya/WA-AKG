@@ -1,3 +1,11 @@
+## [v1.6.4] - 2026-07-12
+
+### Added
+- **Direct Chat URL** (#85): Added `/dashboard/chat/[jid]` route to open a chat directly by phone number. URL path syncs when selecting chat from list.
+
+### Fixed
+- **Reply Input Focus** (#84): Reply text box now automatically gains focus when clicking the reply arrow or using context menu reply.
+
 ## [v1.6.3] - 2026-06-30
 
 ### Added
