@@ -7,6 +7,7 @@ import { MessageCircle } from "lucide-react";
 
 interface ChatLayoutClientProps {
     sessionId: string;
+    initialJid?: string;
 }
 
 interface SelectedChat {
@@ -14,8 +15,10 @@ interface SelectedChat {
     name?: string;
 }
 
-export function ChatLayoutClient({ sessionId }: ChatLayoutClientProps) {
-    const [selectedChat, setSelectedChat] = useState<SelectedChat | null>(null);
+export function ChatLayoutClient({ sessionId, initialJid }: ChatLayoutClientProps) {
+    const [selectedChat, setSelectedChat] = useState<SelectedChat | null>(
+        initialJid ? { jid: initialJid } : null
+    );
 
     const handleSelectChat = (jid: string, name?: string) => {
         setSelectedChat({ jid, name });

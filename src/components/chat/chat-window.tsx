@@ -268,6 +268,13 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
         if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
     };
 
+    // Focus input when replying
+    useEffect(() => {
+        if (replyingTo && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [replyingTo]);
+
     // Global keyboard shortcuts
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {

@@ -164,6 +164,9 @@ async function sendWebhookRequest(url: string, payload: WebhookPayload, secret?:
         });
 
         responseBody = await response.text().catch(() => undefined);
+        if (responseBody && responseBody.length > 1024) {
+            responseBody = responseBody.substring(0, 1024);
+        }
 
         if (!response.ok) {
             errorMessage = `Webhook returned ${response.status}: ${response.statusText}`;
@@ -228,6 +231,33 @@ async function recordWebhookLog(data: {
             errorMessage: data.errorMessage || null,
         }
     });
+
+    cleanupOldLogs(data.webhookId).catch(err =>
+        logger.error("Webhook", "Failed to cleanup old logs:", err)
+    );
+}
+
+async function cleanupOldLogs(webhookId: string) {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    await prisma.webhookLog.deleteMany({
+        where: {
+            webhookId,
+            createdAt: { lt: thirtyDaysAgo }
+        }
+    });
+
+    const logs = await prisma.webhookLog.findMany({
+        where: { webhookId },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true }
+    });
+
+    if (logs.length > 500) {
+        const idsToDelete = logs.slice(500).map(l => l.id);
+        await prisma.webhookLog.deleteMany({
+            where: { id: { in: idsToDelete } }
+        });
+    }
 }
 
 /**
@@ -276,7 +306,10 @@ export async function testWebhook(webhookId: string, url: string, secret?: strin
         });
 
         const responseTimeMs = Date.now() - startedAt;
-        const responseBody = await response.text().catch(() => undefined);
+        let responseBody = await response.text().catch(() => undefined);
+        if (responseBody && responseBody.length > 1024) {
+            responseBody = responseBody.substring(0, 1024);
+        }
 
         // Record test log
         await recordWebhookLog({
@@ -548,8 +581,6 @@ export async function onMessageReceived(sessionId: string, message: any, existin
         caption: normalized.caption,
         quoted: quoted,
 
-        // Raw Data
-        raw: message
     });
 }
 
@@ -600,8 +631,7 @@ export async function onMessageSent(sessionId: string, message: any, existingFil
         caption: normalized.caption,
         quoted: quoted,
 
-        timestamp: Date.now(),
-        raw: message
+        timestamp: Date.now()
     });
 }
 
