@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChatList } from "./chat-list";
 import { ChatWindow } from "./chat-window";
 import { MessageCircle } from "lucide-react";
@@ -20,12 +20,49 @@ export function ChatLayoutClient({ sessionId, initialJid }: ChatLayoutClientProp
         initialJid ? { jid: initialJid } : null
     );
 
+    // Sync selected chat to URL pathname
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const base = "/dashboard/chat";
+        if (selectedChat) {
+            const number = selectedChat.jid.split("@")[0];
+            const newPath = `${base}/${number}`;
+            if (window.location.pathname !== newPath) {
+                window.history.replaceState(null, "", newPath);
+            }
+        } else {
+            if (window.location.pathname !== base) {
+                window.history.replaceState(null, "", base);
+            }
+        }
+    }, [selectedChat]);
+
+    // Handle browser back/forward
+    useEffect(() => {
+        const handlePopState = () => {
+            const path = window.location.pathname;
+            if (path.startsWith("/dashboard/chat/")) {
+                const rawJid = path.replace("/dashboard/chat/", "");
+                let clean = rawJid.replace(/\D/g, "");
+                if (clean.startsWith("0")) clean = "62" + clean.substring(1);
+                setSelectedChat({ jid: `${clean}@s.whatsapp.net` });
+            } else {
+                setSelectedChat(null);
+            }
+        };
+        window.addEventListener("popstate", handlePopState);
+        return () => window.removeEventListener("popstate", handlePopState);
+    }, []);
+
     const handleSelectChat = (jid: string, name?: string) => {
         setSelectedChat({ jid, name });
     };
 
     const handleBack = () => {
         setSelectedChat(null);
+        if (typeof window !== "undefined") {
+            window.history.replaceState(null, "", "/dashboard/chat");
+        }
     };
 
     return (
