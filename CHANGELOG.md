@@ -25,9 +25,12 @@
 - **Comprehensive Vulnerability Remediation**: Remediated 13 security review findings from external evaluation:
   - **Socket.IO Hardening**: Added JWT & API key authentication middleware (`io.use`), session authorization checks, and restricted CORS origins.
   - **SSRF & LFI Mitigation**: Implemented strict safe fetching (`safeFetchBuffer`) with private IP/cloud-metadata blocking (`validateSafeUrl`) for media downloads, webhooks, chat, and scheduler.
-  - **Auth & Secrets Protection**: Encrypted WhatsApp `AuthState` session keys at rest with AES-256-GCM, changed default role to `STAFF`, disabled public registration by default, and migrated API key generation to CSPRNG.
+  - **Auth & Secrets Protection**: Encrypted WhatsApp `AuthState` session keys at rest with AES-256-GCM, changed default role to `USER`, disabled public registration by default, and migrated API key generation to CSPRNG.
   - **Swagger & API Security**: Eliminated client-side credentials from Swagger UI, enforced session checks, and strengthened defense-in-depth API key validation in proxy middleware.
   - **Media & Container Hardening**: Sanitized mimetype file extensions to prevent path traversal, enforced session prefix ownership, and migrated Docker runner to non-root user `node`.
+
+### Fixed
+- **Dev Server Startup Stability**: Decoupled NextAuth evaluation from Socket.IO and session access queries to eliminate Next.js 16 `Invariant: AsyncLocalStorage accessed in runtime where it is not available` crash on server startup.
 
 ## [v1.6.4] - 2026-07-12
 
