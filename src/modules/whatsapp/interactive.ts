@@ -3,6 +3,7 @@ import {
     generateWAMessageFromContent,
     generateWAMessage,
     prepareWAMessageMedia,
+    jidNormalizedUser,
     WASocket,
     WAMessage
 } from "@whiskeysockets/baileys";
@@ -149,6 +150,12 @@ export function formatNativeButtons(buttons: AnyInteractiveButton[]): any[] {
             return {
                 name: btn.name,
                 buttonParamsJson: btn.buttonParamsJson
+            };
+        }
+        if (btn.name && typeof (btn as any).buttonParamsJson === "object" && (btn as any).buttonParamsJson !== null) {
+            return {
+                name: btn.name,
+                buttonParamsJson: JSON.stringify((btn as any).buttonParamsJson)
             };
         }
 
@@ -390,8 +397,9 @@ export function convertLegacyToInteractive(content: any): any {
  */
 export async function buildInteractiveMessage(
     sock: WASocket,
-    payload: InteractiveMessagePayload
+    payload: any
 ): Promise<any> {
+    const raw = payload?.interactiveMessage || payload || {};
     const {
         title,
         body,
@@ -408,13 +416,14 @@ export async function buildInteractiveMessage(
         externalAdReply,
         buttons = [],
         nativeFlowMessage
-    } = payload;
+    } = raw;
 
-    const bodyText = body || title || "";
+    const bodyText = (typeof body === "object" ? body?.text : body) || title || "";
+    const footerText = typeof footer === "object" ? footer?.text : footer;
 
     // 1. Prepare Header (media or text)
     let headerMedia: any = null;
-    let headerText = typeof header === "string" ? header : "";
+    let headerText = typeof header === "string" ? header : (typeof header === "object" ? header?.title : "");
 
     const uploadFn = (sock as any).waUploadToServer;
 
@@ -455,17 +464,24 @@ export async function buildInteractiveMessage(
 
     const interactiveHeader: any = headerMedia
         ? {
-              title: headerText,
+              title: headerText || "",
               hasMediaAttachment: true,
+              subtitle: "",
               ...headerMedia
           }
-        : {
+        : headerText
+        ? {
               title: headerText,
-              hasMediaAttachment: false
-          };
+              hasMediaAttachment: false,
+              subtitle: ""
+          }
+        : undefined;
 
     // 2. Prepare Native Flow Buttons
-    const formattedButtons = formatNativeButtons(buttons);
+    const rawButtons = Array.isArray(buttons) && buttons.length > 0
+        ? buttons
+        : (nativeFlowMessage?.buttons || []);
+    const formattedButtons = formatNativeButtons(rawButtons);
     const flowMessage = {
         buttons: formattedButtons,
         messageParamsJson: "",
@@ -494,7 +510,7 @@ export async function buildInteractiveMessage(
 
     const interactiveMessage: any = {
         body: { text: bodyText },
-        footer: footer ? { text: footer } : undefined,
+        footer: footerText ? { text: footerText } : undefined,
         header: interactiveHeader,
         nativeFlowMessage: flowMessage
     };
@@ -503,17 +519,8 @@ export async function buildInteractiveMessage(
         interactiveMessage.contextInfo = finalContextInfo;
     }
 
-    // Wrapped in viewOnceMessage with messageContextInfo as required by WhatsApp clients
     return {
-        viewOnceMessage: {
-            message: {
-                messageContextInfo: {
-                    deviceListMetadata: {},
-                    deviceListMetadataVersion: 2
-                },
-                interactiveMessage
-            }
-        }
+        interactiveMessage
     };
 }
 
@@ -632,6 +639,77 @@ export async function sendEventMessage(
 }
 
 /**
+ * Normalizes any phone number or JID into standard WhatsApp format
+ */
+export function normalizeTargetJid(jid: string): string {
+    if (!jid) return jid;
+    if (jid.endsWith("@g.us") || jid.endsWith("@newsletter")) {
+        return jid;
+    }
+    const clean = jid.replace(/[^0-9]/g, "");
+    if (jid.includes("@")) {
+        return jidNormalizedUser(jid);
+    }
+    return `${clean}@s.whatsapp.net`;
+}
+
+/**
+ * Builds binary nodes required by WhatsApp servers and clients
+ * to render Native Flow interactive buttons natively.
+ */
+export function buildNativeFlowAdditionalNodes(targetJid: string, buttonName: string = "mixed"): any[] {
+    const isGroup = targetJid.endsWith("@g.us");
+    const isNewsletter = targetJid.endsWith("@newsletter");
+
+    const nodes: any[] = [
+        {
+            tag: "biz",
+            attrs: {
+                actual_actors: "2",
+                host_storage: "2",
+                privacy_mode_ts: String(Math.floor(Date.now() / 1000))
+            },
+            content: [
+                {
+                    tag: "interactive",
+                    attrs: {
+                        type: "native_flow",
+                        v: "1"
+                    },
+                    content: [
+                        {
+                            tag: "native_flow",
+                            attrs: {
+                                name: buttonName || "mixed",
+                                v: "9"
+                            }
+                        }
+                    ]
+                },
+                {
+                    tag: "quality_control",
+                    attrs: {
+                        source_type: "third_party"
+                    }
+                }
+            ]
+        }
+    ];
+
+    // In direct 1-on-1 chats, WhatsApp expects the biz_bot attribute to recognize interactive bot messages
+    if (!isGroup && !isNewsletter) {
+        nodes.push({
+            tag: "bot",
+            attrs: {
+                biz_bot: "1"
+            }
+        });
+    }
+
+    return nodes;
+}
+
+/**
  * Builds and sends a Product interactive message
  */
 export async function sendProductMessage(
@@ -666,51 +744,57 @@ export async function sendProductMessage(
     const formattedButtons = formatNativeButtons(buttons);
 
     const productContent = {
-        viewOnceMessage: {
-            message: {
-                messageContextInfo: {
-                    deviceListMetadata: {},
-                    deviceListMetadataVersion: 2
-                },
-                interactiveMessage: {
-                    body: { text: body },
-                    footer: footer ? { text: footer } : undefined,
-                    header: {
+        interactiveMessage: {
+            body: { text: body },
+            footer: footer ? { text: footer } : undefined,
+            header: {
+                title: title,
+                hasMediaAttachment: false,
+                productMessage: {
+                    product: {
+                        productImage: productImage || undefined,
+                        productId: productId || "",
                         title: title,
-                        hasMediaAttachment: false,
-                        productMessage: {
-                            product: {
-                                productImage: productImage || undefined,
-                                productId: productId || "",
-                                title: title,
-                                description: description,
-                                currencyCode: currencyCode,
-                                priceAmount1000: priceAmount1000,
-                                retailerId: retailerId || "",
-                                url: url || "",
-                                productImageCount: productImage ? 1 : 0
-                            },
-                            businessOwnerJid: (sock as any).user?.id || "0@s.whatsapp.net"
-                        }
+                        description: description,
+                        currencyCode: currencyCode,
+                        priceAmount1000: priceAmount1000,
+                        retailerId: retailerId || "",
+                        url: url || "",
+                        productImageCount: productImage ? 1 : 0
                     },
-                    nativeFlowMessage: {
-                        buttons: formattedButtons,
-                        messageParamsJson: "",
-                        messageVersion: 1
-                    }
+                    businessOwnerJid: (sock as any).user?.id ? jidNormalizedUser((sock as any).user.id) : "0@s.whatsapp.net"
                 }
+            },
+            nativeFlowMessage: {
+                buttons: formattedButtons,
+                messageParamsJson: "",
+                messageVersion: 1
             }
         }
     };
 
-    const msg = await generateWAMessageFromContent(jid, productContent, {
-        userJid: (sock as any).user?.id,
+    const targetJid = normalizeTargetJid(jid);
+    const userJid = (sock as any).user?.id ? jidNormalizedUser((sock as any).user.id) : undefined;
+    const additionalNodes = buildNativeFlowAdditionalNodes(targetJid, "mixed");
+
+    const msg = await generateWAMessageFromContent(targetJid, productContent, {
+        ...(userJid ? { userJid } : {}),
         quoted: options.quoted
+    } as any);
+
+    await sock.relayMessage(targetJid, msg.message!, {
+        messageId: msg.key.id!,
+        additionalNodes
     });
 
-    await sock.relayMessage(jid, msg.message!, {
-        messageId: msg.key.id!
-    });
+    try {
+        sock.ev.emit("messages.upsert", {
+            messages: [msg],
+            type: "append"
+        });
+    } catch (e) {
+        logger.warn(`Failed to emit messages.upsert for product message: ${e}`);
+    }
 
     return msg;
 }
@@ -732,14 +816,32 @@ export async function handleInteractiveMessageDispatch(
     if (converted.interactiveMessage) {
         const interactivePayload = converted.interactiveMessage;
         const fullInteractive = await buildInteractiveMessage(sock, interactivePayload);
-        const msg = await generateWAMessageFromContent(jid, fullInteractive, {
-            userJid: (sock as any).user?.id,
+        const targetJid = normalizeTargetJid(jid);
+        const userJid = (sock as any).user?.id ? jidNormalizedUser((sock as any).user.id) : undefined;
+
+        const rawBtns = interactivePayload.buttons || interactivePayload.nativeFlowMessage?.buttons || [];
+        const buttonName = (rawBtns.length === 1 && rawBtns[0]?.name) ? rawBtns[0].name : "mixed";
+        const additionalNodes = buildNativeFlowAdditionalNodes(targetJid, buttonName);
+
+        const msg = await generateWAMessageFromContent(targetJid, fullInteractive, {
+            ...(userJid ? { userJid } : {}),
             quoted: options.quoted
+        } as any);
+
+        await sock.relayMessage(targetJid, msg.message!, {
+            messageId: msg.key.id!,
+            additionalNodes
         });
 
-        await sock.relayMessage(jid, msg.message!, {
-            messageId: msg.key.id!
-        });
+        // Emit messages.upsert to ensure DB store saves the message and web dashboard updates real-time
+        try {
+            sock.ev.emit("messages.upsert", {
+                messages: [msg],
+                type: "append"
+            });
+        } catch (e) {
+            logger.warn(`Failed to emit messages.upsert for interactive message: ${e}`);
+        }
 
         return msg;
     }
@@ -749,12 +851,26 @@ export async function handleInteractiveMessageDispatch(
         const items: AlbumItem[] = Array.isArray(content.albumMessage)
             ? content.albumMessage
             : content.albumMessage.items || [];
-        return await sendAlbumMessage(sock, jid, items, options);
+        const msg = await sendAlbumMessage(sock, jid, items, options);
+        try {
+            sock.ev.emit("messages.upsert", {
+                messages: [msg],
+                type: "append"
+            });
+        } catch (e) {}
+        return msg;
     }
 
     // 4. Handle eventMessage
     if (content.eventMessage) {
-        return await sendEventMessage(sock, jid, content.eventMessage, options);
+        const msg = await sendEventMessage(sock, jid, content.eventMessage, options);
+        try {
+            sock.ev.emit("messages.upsert", {
+                messages: [msg],
+                type: "append"
+            });
+        } catch (e) {}
+        return msg;
     }
 
     // 5. Handle productMessage

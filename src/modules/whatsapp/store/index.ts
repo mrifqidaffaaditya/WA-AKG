@@ -433,7 +433,22 @@ async function processAndSaveMessage(
         const title = interactiveMsg.header?.title ? `*${interactiveMsg.header.title}*\n` : "";
         const body = interactiveMsg.body?.text || "";
         const footer = interactiveMsg.footer?.text ? `\n_${interactiveMsg.footer.text}_` : "";
-        text = `${title}${body}${footer}`.trim() || "[Interactive Message]";
+
+        let buttonList = "";
+        const rawBtns = interactiveMsg.nativeFlowMessage?.buttons || [];
+        if (Array.isArray(rawBtns) && rawBtns.length > 0) {
+            const btnTitles = rawBtns.map((b: any) => {
+                try {
+                    const parsed = typeof b.buttonParamsJson === "string" ? JSON.parse(b.buttonParamsJson) : b.buttonParamsJson;
+                    return `[🔘 ${parsed?.display_text || parsed?.title || b.name}]`;
+                } catch {
+                    return `[🔘 ${b.name}]`;
+                }
+            });
+            buttonList = `\n\n${btnTitles.join("  ")}`;
+        }
+
+        text = `${title}${body}${footer}${buttonList}`.trim() || "[Interactive Message]";
     } else if (messageContent?.interactiveResponseMessage) {
         messageType = "TEXT";
         const rm = messageContent.interactiveResponseMessage;
