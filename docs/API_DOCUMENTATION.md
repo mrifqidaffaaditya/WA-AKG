@@ -2,9 +2,7 @@
 
 # WhatsApp AI Gateway — Complete API Reference
 
-Professional WhatsApp Gateway REST API with **81 routes** for complete WhatsApp automation.
-
-> **Version**: 1.6.1 | **Last Updated**: June 2026
+Professional WhatsApp Gateway REST API with **86 routes** for complete WhatsApp automation.
 
 ## 🔐 Authentication
 
@@ -14,9 +12,6 @@ All endpoints require one of the following authentication methods:
 | :--- | :--- | :--- |
 | **API Key** | `X-API-Key` (header) | `X-API-Key: your-api-key-here` |
 | **Session Cookie** | `next-auth.session-token` (cookie) | Automatically managed by browser |
-
-> [!IMPORTANT]
-> `AUTH_SECRET` **wajib** diset di `.env` — tidak ada fallback ke default. Server akan crash jika tidak diset.
 
 ## 📋 Common Parameters
 
@@ -1190,10 +1185,6 @@ Get all sessions accessible to the authenticated user (role-based filtering)
     "sessionId": "marketing-1",
     "status": "Connected",
     "userId": "string",
-    "user": {
-      "name": "User Name",
-      "email": "user@example.com"
-    },
     "botConfig": {
       "text": "Hello from WA-AKG!"
     },
@@ -2092,6 +2083,116 @@ curl -X POST "http://localhost:3000/api/messages/session-01/628123456789@s.whats
 
 ---
 
+### \[POST\] /messages/{sessionId}/{jid}/interactive
+
+**Send interactive message (Native Flow buttons, CTA, List)**
+
+Send modern WhatsApp Native Flow interactive messages including quick replies, CTA URL links, CTA call buttons, copy-to-clipboard code, and single select lists.
+
+#### Parameters
+
+| Name | Located in | Required | Type | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `sessionId` | path | ✅ Yes | string | Session identifier |
+| `jid` | path | ✅ Yes | string | Recipient JID (e.g. 628123456789@s.whatsapp.net or 08123456789) |
+
+#### Headers
+
+```
+X-API-Key: your-api-key
+Content-Type: application/json
+```
+
+#### Request Body (`application/json`)
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `title` | string | No | — |
+| `body` | string | No | — |
+| `footer` | string | No | — |
+| `header` | object | No | — |
+| `buttons` | array of object | No | Array of interactive action buttons |
+
+**Example:**
+
+```json
+{
+  "title": "Interactive Message Title",
+  "body": "Hello! Please select one of the options below:",
+  "footer": "Powered by WA-AKG",
+  "header": {
+    "title": "Announcement",
+    "image": {
+      "url": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800"
+    }
+  },
+  "buttons": [
+    {
+      "type": "quick_reply",
+      "displayText": "Confirm Order",
+      "id": "btn_confirm",
+      "url": "https://example.com",
+      "phoneNumber": "+628123456789",
+      "copyCode": "PROMO2026",
+      "title": "Menu List",
+      "sections": [
+        {
+          "title": "Available Packages",
+          "rows": [
+            {
+              "id": "pkg_basic",
+              "title": "Basic Plan",
+              "description": "Affordable starter package"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Responses
+
+| Code | Description |
+| :--- | :--- |
+| `200` | Interactive message sent successfully |
+| `400` | Bad Request - Missing required content |
+| `401` | Unauthorized - Invalid or missing API key |
+| `403` | Forbidden - Access denied |
+| `500` | Failed to send interactive message |
+
+**Response Fields (`200`):**
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `status` | boolean | No | — |
+| `message` | string | No | — |
+| `data` | object, nullable | No | — |
+
+**Response Example (`200`):**
+
+```json
+{
+  "status": true,
+  "message": "Operation successful",
+  "data": {
+    "text": "Hello from WA-AKG!"
+  }
+}
+```
+
+#### cURL Example
+
+```bash
+curl -X POST "http://localhost:3000/api/messages/session-01/628123456789@s.whatsapp.net/interactive" \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Interactive Message Title","body":"Hello! Please select one of the options below:","footer":"Powered by WA-AKG","header":{"title":"Announcement","image":{"url":"https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800"}},"buttons":[{"type":"quick_reply","displayText":"Confirm Order","id":"btn_confirm","url":"https://example.com","phoneNumber":"+628123456789","copyCode":"PROMO2026","title":"Menu List","sections":[{"title":"Available Packages","rows":[{"id":"pkg_basic","title":"Basic Plan","description":"Affordable starter package"}]}]}]}'
+```
+
+---
+
 ### \[POST\] /messages/{sessionId}/broadcast
 
 **Broadcast message to multiple recipients**
@@ -2169,102 +2270,140 @@ curl -X POST "http://localhost:3000/api/messages/session-01/broadcast" \
 
 ---
 
-### [GET] /messages/{sessionId}/broadcast/history
+### \[GET\] /messages/{sessionId}/broadcast/history
 
 **Get broadcast history**
 
-Retrieve list of past broadcasts with status, sent/failed counts.
+Retrieve list of past broadcasts with status, sent/failed counts (persisted in DB)
 
 #### Parameters
 
-| Field | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| `sessionId` | string | Yes | Session ID (path) |
-| `limit` | integer | No | Max results (default: 20, max: 50) |
-| `offset` | integer | No | Pagination offset |
+| Name | Located in | Required | Type | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `sessionId` | path | ✅ Yes | string | — |
+| `limit` | query | No | integer | Max results (max 50) **Default:** `20` |
+| `offset` | query | No | integer | Pagination offset **Default:** `0` |
+
+#### Responses
+
+| Code | Description |
+| :--- | :--- |
+| `200` | Broadcast history |
+| `401` | Unauthorized - Invalid or missing API key |
+| `403` | Forbidden - Access denied |
 
 **Response Fields (`200`):**
 
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `status` | boolean | Success indicator |
-| `data` | array | List of BroadcastLog objects |
-| `total` | integer | Total count |
-| `limit` | integer | Requested limit |
-| `offset` | integer | Requested offset |
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `status` | boolean | No | — |
+| `data` | array of object | No | — |
+| `total` | integer | No | — |
+| `limit` | integer | No | — |
+| `offset` | integer | No | — |
 
-**BroadcastLog object:**
+**Response Example (`200`):**
 
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `id` | string | Broadcast log ID |
-| `message` | string | Broadcast message content |
-| `total` | integer | Total recipients |
-| `sent` | integer | Successfully sent count |
-| `failed` | integer | Failed count |
-| `status` | string | `running`, `completed`, `cancelled` |
-| `startedAt` | datetime | Start time |
-| `completedAt` | datetime | Completion time (nullable) |
-
-**Status Codes:**
-
-| Code | Description |
-| :--- | :--- |
-| `200` | Broadcast history retrieved |
-| `401` | Unauthorized |
-| `403` | Forbidden |
+```json
+{
+  "status": true,
+  "data": [
+    {
+      "id": "string",
+      "sessionId": "string",
+      "message": "string",
+      "total": 0,
+      "sent": 0,
+      "failed": 0,
+      "status": "running",
+      "delay": 0,
+      "startedAt": "2026-01-15T08:00:00.000Z",
+      "completedAt": "2026-01-15T08:00:00.000Z"
+    }
+  ],
+  "total": 0,
+  "limit": 0,
+  "offset": 0
+}
+```
 
 #### cURL Example
 
 ```bash
-curl -X GET "http://localhost:3000/api/messages/session-01/broadcast/history" \
+curl -X GET "http://localhost:3000/api/messages/session-01/broadcast/history?limit=value&offset=value" \
   -H "X-API-Key: your-api-key"
 ```
 
 ---
 
-### [GET] /messages/{sessionId}/broadcast/history/{logId}
+### \[GET\] /messages/{sessionId}/broadcast/history/{logId}
 
 **Get broadcast detail**
 
-Retrieve full detail of a specific broadcast including per-recipient status.
+Retrieve full detail of a specific broadcast including per-recipient status
 
 #### Parameters
 
-| Field | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| `sessionId` | string | Yes | Session ID (path) |
-| `logId` | string | Yes | Broadcast log ID (path) |
+| Name | Located in | Required | Type | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `sessionId` | path | ✅ Yes | string | — |
+| `logId` | path | ✅ Yes | string | — |
 
-**BroadcastRecipient object:**
-
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `id` | string | Recipient record ID |
-| `jid` | string | WhatsApp JID |
-| `status` | string | `pending`, `sent`, `failed` |
-| `error` | string | Error message if failed (nullable) |
-| `sentAt` | datetime | Sent timestamp (nullable) |
-
-**Status Codes:**
+#### Responses
 
 | Code | Description |
 | :--- | :--- |
-| `200` | Broadcast detail retrieved |
-| `401` | Unauthorized |
-| `403` | Forbidden |
+| `200` | Broadcast detail |
+| `401` | Unauthorized - Invalid or missing API key |
+| `403` | Forbidden - Access denied |
 | `404` | Broadcast not found |
+
+**Response Fields (`200`):**
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `status` | boolean | No | — |
+| `data` | object | No | — |
+
+**Response Example (`200`):**
+
+```json
+{
+  "status": true,
+  "data": {
+    "id": "string",
+    "sessionId": "string",
+    "message": "string",
+    "total": 0,
+    "sent": 0,
+    "failed": 0,
+    "status": "string",
+    "delay": 0,
+    "startedAt": "2026-01-15T08:00:00.000Z",
+    "completedAt": "2026-01-15T08:00:00.000Z",
+    "recipients": [
+      {
+        "id": "string",
+        "jid": "string",
+        "status": "pending",
+        "error": "string",
+        "sentAt": "2026-01-15T08:00:00.000Z"
+      }
+    ]
+  }
+}
+```
 
 #### cURL Example
 
 ```bash
-curl -X GET "http://localhost:3000/api/messages/session-01/broadcast/history/clxabc123" \
+curl -X GET "http://localhost:3000/api/messages/session-01/broadcast/history/value" \
   -H "X-API-Key: your-api-key"
 ```
 
 ---
 
-### [POST] /messages/{sessionId}/{jid}/poll
+### \[POST\] /messages/{sessionId}/{jid}/poll
 
 **Send poll message**
 
@@ -4333,7 +4472,7 @@ Content-Type: application/json
 curl -X POST "http://localhost:3000/api/autoreplies/session-01" \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
-  -d '{"keyword":"hello","response":"Hi there! How can I help?","matchType":"EXACT","triggerType":"ALL","isMedia":false}'
+  -d '{"keyword":"hello","response":"Hi there! How can I help?","matchType":"EXACT","triggerType":"ALL","isMedia":false,"mediaUrl":null,"mediaType":null}'
 ```
 
 ---
@@ -4425,7 +4564,7 @@ Content-Type: application/json
 curl -X PUT "http://localhost:3000/api/autoreplies/session-01/reply_01" \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
-  -d '{"keyword":"hello","response":"Hi there! How can I help?","matchType":"EXACT","triggerType":"ALL","isMedia":false}'
+  -d '{"keyword":"hello","response":"Hi there! How can I help?","matchType":"EXACT","triggerType":"ALL","isMedia":false,"mediaUrl":null,"mediaType":null}'
 ```
 
 ---
@@ -4511,8 +4650,8 @@ Content-Type: application/json
 | `sendAt` | string (date-time) | ✅ Yes | — |
 | `mediaUrl` | string | No | — |
 | `mediaType` | string | No | **Options:** `image`, `video`, `document`, `audio` |
-| `cronExpression` | string | No | **Format:** `*/5 * * * *` |
-| `recurrenceRule` | string | No | JSON string representing recurrence settings |
+| `cronExpression` | string | No | — |
+| `recurrenceRule` | string | No | — |
 
 **Example:**
 
@@ -4543,7 +4682,7 @@ Content-Type: application/json
 curl -X POST "http://localhost:3000/api/scheduler/session-01" \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
-  -d '{"jid":"628123456789@s.whatsapp.net","content":"Reminder: Meeting in 10 mins","sendAt":"2024-12-25T10:00:00.000Z","mediaUrl":"https://example.com/image.jpg","mediaType":"image"}'
+  -d '{"jid":"628123456789@s.whatsapp.net","content":"Reminder: Meeting in 10 mins","sendAt":"2024-12-25T10:00:00.000Z","mediaUrl":"https://example.com/image.jpg","mediaType":"image","cronExpression":"*/10 * * * *","recurrenceRule":"{\"type\":\"minutes\",\"value\":10}"}'
 ```
 
 ---
@@ -4604,8 +4743,8 @@ Content-Type: application/json
 | `sendAt` | string (date-time) | ✅ Yes | — |
 | `mediaUrl` | string | No | — |
 | `mediaType` | string | No | **Options:** `image`, `video`, `document`, `audio` |
-| `cronExpression` | string | No | **Format:** `*/5 * * * *` |
-| `recurrenceRule` | string | No | JSON string representing recurrence settings |
+| `cronExpression` | string | No | — |
+| `recurrenceRule` | string | No | — |
 
 **Example:**
 
@@ -4636,7 +4775,7 @@ Content-Type: application/json
 curl -X PUT "http://localhost:3000/api/scheduler/session-01/sched_01" \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
-  -d '{"jid":"628123456789@s.whatsapp.net","content":"Updated meeting reminder","sendAt":"2024-12-25T11:00:00.000Z","mediaUrl":"https://example.com/image.jpg","mediaType":"image"}'
+  -d '{"jid":"628123456789@s.whatsapp.net","content":"Updated meeting reminder","sendAt":"2024-12-25T11:00:00.000Z","mediaUrl":"https://example.com/image.jpg","mediaType":"image","cronExpression":null,"recurrenceRule":null}'
 ```
 
 ---
@@ -4885,7 +5024,7 @@ curl -X DELETE "http://localhost:3000/api/webhooks/abc123" \
 
 **Test webhook endpoint**
 
-Fire a test payload to verify the webhook endpoint is reachable and responding correctly.
+Fire a test payload to verify the webhook endpoint is reachable and responding correctly
 
 #### Parameters
 
@@ -4905,27 +5044,24 @@ Fire a test payload to verify the webhook endpoint is reachable and responding c
 
 **Response Fields (`200`):**
 
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `status` | boolean | Operation status |
-| `message` | string | Success/failure message |
-| `data.success` | boolean | Whether the test request succeeded |
-| `data.statusCode` | integer (nullable) | HTTP status code returned by webhook |
-| `data.responseBody` | string (nullable) | Response body from webhook |
-| `data.responseTimeMs` | integer | Response time in milliseconds |
-| `data.error` | string (nullable) | Error message if failed |
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `status` | boolean | No | — |
+| `message` | string | No | — |
+| `data` | object | No | — |
 
-**Response Example:**
+**Response Example (`200`):**
 
 ```json
 {
   "status": true,
-  "message": "Webhook test successful",
+  "message": "string",
   "data": {
     "success": true,
-    "statusCode": 200,
-    "responseBody": "OK",
-    "responseTimeMs": 234
+    "statusCode": 0,
+    "responseBody": "string",
+    "responseTimeMs": 0,
+    "error": "string"
   }
 }
 ```
@@ -4943,7 +5079,7 @@ curl -X POST "http://localhost:3000/api/webhooks/session-01/abc123/test" \
 
 **Get webhook delivery logs**
 
-Retrieve delivery history for a specific webhook including status, response time, and error messages.
+Retrieve delivery history for a specific webhook
 
 #### Parameters
 
@@ -4951,8 +5087,8 @@ Retrieve delivery history for a specific webhook including status, response time
 | :--- | :--- | :--- | :--- | :--- |
 | `sessionId` | path | ✅ Yes | string | — |
 | `id` | path | ✅ Yes | string | — |
-| `limit` | query | No | integer | Max logs to return (default: 50) |
-| `offset` | query | No | integer | Pagination offset (default: 0) |
+| `limit` | query | No | integer | **Default:** `50` |
+| `offset` | query | No | integer | **Default:** `0` |
 
 #### Responses
 
@@ -4965,50 +5101,41 @@ Retrieve delivery history for a specific webhook including status, response time
 
 **Response Fields (`200`):**
 
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `status` | boolean | Operation status |
-| `data` | array of object | Delivery log entries |
-| `total` | integer | Total log count |
-| `limit` | integer | Requested limit |
-| `offset` | integer | Requested offset |
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `status` | boolean | No | — |
+| `data` | array of object | No | — |
+| `total` | integer | No | — |
+| `limit` | integer | No | — |
+| `offset` | integer | No | — |
 
-**Log Entry Fields:**
-
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `id` | string | Log entry ID |
-| `webhookId` | string | Associated webhook ID |
-| `event` | string | Event that triggered the webhook |
-| `status` | string | SUCCESS or FAILED |
-| `requestUrl` | string | Webhook URL called |
-| `responseStatusCode` | integer (nullable) | HTTP response status |
-| `responseBody` | string (nullable) | Response body |
-| `responseTimeMs` | integer (nullable) | Response time in milliseconds |
-| `errorMessage` | string (nullable) | Error message if failed |
-| `createdAt` | string (date-time) | When the delivery occurred |
-
-**Response Example:**
+**Response Example (`200`):**
 
 ```json
 {
   "status": true,
   "data": [
     {
-      "id": "cmk123abc",
-      "webhookId": "abc123",
-      "event": "message.received",
+      "id": "string",
+      "webhookId": "string",
+      "event": "string",
       "status": "SUCCESS",
-      "requestUrl": "https://example.com/webhook",
-      "responseStatusCode": 200,
-      "responseBody": "OK",
-      "responseTimeMs": 145,
-      "errorMessage": null,
-      "createdAt": "2026-06-28T10:30:00.000Z"
+      "requestUrl": "string",
+      "requestHeaders": {
+        "text": "Hello from WA-AKG!"
+      },
+      "requestBody": {
+        "text": "Hello from WA-AKG!"
+      },
+      "responseStatusCode": 0,
+      "responseBody": "string",
+      "responseTimeMs": 0,
+      "errorMessage": "string",
+      "createdAt": "2026-01-15T08:00:00.000Z"
     }
   ],
-  "total": 1,
-  "limit": 50,
+  "total": 0,
+  "limit": 0,
   "offset": 0
 }
 ```
@@ -5016,485 +5143,8 @@ Retrieve delivery history for a specific webhook including status, response time
 #### cURL Example
 
 ```bash
-curl -X GET "http://localhost:3000/api/webhooks/session-01/abc123/logs?limit=50&offset=0" \
+curl -X GET "http://localhost:3000/api/webhooks/session-01/abc123/logs?limit=value&offset=value" \
   -H "X-API-Key: your-api-key"
-```
-
----
-
-## 🔐 Webhook HMAC Verification
-
-WA-AKG signs every webhook request with HMAC-SHA256 when you set a `secret` on your webhook. Receiver **must** verify signature before processing payload.
-
-### How It Works
-
-When secret set, WA-AKG sends header:
-
-```
-X-Webhook-Signature: sha256=<hex-encoded-hmac>
-```
-
-Signature = HMAC-SHA256(webhook-secret, raw-request-body).
-
-### Verify Examples
-
-#### Node.js (Express)
-
-```javascript
-import crypto from "crypto";
-
-const WEBHOOK_SECRET = "your-webhook-secret"; // same as set in WA-AKG
-
-app.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
-  const sig = req.headers["x-webhook-signature"];
-  if (!sig) return res.status(401).send("Missing signature");
-
-  // Extract hash from "sha256=<hex>"
-  const expected = sig.replace("sha256=", "");
-  const actual = crypto
-    .createHmac("sha256", WEBHOOK_SECRET)
-    .update(req.body)
-    .digest("hex");
-
-  if (expected !== actual) {
-    return res.status(401).send("Invalid signature");
-  }
-
-  const payload = JSON.parse(req.body);
-  console.log("Verified webhook:", payload.event);
-  res.sendStatus(200);
-});
-```
-
-#### Node.js (Raw HTTP)
-
-```javascript
-import crypto from "crypto";
-import { createServer } from "http";
-
-const WEBHOOK_SECRET = "your-webhook-secret";
-
-createServer((req, res) => {
-  if (req.method !== "POST") return res.writeHead(405).end();
-
-  let body = "";
-  req.on("data", (chunk) => (body += chunk));
-  req.on("end", () => {
-    const sig = req.headers["x-webhook-signature"];
-    if (!sig) return res.writeHead(401).end("Missing signature");
-
-    const expected = sig.replace("sha256=", "");
-    const actual = crypto
-      .createHmac("sha256", WEBHOOK_SECRET)
-      .update(body)
-      .digest("hex");
-
-    if (expected !== actual) {
-      return res.writeHead(401).end("Invalid signature");
-    }
-
-    const payload = JSON.parse(body);
-    console.log("Verified:", payload.event);
-    res.writeHead(200).end("OK");
-  });
-}).listen(3001);
-```
-
-#### Python (Flask)
-
-```python
-import hmac
-import hashlib
-from flask import Flask, request, abort
-
-app = Flask(__name__)
-WEBHOOK_SECRET = b"your-webhook-secret"  # same as set in WA-AKG
-
-@app.route("/webhook", methods=["POST"])
-def webhook():
-    sig = request.headers.get("X-Webhook-Signature", "")
-    if not sig:
-        abort(401, "Missing signature")
-
-    expected = sig.replace("sha256=", "")
-    actual = hmac.new(WEBHOOK_SECRET, request.data, hashlib.sha256).hexdigest()
-
-    if not hmac.compare_digest(expected, actual):
-        abort(401, "Invalid signature")
-
-    payload = request.json
-    print(f"Verified: {payload['event']}")
-    return "OK", 200
-```
-
-#### Python (FastAPI)
-
-```python
-import hmac
-import hashlib
-from fastapi import FastAPI, Request, HTTPException
-
-app = FastAPI()
-WEBHOOK_SECRET = b"your-webhook-secret"
-
-@app.post("/webhook")
-async def webhook(req: Request):
-    sig = req.headers.get("x-webhook-signature", "")
-    if not sig:
-        raise HTTPException(401, "Missing signature")
-
-    body = await req.body()
-    expected = sig.replace("sha256=", "")
-    actual = hmac.new(WEBHOOK_SECRET, body, hashlib.sha256).hexdigest()
-
-    if not hmac.compare_digest(expected, actual):
-        raise HTTPException(401, "Invalid signature")
-
-    payload = await req.json()
-    print(f"Verified: {payload['event']}")
-    return "OK"
-```
-
-#### PHP
-
-```php
-<?php
-$secret = 'your-webhook-secret';
-$body = file_get_contents('php://input');
-$sig = $_SERVER['HTTP_X_WEBHOOK_SIGNATURE'] ?? '';
-
-$expected = str_replace('sha256=', '', $sig);
-$actual = hash_hmac('sha256', $body, $secret);
-
-if (!hash_equals($expected, $actual)) {
-    http_response_code(401);
-    die('Invalid signature');
-}
-
-$payload = json_decode($body);
-error_log('Verified: ' . $payload->event);
-http_response_code(200);
-echo 'OK';
-```
-
-#### Go
-
-```go
-package main
-
-import (
-    "crypto/hmac"
-    "crypto/sha256"
-    "encoding/hex"
-    "fmt"
-    "io"
-    "net/http"
-    "strings"
-)
-
-var secret = []byte("your-webhook-secret")
-
-func webhookHandler(w http.ResponseWriter, r *http.Request) {
-    sig := r.Header.Get("X-Webhook-Signature")
-    if sig == "" {
-        http.Error(w, "Missing signature", 401)
-        return
-    }
-
-    body, _ := io.ReadAll(r.Body)
-    expected := strings.TrimPrefix(sig, "sha256=")
-    mac := hmac.New(sha256.New, secret)
-    mac.Write(body)
-    actual := hex.EncodeToString(mac.Sum(nil))
-
-    if !hmac.Equal([]byte(expected), []byte(actual)) {
-        http.Error(w, "Invalid signature", 401)
-        return
-    }
-
-    fmt.Println("Verified webhook")
-    w.WriteHeader(200)
-}
-```
-
-### Testing Your Webhook Receiver
-
-WA-AKG includes built-in webhook test payload. You can also trigger test event manually:
-
-```bash
-# Create webhook with secret
-curl -X POST "http://localhost:3000/api/webhooks/session-01" \
-  -H "X-API-Key: your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Test HMAC",
-    "url": "https://your-server.com/webhook",
-    "secret": "your-webhook-secret",
-    "events": ["message.received"]
-  }'
-```
-
-Then send a message to a WhatsApp session. Check your server logs — should show verified payload with `X-Webhook-Signature` header.
-
----
-
----
-
-## 🎯 Webhook Payload Examples
-
-When WA-AKG sends a POST to your webhook URL, the body has this structure:
-
-```json
-{
-  "event": "message.received",
-  "sessionId": "your-session-id",
-  "timestamp": "2026-06-27T12:00:00.000Z",
-  "data": { }
-}
-```
-
-### Events List
-
-| Event | Trigger |
-| :--- | :--- |
-| `message.received` | New incoming message |
-| `message.sent` | Message sent from dashboard/API |
-| `message.status` | Message delivery/read status change |
-| `message.deleted` | Message recalled/revoked |
-| `message.edited` | Message edited |
-| `connection.update` | Session connection state changed |
-| `group.update` | Group metadata changed (name, desc, settings) |
-| `group.participant` | Member joined/left/promoted/demoted |
-| `contact.update` | Contact name or notify changed |
-| `status.update` | Status/story update |
-
----
-
-### Payload Examples
-
-#### message.received — Incoming DM text
-
-```json
-{
-  "event": "message.received",
-  "data": {
-    "key": { "id": "AB12CD34EF", "remoteJid": "6281234567890@s.whatsapp.net", "fromMe": false },
-    "pushName": "Budi",
-    "from": "6281234567890@s.whatsapp.net",
-    "sender": "6281234567890@s.whatsapp.net",
-    "isGroup": false,
-    "chatType": "PERSONAL",
-    "type": "TEXT",
-    "content": "Halo, ini test",
-    "fileUrl": null,
-    "caption": null,
-    "quoted": null
-  }
-}
-```
-
-#### message.received — Image/video with caption
-
-```json
-{
-  "event": "message.received",
-  "data": {
-    "from": "6281234567890@s.whatsapp.net",
-    "isGroup": false,
-    "chatType": "PERSONAL",
-    "type": "IMAGE",
-    "content": "Foto liburan",
-    "fileUrl": "/api/media/abc-GH78IJ90KL.jpg",
-    "caption": "Foto liburan"
-  }
-}
-```
-
-#### message.received — Group text
-
-```json
-{
-  "event": "message.received",
-  "data": {
-    "from": "1234567890-123456@g.us",
-    "sender": "6281234567890@s.whatsapp.net",
-    "isGroup": true,
-    "chatType": "GROUP",
-    "type": "TEXT",
-    "content": "Halo group",
-    "key": { "id": "AB12CD34EF", "remoteJid": "1234567890-123456@g.us", "fromMe": false, "participant": "6281234567890@s.whatsapp.net" }
-  }
-}
-```
-
-#### message.received — With quoted reply
-
-```json
-{
-  "event": "message.received",
-  "data": {
-    "from": "6281234567890@s.whatsapp.net",
-    "type": "TEXT",
-    "content": "Setuju!",
-    "quoted": {
-      "key": { "remoteJid": "6281234567890@s.whatsapp.net", "fromMe": true, "id": "XY99ZZ00AA" },
-      "type": "TEXT",
-      "content": "Gimana?"
-    }
-  }
-}
-```
-
-#### message.received — Audio / Sticker / Location / Contact
-
-```json
-{
-  "event": "message.received",
-  "data": { "from": "6281234567890@s.whatsapp.net", "type": "AUDIO", "fileUrl": "/api/media/abc.mp3" }
-}
-```
-For sticker: `type: "STICKER"`, location: `type: "LOCATION"` + `content: "lat,lng"`, contact: `type: "CONTACT"` + `content: "Display Name"`.
-
-#### message.sent — Outgoing text (dashboard/API)
-
-```json
-{
-  "event": "message.sent",
-  "data": {
-    "key": { "id": "BA12CD34EF", "remoteJid": "6281234567890@s.whatsapp.net", "fromMe": true },
-    "from": "6281234567890@s.whatsapp.net",
-    "receiver": "6281234567890@s.whatsapp.net",
-    "sender": "ME",
-    "isGroup": false,
-    "chatType": "PERSONAL",
-    "type": "TEXT",
-    "content": "Pesan balasan",
-    "fileUrl": null,
-    "quoted": null
-  }
-}
-```
-
-#### message.sent — Outgoing media
-
-```json
-{
-  "event": "message.sent",
-  "data": {
-    "from": "6281234567890@s.whatsapp.net",
-    "type": "IMAGE",
-    "content": "Foto liburan",
-    "fileUrl": "/api/media/abc-CD78EF90GH.jpg",
-    "caption": "Foto liburan"
-  }
-}
-```
-
-#### message.sent — To group
-
-```json
-{
-  "event": "message.sent",
-  "data": {
-    "from": "1234567890-123456@g.us",
-    "receiver": "1234567890-123456@g.us",
-    "sender": "ME",
-    "isGroup": true,
-    "chatType": "GROUP",
-    "type": "TEXT",
-    "content": "Saya setuju",
-    "key": { "participant": "6281234567890@s.whatsapp.net" }
-  }
-}
-```
-
-#### message.status — Delivery/read update
-
-```json
-{
-  "event": "message.status",
-  "data": { "keyId": "AB12CD34EF", "remoteJid": "6281234567890@s.whatsapp.net", "status": "DELIVERED" }
-}
-```
-
-Status flow: `PENDING` → `SENT` → `DELIVERED` → `READ`
-
-#### message.deleted — Message recalled/revoked
-
-```json
-{
-  "event": "message.deleted",
-  "data": { "keyId": "DE12LT34EF", "remoteJid": "6281234567890@s.whatsapp.net", "fromMe": false }
-}
-```
-
-#### message.edited — Message edited
-
-```json
-{
-  "event": "message.edited",
-  "data": { "keyId": "ED12IT34EF", "newContent": "Pesan diperbaiki", "remoteJid": "6281234567890@s.whatsapp.net" }
-}
-```
-
-#### connection.update — Session connection state
-
-```json
-{
-  "event": "connection.update",
-  "data": { "status": "CONNECTED", "qr": null }
-}
-```
-
-Status: `SCAN_QR` (includes QR), `CONNECTED`, `DISCONNECTED`, `LOGGED_OUT`, `STOPPED`
-
-#### group.update — Group metadata changed
-
-```json
-{
-  "event": "group.update",
-  "data": {
-    "jid": "1234567890-123456@g.us",
-    "subject": "Nama Grup Baru",
-    "desc": "Deskripsi grup",
-    "restrict": true,
-    "announce": false,
-    "owner": "6281234567890@s.whatsapp.net"
-  }
-}
-```
-
-#### group.participant — Member joined/left/promoted
-
-```json
-{
-  "event": "group.participant",
-  "data": {
-    "jid": "1234567890-123456@g.us",
-    "action": "add",
-    "participants": ["6281234567890@s.whatsapp.net"]
-  }
-}
-```
-
-Actions: `add`, `remove`, `promote`, `demote`
-
-#### contact.update — Contact name/notify changed
-
-```json
-{
-  "event": "contact.update",
-  "data": { "jid": "6281234567890@s.whatsapp.net", "name": "Budi Santoso", "notify": "Budi" }
-}
-```
-
-#### status.update — Status/story update
-
-```json
-{
-  "event": "status.update",
-  "data": { "from": "status@broadcast", "type": "TEXT", "content": "Halo semua" }
-}
 ```
 
 ---
@@ -7147,6 +6797,46 @@ curl -X POST "http://localhost:3000/api/contacts/session-01/628123456789@s.whats
 }
 ```
 
+### WebhookLog
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | string | No | — |
+| `webhookId` | string | No | — |
+| `event` | string | No | — |
+| `status` | string | No | **Options:** `SUCCESS`, `FAILED` |
+| `requestUrl` | string | No | — |
+| `requestHeaders` | object | No | — |
+| `requestBody` | object | No | — |
+| `responseStatusCode` | integer, nullable | No | — |
+| `responseBody` | string, nullable | No | — |
+| `responseTimeMs` | integer, nullable | No | — |
+| `errorMessage` | string, nullable | No | — |
+| `createdAt` | string (date-time) | No | — |
+
+**Example:**
+
+```json
+{
+  "id": "string",
+  "webhookId": "string",
+  "event": "string",
+  "status": "SUCCESS",
+  "requestUrl": "string",
+  "requestHeaders": {
+    "text": "Hello from WA-AKG!"
+  },
+  "requestBody": {
+    "text": "Hello from WA-AKG!"
+  },
+  "responseStatusCode": 0,
+  "responseBody": "string",
+  "responseTimeMs": 0,
+  "errorMessage": "string",
+  "createdAt": "2026-01-15T08:00:00.000Z"
+}
+```
+
 ### Group
 
 | Field | Type | Required | Description |
@@ -7225,6 +6915,60 @@ curl -X POST "http://localhost:3000/api/contacts/session-01/628123456789@s.whats
   "descOwner": "string",
   "descId": "string",
   "owner": "string"
+}
+```
+
+### BroadcastLog
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | string | No | — |
+| `sessionId` | string | No | — |
+| `message` | string | No | — |
+| `total` | integer | No | — |
+| `sent` | integer | No | — |
+| `failed` | integer | No | — |
+| `status` | string | No | **Options:** `running`, `completed`, `cancelled` |
+| `delay` | integer | No | — |
+| `startedAt` | string (date-time) | No | — |
+| `completedAt` | string, nullable (date-time) | No | — |
+
+**Example:**
+
+```json
+{
+  "id": "string",
+  "sessionId": "string",
+  "message": "string",
+  "total": 0,
+  "sent": 0,
+  "failed": 0,
+  "status": "running",
+  "delay": 0,
+  "startedAt": "2026-01-15T08:00:00.000Z",
+  "completedAt": "2026-01-15T08:00:00.000Z"
+}
+```
+
+### BroadcastRecipient
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | string | No | — |
+| `jid` | string | No | — |
+| `status` | string | No | **Options:** `pending`, `sent`, `failed` |
+| `error` | string, nullable | No | — |
+| `sentAt` | string, nullable (date-time) | No | — |
+
+**Example:**
+
+```json
+{
+  "id": "string",
+  "jid": "string",
+  "status": "pending",
+  "error": "string",
+  "sentAt": "2026-01-15T08:00:00.000Z"
 }
 ```
 

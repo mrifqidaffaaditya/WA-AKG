@@ -8,7 +8,7 @@ export const getApiDocs = () => {
             openapi: "3.0.0",
             info: {
                 title: "WA-AKG API Documentation",
-                version: "1.6.1",
+                version: "1.7.0-beta.1",
                 description: `
 # WhatsApp AI Gateway - Complete API Reference
 
@@ -1106,6 +1106,107 @@ All endpoints require authentication via:
                             403: { $ref: "#/components/responses/Forbidden" },
                             503: { $ref: "#/components/responses/SessionNotReady" },
                             500: { description: "Failed to send media" }
+                        }
+                    }
+                },
+
+                "/messages/{sessionId}/{jid}/interactive": {
+                    post: {
+                        tags: ["Messaging"],
+                        summary: "Send interactive message (Native Flow buttons, CTA, List)",
+                        description: "Send modern WhatsApp Native Flow interactive messages including quick replies, CTA URL links, CTA call buttons, copy-to-clipboard code, and single select lists.",
+                        parameters: [
+                            {
+                                name: "sessionId",
+                                in: "path",
+                                required: true,
+                                schema: { type: "string" },
+                                description: "Session identifier"
+                            },
+                            {
+                                name: "jid",
+                                in: "path",
+                                required: true,
+                                schema: { type: "string" },
+                                description: "Recipient JID (e.g. 628123456789@s.whatsapp.net or 08123456789)"
+                            }
+                        ],
+                        requestBody: {
+                            required: true,
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            title: { type: "string", example: "Interactive Message Title" },
+                                            body: { type: "string", example: "Hello! Please select one of the options below:" },
+                                            footer: { type: "string", example: "Powered by WA-AKG" },
+                                            header: {
+                                                type: "object",
+                                                properties: {
+                                                    title: { type: "string", example: "Announcement" },
+                                                    image: {
+                                                        type: "object",
+                                                        properties: {
+                                                            url: { type: "string", example: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800" }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            buttons: {
+                                                type: "array",
+                                                description: "Array of interactive action buttons",
+                                                items: {
+                                                    type: "object",
+                                                    properties: {
+                                                        type: { type: "string", enum: ["quick_reply", "cta_url", "cta_call", "cta_copy", "single_select"], example: "quick_reply" },
+                                                        displayText: { type: "string", example: "Confirm Order" },
+                                                        id: { type: "string", example: "btn_confirm" },
+                                                        url: { type: "string", example: "https://example.com" },
+                                                        phoneNumber: { type: "string", example: "+628123456789" },
+                                                        copyCode: { type: "string", example: "PROMO2026" },
+                                                        title: { type: "string", example: "Menu List" },
+                                                        sections: {
+                                                            type: "array",
+                                                            items: {
+                                                                type: "object",
+                                                                properties: {
+                                                                    title: { type: "string", example: "Available Packages" },
+                                                                    rows: {
+                                                                        type: "array",
+                                                                        items: {
+                                                                            type: "object",
+                                                                            properties: {
+                                                                                id: { type: "string", example: "pkg_basic" },
+                                                                                title: { type: "string", example: "Basic Plan" },
+                                                                                description: { type: "string", example: "Affordable starter package" }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        responses: {
+                            200: {
+                                description: "Interactive message sent successfully",
+                                content: {
+                                    "application/json": {
+                                        schema: { $ref: "#/components/schemas/Success" }
+                                    }
+                                }
+                            },
+                            400: { description: "Bad Request - Missing required content" },
+                            401: { $ref: "#/components/responses/Unauthorized" },
+                            403: { $ref: "#/components/responses/Forbidden" },
+                            500: { description: "Failed to send interactive message" }
                         }
                     }
                 },

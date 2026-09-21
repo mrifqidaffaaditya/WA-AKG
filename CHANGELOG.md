@@ -1,3 +1,23 @@
+## [v1.7.0-beta.1] - 2026-09-21
+
+### Added
+- **Pure Baileys v7 Core**: Upgraded WhatsApp engine to pure `@whiskeysockets/baileys@7.0.0-rc14` completely removing all `patch-package` dependencies for clean open-source distribution.
+- **Native Flow Interactive Messages**: Full support for sending and receiving modern WhatsApp interactive messages (Native Flow buttons):
+  - `quick_reply`: Interactive quick action buttons.
+  - `cta_url`: Direct external web links.
+  - `cta_call`: Direct telephone call actions.
+  - `cta_copy`: One-click copy code / voucher tokens.
+  - `single_select`: Dynamic list menu with sections and rows.
+- **Interactive Message Tester Dashboard**: Dedicated UI at `/dashboard/interactive` featuring 1-click test triggers and custom JSON/form builders.
+- **Chat Window Interactive Dialog**: Integrated interactive message builder dialog (`✨`) into `/dashboard/chat` window.
+- **Interactive REST Endpoint**: Added `POST /api/messages/[sessionId]/[jid]/interactive` with complete validation and OpenAPI/Swagger documentation.
+- **Binary Stanza Injection**: Injected WhatsApp `<biz>` and `<bot>` binary nodes via `additionalNodes` at protocol level for native button rendering across WhatsApp Web, Android, and iOS.
+
+### Changed
+- **Pure Interactive Payload**: Removed legacy `viewOnceMessage` wrapping in favor of pure `interactiveMessage` stanzas to ensure button visibility on modern WhatsApp clients.
+- **Real-Time Store Sync**: Interactive messages sent via `relayMessage` are now automatically stored in SQLite database and emitted via Socket.IO to the web dashboard.
+- **Dev Server Stability**: Added Webpack fallback in `src/server/index.ts` to eliminate Turbopack NTFS colon chunk naming panic (`os error 22`) in dev mode.
+
 ## [v1.6.4] - 2026-07-12
 
 ### Added
