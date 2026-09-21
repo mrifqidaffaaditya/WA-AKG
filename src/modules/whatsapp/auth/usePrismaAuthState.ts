@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { AuthenticationCreds, AuthenticationState, BufferJSON, initAuthCreds, SignalDataTypeMap } from "@whiskeysockets/baileys";
 import { logger } from "@/lib/logger";
+import { encryptData, decryptData } from "@/lib/crypto";
 
 export const usePrismaAuthState = async (sessionId: string): Promise<{ state: AuthenticationState, saveCreds: () => Promise<void> }> => {
     
-    // Helper to read JSON with Buffer handling
+    // Helper to read JSON with Buffer handling & transparent decryption
     const readData = async (type: string, id: string) => {
         try {
             const key = `${type}-${id}`;
@@ -12,7 +13,9 @@ export const usePrismaAuthState = async (sessionId: string): Promise<{ state: Au
                 where: { sessionId_key: { sessionId, key } }
             });
             if (data && data.value) {
-                return JSON.parse(JSON.stringify(data.value), BufferJSON.reviver);
+                const rawStr = typeof data.value === "string" ? data.value : JSON.stringify(data.value);
+                const decryptedStr = decryptData(rawStr);
+                return JSON.parse(decryptedStr, BufferJSON.reviver);
             }
             return null;
         } catch (error) {
@@ -21,11 +24,12 @@ export const usePrismaAuthState = async (sessionId: string): Promise<{ state: Au
         }
     };
 
-    // Helper to write data
+    // Helper to write data with encryption
     const writeData = async (type: string, id: string, data: any) => {
         try {
             const key = `${type}-${id}`;
-            const value = JSON.parse(JSON.stringify(data, BufferJSON.replacer));
+            const jsonStr = JSON.stringify(data, BufferJSON.replacer);
+            const value = encryptData(jsonStr);
             
             await prisma.authState.upsert({
                 where: { sessionId_key: { sessionId, key } },

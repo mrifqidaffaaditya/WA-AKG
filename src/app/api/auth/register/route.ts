@@ -14,14 +14,18 @@ export async function POST(req: Request) {
         const body = await req.json();
         const { email, password, name } = registerSchema.parse(body);
 
-        // Check if registration is enabled
-        const systemConfig = await prisma.systemConfig.findUnique({ where: { id: "default" } });
-        // @ts-ignore
-        if (systemConfig && systemConfig.enableRegistration === false) {
-            return NextResponse.json(
-                { error: "Registration is currently disabled by the administrator" },
-                { status: 403 }
-            );
+        // Check user count to allow first user as SUPERADMIN
+        const userCount = await prisma.user.count();
+
+        if (userCount > 0) {
+            // Check if registration is enabled
+            const systemConfig = await prisma.systemConfig.findUnique({ where: { id: "default" } });
+            if (!systemConfig || systemConfig.enableRegistration !== true) {
+                return NextResponse.json(
+                    { error: "Registration is currently disabled by the administrator" },
+                    { status: 403 }
+                );
+            }
         }
 
         // Check if user already exists
@@ -39,12 +43,16 @@ export async function POST(req: Request) {
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // First user becomes SUPERADMIN, subsequent users are STAFF (least privilege)
+        const assignedRole = userCount === 0 ? "SUPERADMIN" : "STAFF";
+
         // Create the user
         const newUser = await prisma.user.create({
             data: {
                 name,
                 email,
                 password: hashedPassword,
+                role: assignedRole as any,
             },
         });
 

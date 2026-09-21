@@ -171,7 +171,13 @@ export async function DELETE(request: NextRequest) {
             }
 
             const parsed = parseFilename(filename);
-            if (parsed) {
+            if (!parsed) {
+                if (user.role !== "SUPERADMIN") {
+                    errors.push(`Forbidden: ${filename}`);
+                    failed++;
+                    continue;
+                }
+            } else {
                 const canAccess = await canAccessSession(user.id, user.role, parsed.sessionId);
                 if (!canAccess) {
                     errors.push(`Forbidden: ${filename}`);

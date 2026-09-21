@@ -51,6 +51,14 @@ export async function PUT(
             return NextResponse.json({ status: false, message: "Webhook not found", error: "Webhook not found" }, { status: 404 });
         }
 
+        if (url !== undefined) {
+            const { validateSafeUrl } = await import("@/lib/security");
+            const urlValidation = await validateSafeUrl(url, { allowHttp: false });
+            if (!urlValidation.valid) {
+                return NextResponse.json({ status: false, message: `Invalid webhook URL: ${urlValidation.error}`, error: urlValidation.error }, { status: 400 });
+            }
+        }
+
         const webhook = await prisma.webhook.update({
             where: { id },
             data: {

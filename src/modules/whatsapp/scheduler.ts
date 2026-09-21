@@ -26,18 +26,20 @@ const checkScheduledMessages = async () => {
                     let content: any = {};
                     if (msg.mediaUrl) {
                         const url = msg.mediaUrl;
-                        const type = msg.mediaType || 'image'; // Default to image if null
+                        const type = msg.mediaType || 'image';
 
-                        const res = await fetch(url);
-                        if (!res.ok) throw new Error(`Failed to fetch media from URL: ${res.status} ${res.statusText}`);
-                        const buffer = Buffer.from(await res.arrayBuffer());
+                        const { safeFetchBuffer } = await import("@/lib/security");
+                        const { buffer, fileName, contentType } = await safeFetchBuffer(url, {
+                            maxBytes: 50 * 1024 * 1024,
+                            timeoutMs: 15000
+                        });
 
                         if (type === 'video') {
-                            content = { video: buffer, caption: msg.content };
+                            content = { video: buffer, caption: msg.content, mimetype: contentType || 'video/mp4' };
                         } else if (type === 'document') {
-                            content = { document: buffer, caption: msg.content, fileName: url.split('/').pop() || 'file', mimetype: 'application/octet-stream' };
+                            content = { document: buffer, caption: msg.content, fileName: fileName || 'file', mimetype: contentType || 'application/octet-stream' };
                         } else {
-                            content = { image: buffer, caption: msg.content };
+                            content = { image: buffer, caption: msg.content, mimetype: contentType || 'image/jpeg' };
                         }
                     } else {
                         content = { text: msg.content };

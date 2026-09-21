@@ -152,27 +152,36 @@ export async function bindAutoReply(sock: WASocket, sessionId: string) {
                             const url = rule.mediaUrl;
                             const type = (rule as any).mediaType || "document";
                             
-                            let payload: any = {};
-                            if (rule.response) {
-                                payload.caption = rule.response;
-                            }
-
-                            if (type === "image") {
-                                payload.image = { url };
-                            } else if (type === "video") {
-                                payload.video = { url };
-                            } else if (type === "audio") {
-                                payload = { audio: { url } };
-                            } else {
-                                payload.document = { url };
-                                payload.mimetype = 'application/octet-stream';
-                                payload.fileName = url.split('/').pop() || 'document';
-                            }
-                            
                             try {
+                                const { safeFetchBuffer } = await import("@/lib/security");
+                                const { buffer, contentType, fileName } = await safeFetchBuffer(url, {
+                                    maxBytes: 25 * 1024 * 1024,
+                                    timeoutMs: 15000
+                                });
+
+                                let payload: any = {};
+                                if (rule.response) {
+                                    payload.caption = rule.response;
+                                }
+
+                                if (type === "image") {
+                                    payload.image = buffer;
+                                    payload.mimetype = contentType || "image/jpeg";
+                                } else if (type === "video") {
+                                    payload.video = buffer;
+                                    payload.mimetype = contentType || "video/mp4";
+                                } else if (type === "audio") {
+                                    payload.audio = buffer;
+                                    payload.mimetype = contentType || "audio/mp4";
+                                } else {
+                                    payload.document = buffer;
+                                    payload.mimetype = contentType || "application/octet-stream";
+                                    payload.fileName = fileName || "document";
+                                }
+
                                 await sock.sendMessage(remoteJid, payload, { quoted: msg });
                             } catch (err: any) {
-                                logger.error("AutoReply", `Failed to send media auto-reply from URL: ${err.message}. Falling back to text if response exists.`);
+                                logger.error("AutoReply", `Failed to send media auto-reply: ${err.message}. Falling back to text if response exists.`);
                                 if (rule.response) {
                                     await sock.sendMessage(remoteJid, { text: rule.response }, { quoted: msg });
                                 }

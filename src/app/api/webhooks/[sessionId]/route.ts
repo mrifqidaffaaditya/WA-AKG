@@ -75,6 +75,12 @@ export async function POST(
             return NextResponse.json({ status: false, message: "Name, URL, and at least one event are required", error: "Name, URL, and at least one event are required" }, { status: 400 });
         }
 
+        const { validateSafeUrl } = await import("@/lib/security");
+        const urlValidation = await validateSafeUrl(url, { allowHttp: false });
+        if (!urlValidation.valid) {
+            return NextResponse.json({ status: false, message: `Invalid webhook URL: ${urlValidation.error}`, error: urlValidation.error }, { status: 400 });
+        }
+
         const session = await prisma.session.findUnique({
             where: { sessionId: sessionId },
             select: { id: true }

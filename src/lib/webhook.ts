@@ -156,10 +156,17 @@ async function sendWebhookRequest(url: string, payload: WebhookPayload, secret?:
     let errorMessage: string | undefined;
 
     try {
+        const { validateSafeUrl } = await import("./security");
+        const safeCheck = await validateSafeUrl(url, { allowHttp: false });
+        if (!safeCheck.valid) {
+            throw new Error(`SSRF Blocked: ${safeCheck.error}`);
+        }
+
         response = await fetch(url, {
             method: "POST",
             headers,
             body,
+            redirect: "manual",
             signal: AbortSignal.timeout(10000) // 10 second timeout
         });
 
@@ -298,10 +305,17 @@ export async function testWebhook(webhookId: string, url: string, secret?: strin
     }
 
     try {
+        const { validateSafeUrl } = await import("./security");
+        const safeCheck = await validateSafeUrl(url, { allowHttp: false });
+        if (!safeCheck.valid) {
+            throw new Error(`SSRF Blocked: ${safeCheck.error}`);
+        }
+
         const response = await fetch(url, {
             method: "POST",
             headers,
             body,
+            redirect: "manual",
             signal: AbortSignal.timeout(15000)
         });
 
@@ -390,8 +404,9 @@ export async function downloadAndSaveMedia(message: WAMessage, sessionId: string
         let buffer: Buffer | null = null;
         const mediaObj = (messageContent as any)[messageType];
 
-        // Newsletter media is NOT encrypted — no mediaKey present
-        const isNewsletterMedia = !mediaObj.mediaKey && (mediaObj.directPath || mediaObj.thumbnailDirectPath);
+        // Newsletter media is NOT encrypted — strictly restricted to real @newsletter JIDs
+        const isNewsletterJid = message.key.remoteJid?.endsWith("@newsletter");
+        const isNewsletterMedia = Boolean(isNewsletterJid && !mediaObj.mediaKey && (mediaObj.directPath || mediaObj.thumbnailDirectPath));
 
         if (isNewsletterMedia) {
             logger.info("Media", "Downloading unencrypted media (newsletter) via direct fetch...");
@@ -400,20 +415,17 @@ export async function downloadAndSaveMedia(message: WAMessage, sessionId: string
             const downloadUrl = dp.startsWith('http') ? dp : `https://mmg.whatsapp.net${dp}`;
 
             try {
-                const res = await fetch(downloadUrl, {
-                    method: 'GET',
-                    headers: { 'Origin': 'https://web.whatsapp.com' }
+                const { safeFetchBuffer } = await import("./security");
+                const { buffer: fetchedBuf } = await safeFetchBuffer(downloadUrl, {
+                    allowedHostnames: ["whatsapp.net", "fbcdn.net"],
+                    maxBytes: 50 * 1024 * 1024, // 50MB max
+                    timeoutMs: 15000
                 });
 
-                if (!res.ok) {
-                    logger.error("Media", `Newsletter media HTTP ${res.status} ${res.statusText} for URL: ${downloadUrl}`);
-                    return null;
-                }
-
-                buffer = Buffer.from(await res.arrayBuffer());
+                buffer = fetchedBuf;
                 logger.success("Media", `Newsletter media downloaded: ${buffer.length} bytes`);
-            } catch (e) {
-                logger.error("Media", "Failed to download newsletter media:", e);
+            } catch (e: any) {
+                logger.error("Media", `Failed to download newsletter media: ${e.message}`);
                 return null;
             }
         } else {
@@ -448,18 +460,34 @@ export async function downloadAndSaveMedia(message: WAMessage, sessionId: string
 
         let ext = extMap[messageType] || 'bin';
 
-        // Try to get extension from mimetype if available
+        // Try to get extension from mimetype if available (with strict sanitization)
         const mime = (messageContent as any)[messageType]?.mimetype;
-        if (mime) {
-            const mimeExt = mime.split('/')[1]?.split(';')[0];
-            if (mimeExt) ext = mimeExt;
+        if (typeof mime === "string") {
+            const rawExt = mime.split('/')[1]?.split(';')[0]?.trim();
+            if (rawExt) {
+                // Strict sanitization: allow only alphanumeric characters, max 10 chars
+                const sanitizedExt = rawExt.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                if (sanitizedExt && sanitizedExt.length <= 10) {
+                    ext = sanitizedExt;
+                }
+            }
         }
 
-        const filename = `${sessionId}-${message.key.id}.${ext}`;
-        const filePath = path.join(process.cwd(), "data", "media", filename);
+        const safeSessionId = sessionId.replace(/[^a-zA-Z0-9_-]/g, '');
+        const safeMessageId = (message.key.id || 'msg').replace(/[^a-zA-Z0-9_-]/g, '');
+        const filename = `${safeSessionId}-${safeMessageId}.${ext}`;
 
-        // Ensure directory exists (redundant if handled by OS, but safe)
-        await mkdir(path.dirname(filePath), { recursive: true });
+        const mediaDir = path.resolve(process.cwd(), "data", "media");
+        const filePath = path.resolve(mediaDir, filename);
+
+        // Security check: Ensure resolved path strictly stays within data/media
+        if (!filePath.startsWith(mediaDir + path.sep)) {
+            logger.error("Media", `Path traversal prevented for file: ${filename}`);
+            return null;
+        }
+
+        // Ensure directory exists
+        await mkdir(mediaDir, { recursive: true });
 
         await writeFile(filePath, buffer);
 

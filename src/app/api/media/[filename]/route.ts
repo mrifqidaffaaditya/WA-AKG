@@ -41,7 +41,12 @@ export async function GET(
 
         // Session ownership check — extract sessionId from filename
         const sessionId = extractSessionId(filename);
-        if (sessionId) {
+        if (!sessionId) {
+            // Files without valid session prefix require SUPERADMIN privileges
+            if (user.role !== "SUPERADMIN") {
+                return NextResponse.json({ status: false, message: "Forbidden - Invalid media identifier", error: "Forbidden" }, { status: 403 });
+            }
+        } else {
             const canAccess = await canAccessSession(user.id, user.role, sessionId);
             if (!canAccess) {
                 return NextResponse.json({ status: false, message: "Forbidden - Cannot access this session's media", error: "Forbidden - Cannot access this session's media" }, { status: 403 });

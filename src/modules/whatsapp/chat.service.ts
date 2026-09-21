@@ -248,13 +248,13 @@ export class ChatService {
             delete msgPayload.text;
         }
 
+        const { safeFetchBuffer } = await import("@/lib/security");
+
         if (msgPayload.sticker && (msgPayload.sticker.url || typeof msgPayload.sticker === 'string')) {
             const url = msgPayload.sticker.url || msgPayload.sticker;
             try {
-                const res = await fetch(url);
-                if (!res.ok) throw new Error(`Failed to fetch sticker media`);
-                const buffer = await res.arrayBuffer();
-                const sticker = new Sticker(Buffer.from(buffer), {
+                const { buffer } = await safeFetchBuffer(url, { maxBytes: 10 * 1024 * 1024 });
+                const sticker = new Sticker(buffer, {
                     pack: msgPayload.sticker.pack || "WA-AKG Bot",
                     author: msgPayload.sticker.author || "WA-AKG",
                     type: "full",
@@ -268,10 +268,8 @@ export class ChatService {
 
         if (msgPayload.image && typeof msgPayload.image === 'object' && msgPayload.image.url) {
             try {
-                const res = await fetch(msgPayload.image.url);
-                if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-                const buffer = await res.arrayBuffer();
-                msgPayload.image = Buffer.from(buffer);
+                const { buffer } = await safeFetchBuffer(msgPayload.image.url, { maxBytes: 25 * 1024 * 1024 });
+                msgPayload.image = buffer;
             } catch (e: any) {
                 throw new Error(`Failed to fetch image from URL: ${e.message}`);
             }
@@ -279,10 +277,8 @@ export class ChatService {
 
         if (msgPayload.video && typeof msgPayload.video === 'object' && msgPayload.video.url) {
             try {
-                const res = await fetch(msgPayload.video.url);
-                if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-                const buffer = await res.arrayBuffer();
-                msgPayload.video = Buffer.from(buffer);
+                const { buffer } = await safeFetchBuffer(msgPayload.video.url, { maxBytes: 100 * 1024 * 1024 });
+                msgPayload.video = buffer;
             } catch (e: any) {
                 throw new Error(`Failed to fetch video from URL: ${e.message}`);
             }
@@ -290,10 +286,8 @@ export class ChatService {
 
         if (msgPayload.document && typeof msgPayload.document === 'object' && msgPayload.document.url) {
             try {
-                const res = await fetch(msgPayload.document.url);
-                if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-                const buffer = await res.arrayBuffer();
-                msgPayload.document = Buffer.from(buffer);
+                const { buffer } = await safeFetchBuffer(msgPayload.document.url, { maxBytes: 100 * 1024 * 1024 });
+                msgPayload.document = buffer;
             } catch (e: any) {
                 throw new Error(`Failed to fetch document from URL: ${e.message}`);
             }
@@ -301,10 +295,8 @@ export class ChatService {
 
         if (msgPayload.audio && typeof msgPayload.audio === 'object' && msgPayload.audio.url) {
             try {
-                const res = await fetch(msgPayload.audio.url);
-                if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-                const buffer = await res.arrayBuffer();
-                msgPayload.audio = Buffer.from(buffer);
+                const { buffer } = await safeFetchBuffer(msgPayload.audio.url, { maxBytes: 50 * 1024 * 1024 });
+                msgPayload.audio = buffer;
             } catch (e: any) {
                 throw new Error(`Failed to fetch audio from URL: ${e.message}`);
             }

@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { validateApiKey } from "@/lib/api-auth";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -6,7 +7,7 @@ export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Public routes that don't require authentication
-    const publicRoutes = ["/auth/login", "/auth/register", "/api/auth", "/api/test", "/terms", "/privacy"];
+    const publicRoutes = ["/auth/login", "/auth/register", "/api/auth", "/terms", "/privacy"];
 
     // Check if it's a public route
     const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
@@ -25,17 +26,21 @@ export async function proxy(request: NextRequest) {
         return NextResponse.next();
     }
 
-    // API routes: Check for API key or session
+    // API routes: Check for valid API key or session
     if (pathname.startsWith("/api/")) {
         // Skip auth endpoints
-        if (pathname.startsWith("/api/auth") || pathname.startsWith("/api/test")) {
+        if (pathname.startsWith("/api/auth")) {
             return NextResponse.next();
         }
 
         // Check for API key in header
         const apiKey = request.headers.get("x-api-key");
         if (apiKey) {
-            // API key auth will be validated in the route handler
+            // Defense-in-depth: validate API key immediately
+            const user = await validateApiKey(request);
+            if (!user) {
+                return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
+            }
             return NextResponse.next();
         }
 
