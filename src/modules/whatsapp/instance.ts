@@ -16,6 +16,7 @@ import { bindAutoReply } from "./store/autoreply";
 import { bindPpGuard } from "./store/ppguard";
 import { antispam } from "./antispam";
 import { logger } from "@/lib/logger";
+import { isInteractiveContent, handleInteractiveMessageDispatch } from "./interactive";
 
 const MAX_RECONNECT_ATTEMPTS = 3;
 
@@ -70,11 +71,30 @@ export class WhatsAppInstance {
             syncFullHistory: true,
         });
 
-        // Apply Anti-Spam Wrapper to sendMessage
+        // Attach Lekzo Baileys compatible helper methods
+        const currentSocket = this.socket as any;
+        currentSocket.newsletterId = async (url: string) => {
+            const cleanUrl = url.trim();
+            const inviteCode = cleanUrl.includes("/") ? cleanUrl.split("/").filter(Boolean).pop()! : cleanUrl;
+            const meta = await currentSocket.newsletterMetadata("invite", inviteCode);
+            return meta?.id || null;
+        };
+        currentSocket.checkWhatsApp = async (target: string) => {
+            return await currentSocket.onWhatsApp(target);
+        };
+
+        // Apply Anti-Spam & Interactive Message Wrapper to sendMessage
         const originalSendMessage = this.socket.sendMessage.bind(this.socket);
         const sessionId = this.sessionId;
+        const sock = this.socket;
         this.socket.sendMessage = async function (jid: string, content: any, options?: any) {
             await antispam.enqueue(sessionId, jid, content);
+            if (isInteractiveContent(content)) {
+                const interactiveMsg = await handleInteractiveMessageDispatch(sock, jid, content, options);
+                if (interactiveMsg) {
+                    return interactiveMsg;
+                }
+            }
             return originalSendMessage(jid, content, options);
         } as any;
 

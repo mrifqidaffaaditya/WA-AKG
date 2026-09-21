@@ -3,6 +3,7 @@ import { normalizeJid } from "@/lib/jid-utils";
 import { waManager } from "@/modules/whatsapp/manager";
 import { onMessageSent } from "@/lib/webhook";
 import Sticker from "wa-sticker-formatter";
+import type { InteractiveMessagePayload, AlbumItem } from "./interactive";
 
 export class ChatService {
     /**
@@ -431,6 +432,75 @@ export class ChatService {
                 webhookMsg.message = { stickerMessage: {} };
             }
 
+            onMessageSent(sessionId, webhookMsg).catch(e => console.error("Webhook error:", e));
+        } catch (e) {
+            // Non-blocking
+        }
+
+        return sendResult;
+    }
+
+    /**
+     * Send rich interactive message (Native Flow buttons, single_select list, etc.)
+     */
+    static async sendInteractiveMessage(
+        sessionId: string,
+        jid: string,
+        payload: InteractiveMessagePayload,
+        options: any = {}
+    ) {
+        const instance = waManager.getInstance(sessionId);
+        if (!instance || !instance.socket) {
+            throw new Error("WhatsApp session is disconnected or not found");
+        }
+
+        const sendResult = await instance.socket.sendMessage(jid, {
+            interactiveMessage: payload
+        } as any, options);
+
+        // Fire webhook for sent interactive message
+        try {
+            const webhookMsg: any = {
+                key: sendResult?.key || {},
+                message: {
+                    conversation: payload.body || payload.title || "Interactive Message"
+                },
+                messageTimestamp: Math.floor(Date.now() / 1000)
+            };
+            onMessageSent(sessionId, webhookMsg).catch(e => console.error("Webhook error:", e));
+        } catch (e) {
+            // Non-blocking
+        }
+
+        return sendResult;
+    }
+
+    /**
+     * Send Album message with multiple images/videos
+     */
+    static async sendAlbumMessage(
+        sessionId: string,
+        jid: string,
+        items: AlbumItem[],
+        options: { caption?: string; quoted?: any } = {}
+    ) {
+        const instance = waManager.getInstance(sessionId);
+        if (!instance || !instance.socket) {
+            throw new Error("WhatsApp session is disconnected or not found");
+        }
+
+        const sendResult = await instance.socket.sendMessage(jid, {
+            albumMessage: items
+        } as any, options);
+
+        try {
+            const webhookMsg: any = {
+                key: sendResult?.key || {},
+                message: {
+                    conversation: options.caption || "Album Message"
+                },
+                messageTimestamp: Math.floor(Date.now() / 1000)
+            };
             onMessageSent(sessionId, webhookMsg).catch(e => console.error("Webhook error:", e));
         } catch (e) {
             // Non-blocking

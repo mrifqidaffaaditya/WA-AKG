@@ -737,6 +737,28 @@ function extractMessageContent(msg: any): { type: string, content: string, capti
     } else if (messageContent.contactMessage) {
         messageType = "CONTACT";
         text = messageContent.contactMessage.displayName || "";
+    } else if (messageContent.interactiveResponseMessage) {
+        messageType = "INTERACTIVE_RESPONSE";
+        const nativeFlow = messageContent.interactiveResponseMessage.nativeFlowResponseMessage;
+        if (nativeFlow) {
+            try {
+                const params = JSON.parse(nativeFlow.paramsJson || "{}");
+                text = params.id || params.selected_id || params.display_text || nativeFlow.paramsJson || "";
+            } catch {
+                text = nativeFlow.paramsJson || "";
+            }
+        } else {
+            text = messageContent.interactiveResponseMessage.body?.text || "";
+        }
+    } else if (messageContent.buttonsResponseMessage) {
+        messageType = "BUTTON_RESPONSE";
+        text = messageContent.buttonsResponseMessage.selectedButtonId || messageContent.buttonsResponseMessage.selectedDisplayText || "";
+    } else if (messageContent.templateButtonReplyMessage) {
+        messageType = "BUTTON_RESPONSE";
+        text = messageContent.templateButtonReplyMessage.selectedId || messageContent.templateButtonReplyMessage.selectedDisplayText || "";
+    } else if (messageContent.listResponseMessage) {
+        messageType = "LIST_RESPONSE";
+        text = messageContent.listResponseMessage.singleSelectReply?.selectedRowId || messageContent.listResponseMessage.title || "";
     }
 
     return { type: messageType, content: text, caption };
@@ -770,6 +792,14 @@ async function extractQuotedMessageAsync(msg: any, sessionId: string): Promise<a
         contextInfo = messageContent.contactMessage.contextInfo;
     } else if (messageContent.locationMessage) {
         contextInfo = messageContent.locationMessage.contextInfo;
+    } else if (messageContent.interactiveResponseMessage) {
+        contextInfo = messageContent.interactiveResponseMessage.contextInfo;
+    } else if (messageContent.buttonsResponseMessage) {
+        contextInfo = messageContent.buttonsResponseMessage.contextInfo;
+    } else if (messageContent.templateButtonReplyMessage) {
+        contextInfo = messageContent.templateButtonReplyMessage.contextInfo;
+    } else if (messageContent.listResponseMessage) {
+        contextInfo = messageContent.listResponseMessage.contextInfo;
     }
 
     if (contextInfo && contextInfo.quotedMessage) {
