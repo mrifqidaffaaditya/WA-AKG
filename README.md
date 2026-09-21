@@ -232,7 +232,7 @@ curl -X POST http://localhost:3000/api/messages/session_01/62812345678@s.whatsap
 
 ## 🛡️ Security
 - **API Key Auth**: Secured endpoints using `X-API-Key` header.
-- **RBAC**: Multi-role support (`SUPERADMIN`, `OWNER`, `STAFF`).
+- **RBAC**: Multi-role support (`SUPERADMIN`, `STAFF`, `USER`).
 - **Encrypted Passwords**: All passwords hashed with bcrypt.
 - **JWT Encryption**: Session tokens signed with `AUTH_SECRET` (wajib diisi — tidak ada fallback).
 - **Input Validation**: Zod schemas on critical endpoints.
