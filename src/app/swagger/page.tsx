@@ -8,26 +8,40 @@ import SwaggerUI from "swagger-ui-react";
 import "swagger-ui-react/swagger-ui.css";
 import { ArrowLeft, BookOpen, ShieldCheck } from "lucide-react";
 
+// Suppress third-party legacy lifecycle warnings from swagger-ui-react (ModelCollapse)
+if (typeof window !== "undefined") {
+    const isModelCollapseWarning = (...args: any[]): boolean => {
+        const fullMessage = args
+            .map(arg => {
+                if (typeof arg === "string") return arg;
+                if (typeof arg === "object") {
+                    try { return JSON.stringify(arg); } catch { return String(arg); }
+                }
+                return String(arg);
+            })
+            .join(" ");
+        return (
+            fullMessage.includes("ModelCollapse") &&
+            (fullMessage.includes("UNSAFE_componentWillReceiveProps") || fullMessage.includes("unsafe-component-lifecycles"))
+        );
+    };
+
+    const originalError = console.error;
+    console.error = (...args: any[]) => {
+        if (isModelCollapseWarning(...args)) return;
+        originalError.apply(console, args);
+    };
+
+    const originalWarn = console.warn;
+    console.warn = (...args: any[]) => {
+        if (isModelCollapseWarning(...args)) return;
+        originalWarn.apply(console, args);
+    };
+}
+
 export default function ApiDocsPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
-
-    useEffect(() => {
-        // Suppress Swagger UI legacy lifecycle warnings (ModelCollapse)
-        const originalWarn = console.warn;
-        console.warn = (...args) => {
-            if (typeof args[0] === 'string' &&
-                args[0].includes('UNSAFE_componentWillReceiveProps') &&
-                args[0].includes('ModelCollapse')) {
-                return;
-            }
-            originalWarn(...args);
-        };
-
-        return () => {
-            console.warn = originalWarn;
-        };
-    }, []);
 
     if (status === "loading") {
         return (
