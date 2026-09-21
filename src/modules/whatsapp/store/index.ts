@@ -421,8 +421,49 @@ async function processAndSaveMessage(
     let text = "";
     let messageType = "TEXT";
 
+    // Check for interactive message (native flow / viewOnce wrapper)
+    const rawMsg = msg.message as any;
+    const interactiveMsg = messageContent?.interactiveMessage || 
+        rawMsg?.viewOnceMessage?.message?.interactiveMessage || 
+        rawMsg?.viewOnceMessageV2?.message?.interactiveMessage;
+
     // Extract content based on message type
-    if (messageContent?.conversation) {
+    if (interactiveMsg) {
+        messageType = "TEXT";
+        const title = interactiveMsg.header?.title ? `*${interactiveMsg.header.title}*\n` : "";
+        const body = interactiveMsg.body?.text || "";
+        const footer = interactiveMsg.footer?.text ? `\n_${interactiveMsg.footer.text}_` : "";
+        text = `${title}${body}${footer}`.trim() || "[Interactive Message]";
+    } else if (messageContent?.interactiveResponseMessage) {
+        messageType = "TEXT";
+        const rm = messageContent.interactiveResponseMessage;
+        const nativeParams = rm.nativeFlowResponseMessage?.paramsJson;
+        let selectedId = "";
+        try {
+            if (nativeParams) {
+                const parsed = JSON.parse(nativeParams);
+                selectedId = parsed.id || parsed.item_id || "";
+            }
+        } catch {}
+        const bodyText = rm.body?.text || "";
+        const choice = bodyText || selectedId;
+        text = choice ? `🔘 [Interactive Response] ${choice}` : "🔘 [Interactive Response]";
+    } else if (messageContent?.buttonsResponseMessage) {
+        messageType = "TEXT";
+        const bm = messageContent.buttonsResponseMessage;
+        const choice = bm.selectedDisplayText || bm.selectedButtonId || "";
+        text = choice ? `🔘 [Button Response] ${choice}` : "🔘 [Button Response]";
+    } else if (messageContent?.listResponseMessage) {
+        messageType = "TEXT";
+        const lm = messageContent.listResponseMessage;
+        const choice = lm.title || lm.singleSelectReply?.selectedRowId || "";
+        text = choice ? `📋 [List Response] ${choice}` : "📋 [List Response]";
+    } else if (messageContent?.templateButtonReplyMessage) {
+        messageType = "TEXT";
+        const tm = messageContent.templateButtonReplyMessage;
+        const choice = tm.selectedDisplayText || tm.selectedId || "";
+        text = choice ? `🔘 [Button Reply] ${choice}` : "🔘 [Button Reply]";
+    } else if (messageContent?.conversation) {
         text = messageContent.conversation;
     } else if (messageContent?.extendedTextMessage?.text) {
         text = messageContent.extendedTextMessage.text;

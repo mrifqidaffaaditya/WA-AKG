@@ -27,7 +27,8 @@ import {
     Tag,
     MessageCircleReply,
     Contact,
-    UserPlus
+    UserPlus,
+    Sparkles
 } from "lucide-react";
 import { useSidebar } from "./sidebar-context";
 import {
@@ -64,6 +65,7 @@ const navGroups: NavGroup[] = [
         items: [
             { href: "/dashboard/chat", label: "Chat", icon: MessageSquare },
             { href: "/dashboard/broadcast", label: "Broadcast", icon: Megaphone },
+            { href: "/dashboard/interactive", label: "Interactive Tester", icon: Sparkles },
             { href: "/dashboard/sticker", label: "Sticker Maker", icon: ImageIcon },
         ],
     },

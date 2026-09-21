@@ -116,3 +116,31 @@ export async function sendMediaMessage(formData: FormData) {
         throw new Error(`Failed to send media: ${error.message}`);
     }
 }
+
+// Send Interactive Message (Native Flow buttons, single_select, CTA links, etc.)
+export async function sendInteractiveChatMessage(
+    sessionId: string,
+    jid: string,
+    payload: {
+        title?: string;
+        body: string;
+        footer?: string;
+        header?: any;
+        buttons?: any[];
+    }
+) {
+    const user = await getAuthenticatedUserForAction();
+    if (!user) throw new Error("Unauthorized");
+
+    const canAccess = await canAccessSession(user.id, user.role, sessionId);
+    if (!canAccess) throw new Error("Forbidden");
+
+    try {
+        const result = await ChatService.sendInteractiveMessage(sessionId, jid, payload);
+        return { success: true, result };
+    } catch (error: any) {
+        console.error("Interactive send error:", error);
+        throw new Error(`Failed to send interactive message: ${error.message}`);
+    }
+}
+

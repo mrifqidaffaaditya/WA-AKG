@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Send, Paperclip, ArrowLeft, FileText, Image as ImageIcon, Music, Video, Download, ArrowDown, CornerUpLeft, Copy, Trash2, Info, X } from "lucide-react";
+import { Send, Paperclip, ArrowLeft, FileText, Image as ImageIcon, Music, Video, Download, ArrowDown, CornerUpLeft, Copy, Trash2, Info, X, Sparkles } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
     AlertDialog,
@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { getChatMessages, sendChatMessage, sendMediaMessage } from "@/app/dashboard/chat/actions";
 import { useSocket } from "./socket-context";
+import { InteractiveMessageDialog } from "./interactive-message-dialog";
 
 interface Message {
     id: string;
@@ -184,6 +185,9 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
 
     // Context menu state
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+
+    // Interactive message dialog state
+    const [interactiveDialogOpen, setInteractiveDialogOpen] = useState(false);
 
     const { getSocket, joinSession } = useSocket();
     const getDateLabel = useDateLabel();
@@ -539,6 +543,17 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
                                                 {msg.mediaUrl && <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full shrink-0" onClick={() => handleDownload(msg.mediaUrl!, `${msg.type}-${msg.keyId}`)}><Download className="h-3.5 w-3.5" /></Button>}
                                             </div>
                                         )}
+                                        {/* Interactive Response Badge */}
+                                        {(msg.content?.includes("[Interactive Response]") || msg.content?.includes("[Button Response]") || msg.content?.includes("[List Response]") || msg.content?.includes("[Button Reply]")) && (
+                                            <div className="mb-1">
+                                                <span className={cn(
+                                                    "inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full",
+                                                    msg.fromMe ? "bg-white/20 text-primary-foreground" : "bg-primary/10 text-primary border border-primary/20"
+                                                )}>
+                                                    <Sparkles className="h-2.5 w-2.5" /> Button Clicked
+                                                </span>
+                                            </div>
+                                        )}
                                         {/* Text */}
                                         <div className="flex items-end gap-2">
                                             <span className="flex-1 text-sm break-all whitespace-pre-wrap">{msg.content}</span>
@@ -579,15 +594,29 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
                         <PopoverTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full shrink-0 text-muted-foreground hover:text-foreground"><Paperclip className="h-4.5 w-4.5" /></Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-44 p-1.5" side="top" align="start">
+                        <PopoverContent className="w-48 p-1.5" side="top" align="start">
                             <div className="flex flex-col gap-0.5">
                                 <Button variant="ghost" size="sm" className="justify-start gap-2 h-8 text-xs" onClick={() => triggerUpload('image')}><ImageIcon className="h-3.5 w-3.5 text-blue-500" /> Image</Button>
                                 <Button variant="ghost" size="sm" className="justify-start gap-2 h-8 text-xs" onClick={() => triggerUpload('video')}><Video className="h-3.5 w-3.5 text-purple-500" /> Video</Button>
                                 <Button variant="ghost" size="sm" className="justify-start gap-2 h-8 text-xs" onClick={() => triggerUpload('audio')}><Music className="h-3.5 w-3.5 text-orange-500" /> Audio</Button>
                                 <Button variant="ghost" size="sm" className="justify-start gap-2 h-8 text-xs" onClick={() => triggerUpload('document')}><FileText className="h-3.5 w-3.5 text-emerald-500" /> Document</Button>
+                                <div className="my-1 border-t border-border/30" />
+                                <Button variant="ghost" size="sm" className="justify-start gap-2 h-8 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-500 hover:bg-amber-500/10 font-medium" onClick={() => setInteractiveDialogOpen(true)}>
+                                    <Sparkles className="h-3.5 w-3.5 text-amber-500" /> Interactive & Test
+                                </Button>
                             </div>
                         </PopoverContent>
                     </Popover>
+
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 rounded-full shrink-0 text-amber-500/80 hover:text-amber-500 hover:bg-amber-500/10"
+                        title="Interactive Message & Test Trigger"
+                        onClick={() => setInteractiveDialogOpen(true)}
+                    >
+                        <Sparkles className="h-4.5 w-4.5" />
+                    </Button>
 
                     <div className="flex-1">
                         {/* Reply preview bar */}
@@ -610,6 +639,18 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
                     <Button onClick={handleSend} disabled={!input.trim()} size="icon" className="h-9 w-9 rounded-full shrink-0"><Send className="h-4 w-4" /></Button>
                 </div>
             </div>
+
+            {/* Interactive Message & Test Trigger Dialog */}
+            <InteractiveMessageDialog
+                open={interactiveDialogOpen}
+                onOpenChange={setInteractiveDialogOpen}
+                sessionId={sessionId}
+                jid={jid}
+                recipientName={displayName}
+                onSuccess={() => {
+                    setTimeout(() => fetchMessages(), 600);
+                }}
+            />
         </div>
     );
 }

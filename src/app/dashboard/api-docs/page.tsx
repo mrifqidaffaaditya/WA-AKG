@@ -65,6 +65,8 @@ export default function ApiDocsPage() {
 
         // Messaging
         { category: "Messaging", method: "POST", path: "/api/messages/[sessionId]/[jid]/send", description: "Send message", params: "Path: sessionId, jid, Body: { message }" },
+        { category: "Messaging", method: "POST", path: "/api/messages/[sessionId]/[jid]/interactive", description: "Send rich interactive message (Native Flow buttons, CTA, URL, Call, Copy, List)", params: "Path: sessionId, jid, Body: { title, body, footer, buttons: [] }" },
+        { category: "Messaging", method: "POST", path: "/api/messages/[sessionId]/[jid]/album", description: "Send album message (multiple media files)", params: "Path: sessionId, jid, Body: { items: [{ image|video, caption }] }" },
         { category: "Messaging", method: "POST", path: "/api/messages/[sessionId]/[jid]/list", description: "Send list message", params: "Path: sessionId, jid, Body: { ... }" },
         { category: "Messaging", method: "POST", path: "/api/messages/[sessionId]/[jid]/location", description: "Send location", params: "Path: sessionId, jid, Body: { location }" },
         { category: "Messaging", method: "POST", path: "/api/messages/[sessionId]/[jid]/poll", description: "Send poll", params: "Path: sessionId, jid, Body: { poll }" },
