@@ -1,7 +1,6 @@
 import { Server, Socket } from "socket.io";
-import { decode } from "next-auth/jwt";
 import { prisma } from "../lib/prisma";
-import { canAccessSession } from "../lib/api-auth";
+import { canAccessSession } from "../lib/session-access";
 import { logger } from "../lib/logger";
 
 function parseCookies(cookieHeader?: string): Record<string, string> {
@@ -37,26 +36,36 @@ export function setupSocket(io: Server) {
 
             const secret = process.env.AUTH_SECRET;
 
-            for (const cookieName of tokenCookieNames) {
-                const tokenVal = cookies[cookieName];
-                if (tokenVal && secret) {
-                    try {
-                        const decoded = await decode({
-                            token: tokenVal,
-                            secret,
-                            salt: cookieName
-                        });
+            let decodeJwt: any = null;
+            try {
+                const jwtMod = await import("next-auth/jwt");
+                decodeJwt = jwtMod.decode;
+            } catch (err) {
+                logger.debug("Socket", "next-auth/jwt module unavailable:", err);
+            }
 
-                        if (decoded && decoded.id) {
-                            socket.data.user = {
-                                id: decoded.id as string,
-                                role: (decoded.role as string) || "STAFF",
-                                email: (decoded.email as string) || ""
-                            };
-                            return next();
+            if (decodeJwt && secret) {
+                for (const cookieName of tokenCookieNames) {
+                    const tokenVal = cookies[cookieName];
+                    if (tokenVal) {
+                        try {
+                            const decoded = await decodeJwt({
+                                token: tokenVal,
+                                secret,
+                                salt: cookieName
+                            });
+
+                            if (decoded && decoded.id) {
+                                socket.data.user = {
+                                    id: decoded.id as string,
+                                    role: (decoded.role as string) || "USER",
+                                    email: (decoded.email as string) || ""
+                                };
+                                return next();
+                            }
+                        } catch (e) {
+                            logger.debug("Socket", `Failed decoding cookie ${cookieName}:`, e);
                         }
-                    } catch (e) {
-                        logger.debug("Socket", `Failed decoding cookie ${cookieName}:`, e);
                     }
                 }
             }
