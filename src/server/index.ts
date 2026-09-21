@@ -20,7 +20,15 @@ if (!process.env.AUTH_SECRET) {
   process.exit(1);
 }
 
-const app = next({ dev, hostname, port });
+// On NTFS filesystems (e.g. /media/... partitions), Turbopack dev chunk naming containing colons
+// causes OS Error 22 (EINVAL). Default custom server to webpack unless TURBOPACK=1 is explicitly enabled.
+const useTurbopack = process.env.TURBOPACK === "1" || process.env.TURBO === "true";
+const app = next({
+  dev,
+  hostname,
+  port,
+  ...(dev ? (useTurbopack ? { turbopack: true } : { webpack: true }) : {})
+});
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {

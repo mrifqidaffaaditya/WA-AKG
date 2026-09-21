@@ -37,7 +37,6 @@ import {
 import { toast } from "sonner";
 import { useSession } from "@/components/dashboard/session-provider";
 import { SessionGuard } from "@/components/dashboard/session-guard";
-import { sendInteractiveChatMessage } from "@/app/dashboard/chat/actions";
 import { ButtonType, InteractiveButtonItem } from "@/components/chat/interactive-message-dialog";
 
 interface TriggerLog {
@@ -198,7 +197,15 @@ function InteractiveContent() {
         setSendingPresetId(preset.id);
         try {
             toast.info(`Mengirim test "${preset.title}" ke ${targetPhone}...`);
-            await sendInteractiveChatMessage(sessionId, jid, preset.payload);
+            const res = await fetch(`/api/messages/${sessionId}/${encodeURIComponent(jid)}/interactive`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(preset.payload)
+            });
+            const data = await res.json();
+            if (!res.ok || !data.status) {
+                throw new Error(data.message || data.error || "Gagal mengirim test interaktif");
+            }
             toast.success(`Berhasil! Pesan interaktif telah terkirim ke ${targetPhone}`);
 
             setTriggerLogs(prev => [
@@ -303,12 +310,21 @@ function InteractiveContent() {
                 }
             });
 
-            await sendInteractiveChatMessage(sessionId, jid, {
-                title: title.trim() || undefined,
-                body: body.trim(),
-                footer: footer.trim() || undefined,
-                buttons: formattedButtons
+            const res = await fetch(`/api/messages/${sessionId}/${encodeURIComponent(jid)}/interactive`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: title.trim() || undefined,
+                    body: body.trim(),
+                    footer: footer.trim() || undefined,
+                    buttons: formattedButtons
+                })
             });
+
+            const data = await res.json();
+            if (!res.ok || !data.status) {
+                throw new Error(data.message || data.error || "Gagal mengirim pesan interaktif");
+            }
 
             toast.success(`Pesan interaktif berhasil dikirim ke ${targetPhone}!`);
 

@@ -37,7 +37,6 @@ import {
     Layers
 } from "lucide-react";
 import { toast } from "sonner";
-import { sendInteractiveChatMessage } from "@/app/dashboard/chat/actions";
 
 interface InteractiveMessageDialogProps {
     open: boolean;
@@ -173,7 +172,15 @@ export function InteractiveMessageDialog({
         setSendingPreset(preset.id);
         try {
             toast.info(`Mengirim test "${preset.title}" ke ${displayName}...`);
-            await sendInteractiveChatMessage(sessionId, jid, preset.payload);
+            const res = await fetch(`/api/messages/${sessionId}/${encodeURIComponent(jid)}/interactive`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(preset.payload)
+            });
+            const data = await res.json();
+            if (!res.ok || !data.status) {
+                throw new Error(data.message || data.error || "Gagal mengirim pesan interaktif");
+            }
             toast.success(`Berhasil! Pesan interaktif telah dikirim ke ${displayName}`);
             onSuccess?.();
             onOpenChange(false);
@@ -256,12 +263,21 @@ export function InteractiveMessageDialog({
                 }
             });
 
-            await sendInteractiveChatMessage(sessionId, jid, {
-                title: title.trim() || undefined,
-                body: body.trim(),
-                footer: footer.trim() || undefined,
-                buttons: formattedButtons
+            const res = await fetch(`/api/messages/${sessionId}/${encodeURIComponent(jid)}/interactive`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: title.trim() || undefined,
+                    body: body.trim(),
+                    footer: footer.trim() || undefined,
+                    buttons: formattedButtons
+                })
             });
+
+            const data = await res.json();
+            if (!res.ok || !data.status) {
+                throw new Error(data.message || data.error || "Gagal mengirim pesan interaktif");
+            }
 
             toast.success("Pesan interaktif berhasil dikirim!");
             onSuccess?.();
