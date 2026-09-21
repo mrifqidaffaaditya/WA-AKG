@@ -25,7 +25,7 @@ interface UserProfile {
     id: string;
     name: string | null;
     email: string;
-    role: "SUPERADMIN" | "OWNER" | "STAFF";
+    role: "SUPERADMIN" | "STAFF" | "USER";
     createdAt: string;
     _count?: {
         sessions: number;
@@ -44,7 +44,7 @@ export default function UsersPage() {
         name: "",
         email: "",
         password: "",
-        role: "OWNER"
+        role: "USER"
     });
 
     useEffect(() => {
@@ -84,7 +84,7 @@ export default function UsersPage() {
                 toast.success(editingUser ? "User updated" : "User created");
                 setShowForm(false);
                 setEditingUser(null);
-                setFormData({ name: "", email: "", password: "", role: "OWNER" });
+                setFormData({ name: "", email: "", password: "", role: "USER" });
                 fetchUsers();
             } else {
                 const error = await res.json();
@@ -123,7 +123,7 @@ export default function UsersPage() {
     const getRoleIcon = (role: string) => {
         switch (role) {
             case "SUPERADMIN": return <ShieldAlert className="h-4 w-4 text-red-500" />;
-            case "OWNER": return <ShieldCheck className="h-4 w-4 text-blue-500" />;
+            case "STAFF": return <ShieldCheck className="h-4 w-4 text-blue-500" />;
             default: return <User className="h-4 w-4 text-gray-500" />;
         }
     };
@@ -144,7 +144,7 @@ export default function UsersPage() {
                 </div>
                 <Button size="sm" onClick={() => {
                     setEditingUser(null);
-                    setFormData({ name: "", email: "", password: "", role: "OWNER" });
+                    setFormData({ name: "", email: "", password: "", role: "USER" });
                     setShowForm(true);
                 }}>
                     <Plus className="h-4 w-4 mr-1 sm:mr-2" /> Add User
@@ -199,8 +199,8 @@ export default function UsersPage() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="SUPERADMIN">Super Admin</SelectItem>
-                                            <SelectItem value="OWNER">Owner</SelectItem>
                                             <SelectItem value="STAFF">Staff</SelectItem>
+                                            <SelectItem value="USER">User</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>

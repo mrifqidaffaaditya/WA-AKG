@@ -5169,7 +5169,7 @@ Content-Type: application/json
 | `name` | string | ✅ Yes | — |
 | `email` | string (email) | ✅ Yes | — |
 | `password` | string | ✅ Yes | — |
-| `role` | string | No | **Options:** `SUPERADMIN`, `OWNER`, `STAFF` **Default:** `OWNER` |
+| `role` | string | No | **Options:** `SUPERADMIN`, `STAFF`, `USER` **Default:** `USER` |
 
 **Example:**
 
@@ -5333,7 +5333,7 @@ Content-Type: application/json
 | `name` | string | No | — |
 | `email` | string | No | — |
 | `password` | string | No | — |
-| `role` | string | No | **Options:** `SUPERADMIN`, `OWNER`, `STAFF` |
+| `role` | string | No | **Options:** `SUPERADMIN`, `STAFF`, `USER` |
 
 **Example:**
 

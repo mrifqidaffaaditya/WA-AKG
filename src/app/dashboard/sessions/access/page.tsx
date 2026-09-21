@@ -178,7 +178,7 @@ export default function SessionAccessPage() {
     const getRoleIcon = (role: string) => {
         switch (role) {
             case "SUPERADMIN": return <ShieldAlert className="h-4 w-4 text-red-500" />;
-            case "OWNER": return <ShieldCheck className="h-4 w-4 text-blue-500" />;
+            case "STAFF": return <ShieldCheck className="h-4 w-4 text-blue-500" />;
             default: return <User className="h-4 w-4 text-gray-500" />;
         }
     };
@@ -186,7 +186,7 @@ export default function SessionAccessPage() {
     const getRoleBadgeVariant = (role: string) => {
         switch (role) {
             case "SUPERADMIN": return "destructive" as const;
-            case "OWNER": return "default" as const;
+            case "STAFF": return "default" as const;
             default: return "secondary" as const;
         }
     };

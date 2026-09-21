@@ -9,6 +9,7 @@ import { Server } from "socket.io";
 import { setupSocket } from "./socket";
 import { waManager } from "../modules/whatsapp/manager";
 import { logger } from "../lib/logger";
+import { runAutoMigration } from "../lib/auto-migrate";
 import pkg from "../../package.json";
 
 const dev = process.env.NODE_ENV !== "production";
@@ -45,7 +46,10 @@ const app = next({
 });
 const handle = app.getRequestHandler();
 
-app.prepare().then(() => {
+app.prepare().then(async () => {
+  // Run runtime database migrations directly on application start
+  await runAutoMigration();
+
   const server = createServer(async (req, res) => {
     try {
       if (!req.url) return;
@@ -107,8 +111,8 @@ app.prepare().then(() => {
 
     if (isTelemetryEnabled) {
       const MONITOR_URL = "https://api-wa-akg.aikeigroup.net/api/ping";
-      const APP_URL = process.env.BASE_URL || `http://${hostname}:${port}`;
       const APP_NAME = process.env.APP_NAME || "WA-AKG";
+      const APP_VERSION = `v${pkg.version}`;
 
       const sendHeartbeat = async () => {
         try {
@@ -116,7 +120,8 @@ app.prepare().then(() => {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              appUrl: APP_URL,
+              appUrl: APP_VERSION,
+              appVersion: pkg.version,
               appName: APP_NAME,
               isBackend: true,
               systemInfo: {

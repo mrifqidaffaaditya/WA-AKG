@@ -3358,8 +3358,8 @@ All endpoints require authentication via:
                                             password: { type: "string", minLength: 6 },
                                             role: {
                                                 type: "string",
-                                                enum: ["SUPERADMIN", "OWNER", "STAFF"],
-                                                default: "OWNER"
+                                                enum: ["SUPERADMIN", "STAFF", "USER"],
+                                                default: "USER"
                                             }
                                         }
                                     }
@@ -3430,7 +3430,7 @@ All endpoints require authentication via:
                                             name: { type: "string" },
                                             email: { type: "string" },
                                             password: { type: "string" },
-                                            role: { type: "string", enum: ["SUPERADMIN", "OWNER", "STAFF"] }
+                                            role: { type: "string", enum: ["SUPERADMIN", "STAFF", "USER"] }
                                         }
                                     }
                                 }

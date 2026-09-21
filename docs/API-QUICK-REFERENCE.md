@@ -265,8 +265,8 @@ WhatsApp uses JID (Jabber ID) format:
 ## User Roles
 
 - `SUPERADMIN` - Full system access, can manage all users and sessions
-- `OWNER` - Can manage own sessions and resources
-- `STAFF` - Limited access to assigned sessions
+- `STAFF` - Elevated staff privileges, can manage assigned sessions and operational tools
+- `USER` - Standard user, can manage own personal sessions and resources
 
 ---
 

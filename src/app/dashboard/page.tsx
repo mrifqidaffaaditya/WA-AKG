@@ -28,7 +28,7 @@ export default async function DashboardPage() {
         redirect("/login");
     }
 
-    const sessions = await getAccessibleSessions(session.user.id!, session.user.role || "OWNER");
+    const sessions = await getAccessibleSessions(session.user.id!, session.user.role || "USER");
 
     const totalSessions = sessions.length;
     const connectedSessions = sessions.filter(s => s.status === 'CONNECTED').length;

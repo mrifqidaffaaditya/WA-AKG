@@ -8,7 +8,7 @@ const createUserSchema = z.object({
     name: z.string().min(2),
     email: z.string().email(),
     password: z.string().min(6),
-    role: z.enum(["SUPERADMIN", "OWNER", "STAFF"]).default("OWNER"),
+    role: z.enum(["SUPERADMIN", "STAFF", "USER"]).default("USER"),
 });
 
 export async function GET(request: NextRequest) {

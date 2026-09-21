@@ -14,9 +14,20 @@
 - **Binary Stanza Injection**: Injected WhatsApp `<biz>` and `<bot>` binary nodes via `additionalNodes` at protocol level for native button rendering across WhatsApp Web, Android, and iOS.
 
 ### Changed
+- **User Role Architecture (`OWNER` → `USER`)**: Migrated user RBAC hierarchy to `SUPERADMIN` > `STAFF` > `USER` (default least privilege: `USER`). All Prisma schemas, Zod validators, API routes, and dashboard pages updated accordingly.
+- **Automated Database Migrations on Startup**: Embedded runtime auto-migration in `src/server/index.ts` and `scripts/migrate.js` to automatically convert legacy database enum values and records without manual SQL execution.
+- **Telemetry Privacy Hardening**: Replaced private instance deployment hostname/URL in monitoring heartbeat with official WA-AKG application version (`v1.7.0-beta.1`) and added `ENABLE_TELEMETRY` opt-out support.
 - **Pure Interactive Payload**: Removed legacy `viewOnceMessage` wrapping in favor of pure `interactiveMessage` stanzas to ensure button visibility on modern WhatsApp clients.
 - **Real-Time Store Sync**: Interactive messages sent via `relayMessage` are now automatically stored in SQLite database and emitted via Socket.IO to the web dashboard.
 - **Dev Server Stability**: Added Webpack fallback in `src/server/index.ts` to eliminate Turbopack NTFS colon chunk naming panic (`os error 22`) in dev mode.
+
+### Security
+- **Comprehensive Vulnerability Remediation**: Remediated 13 security review findings from external evaluation:
+  - **Socket.IO Hardening**: Added JWT & API key authentication middleware (`io.use`), session authorization checks, and restricted CORS origins.
+  - **SSRF & LFI Mitigation**: Implemented strict safe fetching (`safeFetchBuffer`) with private IP/cloud-metadata blocking (`validateSafeUrl`) for media downloads, webhooks, chat, and scheduler.
+  - **Auth & Secrets Protection**: Encrypted WhatsApp `AuthState` session keys at rest with AES-256-GCM, changed default role to `STAFF`, disabled public registration by default, and migrated API key generation to CSPRNG.
+  - **Swagger & API Security**: Eliminated client-side credentials from Swagger UI, enforced session checks, and strengthened defense-in-depth API key validation in proxy middleware.
+  - **Media & Container Hardening**: Sanitized mimetype file extensions to prevent path traversal, enforced session prefix ownership, and migrated Docker runner to non-root user `node`.
 
 ## [v1.6.4] - 2026-07-12
 

@@ -43,8 +43,8 @@ export async function POST(req: Request) {
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // First user becomes SUPERADMIN, subsequent users are STAFF (least privilege)
-        const assignedRole = userCount === 0 ? "SUPERADMIN" : "STAFF";
+        // First user becomes SUPERADMIN, subsequent users are USER (least privilege)
+        const assignedRole = userCount === 0 ? "SUPERADMIN" : "USER";
 
         // Create the user
         const newUser = await prisma.user.create({

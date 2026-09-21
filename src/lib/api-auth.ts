@@ -7,8 +7,8 @@ import { logger } from "./logger";
 // Role hierarchy for permission checks
 const ROLE_HIERARCHY = {
     SUPERADMIN: 3,
-    OWNER: 2,
-    STAFF: 1
+    STAFF: 2,
+    USER: 1
 } as const;
 
 type Role = keyof typeof ROLE_HIERARCHY;

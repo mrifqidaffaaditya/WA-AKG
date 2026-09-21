@@ -6113,10 +6113,10 @@
                     "type": "string",
                     "enum": [
                       "SUPERADMIN",
-                      "OWNER",
-                      "STAFF"
+                      "STAFF",
+                      "USER"
                     ],
-                    "default": "OWNER"
+                    "default": "USER"
                   }
                 }
               }
@@ -6306,8 +6306,8 @@
                     "type": "string",
                     "enum": [
                       "SUPERADMIN",
-                      "OWNER",
-                      "STAFF"
+                      "STAFF",
+                      "USER"
                     ]
                   }
                 }

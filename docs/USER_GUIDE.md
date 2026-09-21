@@ -80,10 +80,10 @@ Check the **Settings** page to customize:
 ## 🔒 Keamanan (v1.6.1)
 
 - **API Key**: Simpan API key di tempat aman. Jangan commit ke Git.
-- **Role-Based Access**: `SUPERADMIN` (full access), `OWNER` (manage own sessions), `STAFF` (limited).
-- **Session Sharing**: OWNER bisa share session ke STAFF tanpa memberikan akses delete.
+- **Role-Based Access**: `SUPERADMIN` (full access), `STAFF` (elevated operations & assigned sessions), `USER` (standard user access).
+- **Session Sharing**: USER dan STAFF bisa mengelola session sesuai izin yang dibagikan tanpa risiko kebocoran credential.
 - **Password**: Semua password di-hash dengan bcrypt. Tidak ada fallback ke plaintext.
-- **Swagger UI**: Ubah default password (`NEXT_PUBLIC_SWAGGER_PASSWORD`) di `.env` sebelum production.
+- **Swagger UI**: Dilindungi oleh sesi autentikasi dashboard dan validasi API Key.
 
 ---
 <div align="center">
