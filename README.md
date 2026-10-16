@@ -31,6 +31,7 @@ WA-AKG comes with extensive documentation designed for both developers and users
 - **[API Documentation](docs/API_DOCUMENTATION.md)**: Comprehensive OpenAPI / Swagger guide for all **109+ endpoints**.
 - **[API Quick Reference](docs/API-QUICK-REFERENCE.md)**: Instantly jumpstart your integration with ready-to-use cURL/JavaScript snippets.
 - **[Environment Variables](docs/ENVIRONMENT_VARIABLES.md)**: Configuration and security guide.
+- **[Internationalization (i18n)](docs/I18N.md)**: How UI languages work and how to add or translate one.
 
 ---
 
@@ -61,6 +62,7 @@ graph LR
 - **📇 Advanced Contacts**: Rich contact management with LID, verified names, and profile pictures.
 - **🎨 Creative Tools**: Built-in Sticker Maker with background removal (`remove.bg` integration).
 - **📘 Open API Spec**: Fully documented via `swagger-ui-react` at `/docs`.
+- **🌐 Multi-Language UI**: Dashboard available in English, Bahasa Indonesia and Português (Brasil) with a built-in language switcher ([guide](docs/I18N.md)).
 
 <details>
 <summary>📂 <b>View Webhook Payload Example</b></summary>

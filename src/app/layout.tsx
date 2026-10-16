@@ -4,6 +4,8 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { TopLoader } from "@/components/ui/top-loader";
 import { prisma } from "@/lib/prisma";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale } from "next-intl/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -91,15 +93,16 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const allowIndexing = process.env.NEXT_PUBLIC_ALLOW_INDEXING === "true";
+  const locale = await getLocale();
 
   return (
-    <html lang="en" suppressHydrationWarning className="scroll-smooth">
+    <html lang={locale} suppressHydrationWarning className="scroll-smooth">
       <head>
         {/* Conditional robots meta (noindex for staging/dev) */}
         {!allowIndexing && <meta name="robots" content="noindex, nofollow" />}
@@ -113,10 +116,12 @@ export default function RootLayout({
       >
         {/* Global ambient background glow for premium feel */}
         <div className="fixed inset-0 -z-50 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-background to-background dark:from-primary/10 dark:via-background dark:to-background pointer-events-none" suppressHydrationWarning={true} />
-        <Providers>
-          <TopLoader />
-          {children}
-        </Providers>
+        <NextIntlClientProvider>
+          <Providers>
+            <TopLoader />
+            {children}
+          </Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

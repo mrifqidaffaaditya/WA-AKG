@@ -1,0 +1,92 @@
+{
+  "common": {
+    "tagline": "Gateway de WhatsApp",
+    "user": "Usuário",
+    "signOut": "Sair",
+    "collapse": "Recolher"
+  },
+  "language": {
+    "label": "Idioma",
+    "changeFailed": "Falha ao alterar o idioma"
+  },
+  "nav": {
+    "groups": {
+      "main": "Principal",
+      "messaging": "Mensagens",
+      "contacts": "Contatos",
+      "automation": "Automação",
+      "developer": "Desenvolvedor",
+      "administration": "Administração"
+    },
+    "items": {
+      "dashboard": "Painel",
+      "sessions": "Sessões / QR",
+      "chat": "Chat",
+      "broadcast": "Transmissão",
+      "interactive": "Testador Interativo",
+      "sticker": "Criador de Figurinhas",
+      "contacts": "Contatos",
+      "groups": "Grupos",
+      "labels": "Etiquetas",
+      "botSettings": "Configurações do Bot",
+      "autoReply": "Resposta Automática",
+      "botProfile": "Perfil do Bot",
+      "scheduler": "Agendador",
+      "webhooks": "Webhooks e API",
+      "apiDocs": "Documentação da API",
+      "swagger": "Swagger UI",
+      "media": "Gerenciador de Mídia",
+      "sessionAccess": "Acesso às Sessões",
+      "users": "Usuários",
+      "settings": "Configurações",
+      "systemMonitor": "Monitor do Sistema",
+      "notifications": "Notificações"
+    }
+  },
+  "notifications": {
+    "title": "Notificações",
+    "unreadSummary": "{count, plural, =0 {Nenhuma notificação nova.} one {Você tem # atualização não lida.} other {Você tem # atualizações não lidas.}}",
+    "seeAll": "Ver todas",
+    "markAllRead": "Marcar todas como lidas",
+    "emptyTitle": "Nenhuma notificação nova",
+    "emptyDescription": "Avisaremos quando algo importante chegar.",
+    "view": "Ver",
+    "deleted": "Notificação excluída",
+    "deleteFailed": "Falha ao excluir a notificação"
+  },
+  "auth": {
+    "email": "E-mail",
+    "emailPlaceholder": "nome@exemplo.com",
+    "password": "Senha",
+    "invalidEmail": "Informe um endereço de e-mail válido",
+    "unexpectedError": "Ocorreu um erro inesperado",
+    "login": {
+      "title": "Bem-vindo de volta",
+      "subtitle": "Entre na sua conta {appName}",
+      "passwordRequired": "A senha é obrigatória",
+      "invalidCredentials": "E-mail ou senha inválidos",
+      "submitting": "Autenticando...",
+      "submit": "Entrar",
+      "noAccount": "Não tem uma conta?",
+      "createAccount": "Criar uma conta"
+    },
+    "register": {
+      "title": "Criar Conta",
+      "subtitle": "Junte-se ao {appName} hoje",
+      "fullName": "Nome Completo",
+      "fullNamePlaceholder": "João Silva",
+      "confirmPassword": "Confirmar Senha",
+      "nameMin": "O nome deve ter pelo menos {min} caracteres",
+      "passwordMin": "A senha deve ter pelo menos {min} caracteres",
+      "passwordMismatch": "As senhas não coincidem",
+      "failed": "Falha no cadastro",
+      "submitting": "Criando Conta...",
+      "submit": "Cadastrar",
+      "successTitle": "Cadastro Realizado!",
+      "successDescription": "Redirecionando você para a página de login...",
+      "terms": "Ao se cadastrar, você concorda com nossos <terms>Termos de Serviço</terms> e <privacy>Política de Privacidade</privacy>.",
+      "haveAccount": "Já tem uma conta?",
+      "signIn": "Entrar"
+    }
+  }
+}

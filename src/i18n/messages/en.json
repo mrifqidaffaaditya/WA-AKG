@@ -1,0 +1,92 @@
+{
+  "common": {
+    "tagline": "WhatsApp Gateway",
+    "user": "User",
+    "signOut": "Sign Out",
+    "collapse": "Collapse"
+  },
+  "language": {
+    "label": "Language",
+    "changeFailed": "Failed to change language"
+  },
+  "nav": {
+    "groups": {
+      "main": "Main",
+      "messaging": "Messaging",
+      "contacts": "Contacts",
+      "automation": "Automation",
+      "developer": "Developer",
+      "administration": "Administration"
+    },
+    "items": {
+      "dashboard": "Dashboard",
+      "sessions": "Sessions / QR",
+      "chat": "Chat",
+      "broadcast": "Broadcast",
+      "interactive": "Interactive Tester",
+      "sticker": "Sticker Maker",
+      "contacts": "Contacts",
+      "groups": "Groups",
+      "labels": "Labels",
+      "botSettings": "Bot Settings",
+      "autoReply": "Auto Reply",
+      "botProfile": "Bot Profile",
+      "scheduler": "Scheduler",
+      "webhooks": "Webhooks & API",
+      "apiDocs": "API Docs",
+      "swagger": "Swagger UI",
+      "media": "Media Manager",
+      "sessionAccess": "Session Access",
+      "users": "Users",
+      "settings": "Settings",
+      "systemMonitor": "System Monitor",
+      "notifications": "Notifications"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unreadSummary": "{count, plural, =0 {No new notifications.} one {You have # unread update.} other {You have # unread updates.}}",
+    "seeAll": "See all",
+    "markAllRead": "Mark all read",
+    "emptyTitle": "No new notifications",
+    "emptyDescription": "We'll notify you when something important arrives.",
+    "view": "View",
+    "deleted": "Notification deleted",
+    "deleteFailed": "Failed to delete notification"
+  },
+  "auth": {
+    "email": "Email",
+    "emailPlaceholder": "name@example.com",
+    "password": "Password",
+    "invalidEmail": "Please enter a valid email address",
+    "unexpectedError": "An unexpected error occurred",
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to your {appName} account",
+      "passwordRequired": "Password is required",
+      "invalidCredentials": "Invalid email or password",
+      "submitting": "Authenticating...",
+      "submit": "Sign In",
+      "noAccount": "Don't have an account?",
+      "createAccount": "Create an account"
+    },
+    "register": {
+      "title": "Create Account",
+      "subtitle": "Join {appName} today",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "John Doe",
+      "confirmPassword": "Confirm Password",
+      "nameMin": "Name must be at least {min} characters",
+      "passwordMin": "Password must be at least {min} characters",
+      "passwordMismatch": "Passwords do not match",
+      "failed": "Failed to register",
+      "submitting": "Creating Account...",
+      "submit": "Register",
+      "successTitle": "Registration Successful!",
+      "successDescription": "Redirecting you to the login page...",
+      "terms": "By registering, you agree to our <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>.",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in"
+    }
+  }
+}

@@ -42,7 +42,7 @@ chore: update baileys to 7.0.0
 
 1. Fork the repo & create a branch from `dev`
 2. Implement changes + test
-3. Ensure `npm run build` succeeds
+3. Ensure `npm run build` and `npm test` succeed
 4. Open a PR to the `dev` branch
 5. Fill out the PR template completely
 6. Reviewed by a maintainer

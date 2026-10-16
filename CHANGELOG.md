@@ -1,3 +1,19 @@
+## [Unreleased]
+
+### Added
+- **Multi-Language UI (i18n)**: Added internationalization support powered by `next-intl` (cookie-based, no URL changes, API untouched).
+  - Supported languages: English (`en`), Bahasa Indonesia (`id`), Português (Brasil) (`pt-BR`).
+  - Language switcher in the dashboard navbar, mobile menu, and login / register pages. The choice is stored in the `NEXT_LOCALE` cookie.
+  - New `DEFAULT_LANGUAGE` env variable sets the default UI language (falls back to `en`).
+  - Translated: sidebar & mobile navigation, navbar notifications (ICU plurals + localized relative time), login and register pages (including form validation messages).
+  - Type-safe translation keys: a missing or misspelled key fails `tsc` / `next build`.
+  - `npm test` runs catalog checks (key parity, placeholders, ICU syntax) and locale resolution tests.
+  - Contributor guide in `docs/I18N.md`.
+
+### Changed
+- `<html lang>` now reflects the active UI language instead of always being `en`.
+- Pages that were statically prerendered (`/`, `/auth/*`, `/docs`, `/terms`, `/privacy`, `/swagger`, `/error`) are now rendered per request, since the language is read from a cookie.
+
 ## [v1.7.0-beta.1] - 2026-09-21
 
 ### Added

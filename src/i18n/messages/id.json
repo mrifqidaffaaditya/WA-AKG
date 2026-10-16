@@ -1,0 +1,92 @@
+{
+  "common": {
+    "tagline": "WhatsApp Gateway",
+    "user": "Pengguna",
+    "signOut": "Keluar",
+    "collapse": "Ciutkan"
+  },
+  "language": {
+    "label": "Bahasa",
+    "changeFailed": "Gagal mengganti bahasa"
+  },
+  "nav": {
+    "groups": {
+      "main": "Utama",
+      "messaging": "Pesan",
+      "contacts": "Kontak",
+      "automation": "Otomasi",
+      "developer": "Developer",
+      "administration": "Administrasi"
+    },
+    "items": {
+      "dashboard": "Dasbor",
+      "sessions": "Sesi / QR",
+      "chat": "Chat",
+      "broadcast": "Broadcast",
+      "interactive": "Penguji Interaktif",
+      "sticker": "Pembuat Stiker",
+      "contacts": "Kontak",
+      "groups": "Grup",
+      "labels": "Label",
+      "botSettings": "Pengaturan Bot",
+      "autoReply": "Balasan Otomatis",
+      "botProfile": "Profil Bot",
+      "scheduler": "Penjadwal",
+      "webhooks": "Webhook & API",
+      "apiDocs": "Dokumentasi API",
+      "swagger": "Swagger UI",
+      "media": "Pengelola Media",
+      "sessionAccess": "Akses Sesi",
+      "users": "Pengguna",
+      "settings": "Pengaturan",
+      "systemMonitor": "Monitor Sistem",
+      "notifications": "Notifikasi"
+    }
+  },
+  "notifications": {
+    "title": "Notifikasi",
+    "unreadSummary": "{count, plural, =0 {Tidak ada notifikasi baru.} other {Anda memiliki # pembaruan yang belum dibaca.}}",
+    "seeAll": "Lihat semua",
+    "markAllRead": "Tandai semua dibaca",
+    "emptyTitle": "Tidak ada notifikasi baru",
+    "emptyDescription": "Kami akan memberi tahu Anda saat ada hal penting.",
+    "view": "Lihat",
+    "deleted": "Notifikasi dihapus",
+    "deleteFailed": "Gagal menghapus notifikasi"
+  },
+  "auth": {
+    "email": "Email",
+    "emailPlaceholder": "nama@contoh.com",
+    "password": "Kata Sandi",
+    "invalidEmail": "Masukkan alamat email yang valid",
+    "unexpectedError": "Terjadi kesalahan yang tidak terduga",
+    "login": {
+      "title": "Selamat Datang Kembali",
+      "subtitle": "Masuk ke akun {appName} Anda",
+      "passwordRequired": "Kata sandi wajib diisi",
+      "invalidCredentials": "Email atau kata sandi salah",
+      "submitting": "Mengautentikasi...",
+      "submit": "Masuk",
+      "noAccount": "Belum punya akun?",
+      "createAccount": "Buat akun"
+    },
+    "register": {
+      "title": "Buat Akun",
+      "subtitle": "Bergabung dengan {appName} hari ini",
+      "fullName": "Nama Lengkap",
+      "fullNamePlaceholder": "Budi Santoso",
+      "confirmPassword": "Konfirmasi Kata Sandi",
+      "nameMin": "Nama minimal {min} karakter",
+      "passwordMin": "Kata sandi minimal {min} karakter",
+      "passwordMismatch": "Kata sandi tidak cocok",
+      "failed": "Gagal mendaftar",
+      "submitting": "Membuat Akun...",
+      "submit": "Daftar",
+      "successTitle": "Pendaftaran Berhasil!",
+      "successDescription": "Mengalihkan Anda ke halaman masuk...",
+      "terms": "Dengan mendaftar, Anda menyetujui <terms>Ketentuan Layanan</terms> dan <privacy>Kebijakan Privasi</privacy> kami.",
+      "haveAccount": "Sudah punya akun?",
+      "signIn": "Masuk"
+    }
+  }
+}
