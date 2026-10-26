@@ -405,6 +405,57 @@ export async function materializeSafeMediaPayload(messagePayload: any): Promise<
         }
     }
 
+    // Thumbnail
+    if (payload.thumbnail) {
+        let thumbUrl: string | null = null;
+        if (typeof payload.thumbnail === "string") {
+            thumbUrl = payload.thumbnail;
+        } else if (typeof payload.thumbnail === "object" && payload.thumbnail.url) {
+            thumbUrl = payload.thumbnail.url;
+        }
+
+        if (thumbUrl) {
+            try {
+                const { buffer } = await safeFetchBuffer(thumbUrl, { maxBytes: 25 * 1024 * 1024 });
+                payload.thumbnail = buffer;
+            } catch (e: any) {
+                throw new Error(`Failed to process thumbnail media: ${e.message}`);
+            }
+        } else if (typeof payload.thumbnail === "object" && !Buffer.isBuffer(payload.thumbnail)) {
+            if ((payload.thumbnail as any).stream) {
+                throw new Error("Stream uploads are not permitted in message payload");
+            }
+        }
+    }
+
+    // jpegThumbnail
+    if (payload.jpegThumbnail) {
+        let thumbUrl: string | null = null;
+        if (typeof payload.jpegThumbnail === "string") {
+            thumbUrl = payload.jpegThumbnail;
+        } else if (typeof payload.jpegThumbnail === "object" && payload.jpegThumbnail.url) {
+            thumbUrl = payload.jpegThumbnail.url;
+        }
+
+        if (thumbUrl) {
+            try {
+                const { buffer } = await safeFetchBuffer(thumbUrl, { maxBytes: 10 * 1024 * 1024 });
+                payload.jpegThumbnail = buffer;
+            } catch (e: any) {
+                throw new Error(`Failed to process jpegThumbnail media: ${e.message}`);
+            }
+        } else if (typeof payload.jpegThumbnail === "object" && !Buffer.isBuffer(payload.jpegThumbnail)) {
+            if ((payload.jpegThumbnail as any).stream) {
+                throw new Error("Stream uploads are not permitted in message payload");
+            }
+        }
+    }
+
+    // Header media (for interactive messages)
+    if (payload.header && typeof payload.header === "object" && !Buffer.isBuffer(payload.header)) {
+        payload.header = await materializeSafeMediaPayload(payload.header);
+    }
+
     return payload;
 }
 

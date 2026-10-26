@@ -90,4 +90,38 @@ test("materializeSafeMediaPayload blocks local file access", async () => {
         /Stream uploads are not permitted/,
         "Must reject stream payload"
     );
+
+    // Attempt to leak via thumbnail
+    await assert.rejects(
+        async () => {
+            await materializeSafeMediaPayload({
+                thumbnail: "/app/.env"
+            });
+        },
+        /SSRF Prevention|Malformed URL|Failed to process thumbnail media/,
+        "Must reject local file path in thumbnail"
+    );
+
+    // Attempt to leak via header media
+    await assert.rejects(
+        async () => {
+            await materializeSafeMediaPayload({
+                header: {
+                    image: { url: "/app/.env" }
+                }
+            });
+        },
+        /SSRF Prevention|Malformed URL|Failed to process image media/,
+        "Must reject local file path in header media"
+    );
+
+    // Attempt to leak via album items
+    await assert.rejects(
+        async () => {
+            const items = [{ image: { url: "/app/.env" } }];
+            await Promise.all(items.map(item => materializeSafeMediaPayload(item)));
+        },
+        /SSRF Prevention|Malformed URL|Failed to process image media/,
+        "Must reject local file path in album items"
+    );
 });

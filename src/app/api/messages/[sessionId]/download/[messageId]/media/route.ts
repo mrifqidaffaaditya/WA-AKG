@@ -52,7 +52,9 @@ export async function GET(
         ];
 
         const resolvedFilePath = path.resolve(process.cwd(), message.mediaUrl);
-        const isAllowedPath = allowedDirs.some(dir => resolvedFilePath.startsWith(dir));
+        const isAllowedPath = allowedDirs.some(dir => 
+            resolvedFilePath === dir || resolvedFilePath.startsWith(dir + path.sep)
+        );
 
         if (!isAllowedPath) {
             return NextResponse.json({ status: false, message: "Forbidden - Invalid media path", error: "Forbidden" }, { status: 403 });

@@ -402,8 +402,12 @@ export class ChatService {
             throw new Error("WhatsApp session is disconnected or not found");
         }
 
+        // Safely materialize media in interactive message payload
+        const { materializeSafeMediaPayload } = await import("@/lib/security");
+        const safePayload = await materializeSafeMediaPayload(payload);
+
         const sendResult = await instance.socket.sendMessage(jid, {
-            interactiveMessage: payload
+            interactiveMessage: safePayload
         } as any, options);
 
         // Fire webhook for sent interactive message
@@ -437,8 +441,14 @@ export class ChatService {
             throw new Error("WhatsApp session is disconnected or not found");
         }
 
+        // Safely materialize each item in the album payload
+        const { materializeSafeMediaPayload } = await import("@/lib/security");
+        const safeItems = await Promise.all(
+            items.map(item => materializeSafeMediaPayload(item))
+        );
+
         const sendResult = await instance.socket.sendMessage(jid, {
-            albumMessage: items
+            albumMessage: safeItems
         } as any, options);
 
         try {
