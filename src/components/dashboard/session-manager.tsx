@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import QRCode from 'qrcode';
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,7 @@ export function SessionManager({ user }: { user: any }) {
     const [newSessionId, setNewSessionId] = useState("");
     const [loading, setLoading] = useState(false);
     const [socket, setSocket] = useState<Socket | null>(null);
+    const socketRef = useRef<Socket | null>(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -69,17 +70,28 @@ export function SessionManager({ user }: { user: any }) {
             }
         });
 
+        socketRef.current = socketInstance;
         setSocket(socketInstance);
 
         return () => {
             socketInstance.disconnect();
+            socketRef.current = null;
         };
     }, []);
 
     const fetchSessions = () => {
         fetch('/api/sessions').then(res => res.json()).then(responseData => {
             const data = responseData?.data || [];
-            if (Array.isArray(data)) setSessions(data);
+            if (Array.isArray(data)) {
+                setSessions(data);
+                if (socketRef.current) {
+                    data.forEach((s: Session) => {
+                        if (s.sessionId) {
+                            socketRef.current?.emit("join-session", s.sessionId);
+                        }
+                    });
+                }
+            }
         });
     }
 

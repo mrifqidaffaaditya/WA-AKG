@@ -45,14 +45,26 @@ export async function GET(
             return NextResponse.redirect(message.mediaUrl);
         }
 
-        // For local files, read and return
-        const filePath = path.join(process.cwd(), message.mediaUrl);
+        // For local files, verify path confinement to prevent directory traversal
+        const allowedDirs = [
+            path.resolve(process.cwd(), "data", "media"),
+            path.resolve(process.cwd(), "public", "uploads")
+        ];
+
+        const resolvedFilePath = path.resolve(process.cwd(), message.mediaUrl);
+        const isAllowedPath = allowedDirs.some(dir => 
+            resolvedFilePath === dir || resolvedFilePath.startsWith(dir + path.sep)
+        );
+
+        if (!isAllowedPath) {
+            return NextResponse.json({ status: false, message: "Forbidden - Invalid media path", error: "Forbidden" }, { status: 403 });
+        }
         
-        if (!fs.existsSync(filePath)) {
+        if (!fs.existsSync(resolvedFilePath)) {
             return NextResponse.json({ status: false, message: "Media file not found on disk", error: "Media file not found on disk" }, { status: 404 });
         }
 
-        const fileBuffer = fs.readFileSync(filePath);
+        const fileBuffer = fs.readFileSync(resolvedFilePath);
         const mimeType = message.type === 'IMAGE' ? 'image/jpeg' 
             : message.type === 'VIDEO' ? 'video/mp4'
             : message.type === 'AUDIO' ? 'audio/mpeg'

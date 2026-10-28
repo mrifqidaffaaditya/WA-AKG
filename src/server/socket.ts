@@ -45,6 +45,34 @@ export function setupSocket(io: Server) {
             }
 
             if (decodeJwt && secret) {
+                // Check auth token in handshake payload or Authorization header
+                const authToken = (socket.handshake.auth?.token as string) ||
+                                  (headers["authorization"] as string)?.replace(/^Bearer\s+/i, "");
+
+                if (authToken) {
+                    for (const salt of ["authjs.session-token", "next-auth.session-token", ""]) {
+                        try {
+                            const decoded = await decodeJwt({
+                                token: authToken,
+                                secret,
+                                salt
+                            });
+
+                            if (decoded && decoded.id) {
+                                socket.data.user = {
+                                    id: decoded.id as string,
+                                    role: (decoded.role as string) || "USER",
+                                    email: (decoded.email as string) || ""
+                                };
+                                return next();
+                            }
+                        } catch {
+                            // continue trying salts
+                        }
+                    }
+                }
+
+                // Check cookies
                 for (const cookieName of tokenCookieNames) {
                     const tokenVal = cookies[cookieName];
                     if (tokenVal) {
