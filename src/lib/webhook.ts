@@ -320,12 +320,10 @@ export async function testWebhook(webhookId: string, url: string, secret?: strin
         });
 
         const responseTimeMs = Date.now() - startedAt;
-        let responseBody = await response.text().catch(() => undefined);
-        if (responseBody && responseBody.length > 1024) {
-            responseBody = responseBody.substring(0, 1024);
-        }
+        const responseSize = Number(response.headers.get("content-length")) || 0;
+        const safeSummary = `HTTP ${response.status} ${response.statusText}${responseSize ? ` (${responseSize} bytes)` : ""}`;
 
-        // Record test log
+        // Record test log — safely store status without persisting sensitive response bodies
         await recordWebhookLog({
             webhookId,
             event: "test",
@@ -334,7 +332,7 @@ export async function testWebhook(webhookId: string, url: string, secret?: strin
             requestHeaders: headers,
             requestBody: testPayload,
             responseStatusCode: response.status,
-            responseBody: responseBody || null,
+            responseBody: safeSummary,
             responseTimeMs,
             errorMessage: response.ok ? null : `Webhook returned ${response.status}: ${response.statusText}`
         });
@@ -343,7 +341,6 @@ export async function testWebhook(webhookId: string, url: string, secret?: strin
             return {
                 success: false,
                 statusCode: response.status,
-                responseBody,
                 responseTimeMs,
                 error: `Returned ${response.status}: ${response.statusText}`
             };
@@ -352,7 +349,6 @@ export async function testWebhook(webhookId: string, url: string, secret?: strin
         return {
             success: true,
             statusCode: response.status,
-            responseBody,
             responseTimeMs
         };
     } catch (err: any) {

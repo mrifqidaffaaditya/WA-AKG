@@ -399,7 +399,8 @@ export async function buildInteractiveMessage(
     sock: WASocket,
     payload: any
 ): Promise<any> {
-    const raw = payload?.interactiveMessage || payload || {};
+    const { materializeSafeMediaPayload } = await import("@/lib/security");
+    const raw = await materializeSafeMediaPayload(payload?.interactiveMessage || payload || {});
     const {
         title,
         body,
@@ -537,10 +538,16 @@ export async function sendAlbumMessage(
         throw new Error("Album items must be a non-empty array");
     }
 
+    // Materialize media URLs in album items safely to Buffer
+    const { materializeSafeMediaPayload } = await import("@/lib/security");
+    const safeItems = await Promise.all(
+        items.map(item => materializeSafeMediaPayload(item))
+    );
+
     const uploadFn = (sock as any).waUploadToServer;
     const messageSecret = crypto.randomBytes(32);
-    const expectedImageCount = items.filter(a => !!a.image).length;
-    const expectedVideoCount = items.filter(a => !!a.video).length;
+    const expectedImageCount = safeItems.filter(a => !!a.image).length;
+    const expectedVideoCount = safeItems.filter(a => !!a.video).length;
 
     // 1. Create and send album anchor message
     const albumAnchor = await generateWAMessageFromContent(
@@ -565,8 +572,8 @@ export async function sendAlbumMessage(
     });
 
     // 2. Generate and relay each media message associated with the anchor key
-    for (let i = 0; i < items.length; i++) {
-        const item = items[i];
+    for (let i = 0; i < safeItems.length; i++) {
+        const item = safeItems[i];
         const itemCaption = item.caption || (i === 0 ? options.caption : undefined) || "";
 
         const mediaContent: any = {};
@@ -736,8 +743,17 @@ export async function sendProductMessage(
     const uploadFn = (sock as any).waUploadToServer;
 
     if (thumbnail) {
-        const thumbData = Buffer.isBuffer(thumbnail) ? thumbnail : { url: thumbnail };
-        const media = await prepareWAMessageMedia({ image: thumbData }, { upload: uploadFn });
+        let thumbBuffer: Buffer;
+        if (Buffer.isBuffer(thumbnail)) {
+            thumbBuffer = thumbnail;
+        } else if (typeof thumbnail === "string") {
+            const { safeFetchBuffer } = await import("@/lib/security");
+            const { buffer } = await safeFetchBuffer(thumbnail, { maxBytes: 25 * 1024 * 1024 });
+            thumbBuffer = buffer;
+        } else {
+            throw new Error("Invalid thumbnail format");
+        }
+        const media = await prepareWAMessageMedia({ image: thumbBuffer }, { upload: uploadFn });
         productImage = media?.imageMessage;
     }
 

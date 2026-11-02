@@ -1,6 +1,6 @@
 {
   "name": "wa-akg",
-  "version": "1.7.0",
+  "version": "1.7.1-beta.2",
   "private": false,
   "license": "MIT",
   "scripts": {
@@ -11,7 +11,7 @@
     "db:push": "prisma db push && prisma generate",
     "db:studio": "prisma studio",
     "make-admin": "node scripts/setup-admin.js",
-    "test": "tsx --test src/i18n/__tests__/*.test.ts"
+    "test": "tsx --test src/**/__tests__/*.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
