@@ -22,19 +22,19 @@ jobs:
       - name: 3. Install Dependencies (di GitHub)
         run: npm ci
 
-      - name: 4. Buat File .env, Generate Prisma & Build Next.js (di GitHub)
+      - name: 4. Buat .env Sementara di GitHub, Generate Prisma & Build Next.js
         run: |
           cat << 'EOF' > .env
           ${{ secrets.ENV_DEMO }}
           EOF
-          # Menggunakan versi Prisma sesuai package.json Anda
           ./node_modules/.bin/prisma generate
           npm run build
         env:
           NODE_ENV: production
 
-      - name: 5. Compress (.next + node_modules lengkap dengan TypeScript)
+      - name: 5. Compress (.next + node_modules)
         run: |
+          # Jangan masukkan file .env GitHub ke dalam tar agar .env di VPS aman
           tar -czf build-artifact.tar.gz .next node_modules
 
       - name: 6. Kirim Paket Matang ke ~/project/WA-AKG via SCP
@@ -47,7 +47,7 @@ jobs:
           source: "build-artifact.tar.gz"
           target: "project/WA-AKG"
 
-      - name: 7. Ekstrak & Restart PM2 di VPS (0% Pemakaian RAM npm/npx)
+      - name: 7. Ekstrak & Restart PM2 di VPS (Tanpa Mengubah .env VPS)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -57,19 +57,14 @@ jobs:
           script: |
             cd ~/project/WA-AKG
             
-            # 1. Tarik update kode terbaru dari branch demo
+            # 1. Tarik update kode terbaru dari branch demo (.env aman karena ada di .gitignore)
             git fetch origin demo
             git reset --hard origin/demo
             
-            # 2. Perbarui file .env di VPS
-            cat << 'EOF' > .env
-            ${{ secrets.ENV_DEMO }}
-            EOF
-            
-            # 3. Langsung ekstrak .next dan node_modules matang dari GitHub
+            # 2. Ekstrak .next dan node_modules matang dari GitHub
             rm -rf .next node_modules
             tar -xzf build-artifact.tar.gz
             rm build-artifact.tar.gz
             
-            # 4. Restart aplikasi via PM2
+            # 3. Restart aplikasi via PM2 menggunakan .env asli yang ada di VPS
             pm2 reload wa-akg-demo --update-env || pm2 start npm --name "wa-akg-demo" -- start
