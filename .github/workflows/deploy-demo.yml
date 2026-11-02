@@ -33,11 +33,8 @@ jobs:
         env:
           NODE_ENV: production
 
-      - name: 5. Pangkas DevDependencies & Compress (.next + node_modules)
+      - name: 5. Compress (.next + node_modules lengkap dengan TypeScript)
         run: |
-          # Hapus package devDependencies di GitHub agar ukuran file ringan
-          npm prune --omit=dev
-          # Bungkus hasil build .next DAN node_modules (yang sudah berisi Prisma Client versi Anda)
           tar -czf build-artifact.tar.gz .next node_modules
 
       - name: 6. Kirim Paket Matang ke ~/project/WA-AKG via SCP
