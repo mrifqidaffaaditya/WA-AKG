@@ -11,6 +11,12 @@
 
 [![Active Apps](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi-wa-akg.aikeigroup.net%2Fapi%2Factive-apps&query=%24.activeCount&style=flat-square&color=25D366&logo=whatsapp&logoColor=white&label=)](https://api-wa-akg.aikeigroup.net/)
 
+<div align="center">
+  <a href="https://trendshift.io/repositories/252310?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-252310" target="_blank" rel="noopener noreferrer">
+    <img src="https://trendshift.io/api/badge/repositories/252310" alt="mrifqidaffaaditya%2FWA-AKG | Trendshift" width="250" height="55"/>
+  </a>
+</div>
+
 **A professional, multi-session WhatsApp Gateway, Dashboard, and Automation System.**  
 Built with **Next.js 16**, **React**, and **Baileys** for high-performance messaging automation and real-time WhatsApp Bot Gateway services.
 
