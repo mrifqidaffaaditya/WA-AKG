@@ -1,0 +1,78 @@
+name: Build & Auto Deploy WA-AKG (Demo)
+
+on:
+  push:
+    branches:
+      - demo # Berjalan otomatis setiap ada push atau merge PR ke branch demo
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 2. Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 3. Install Dependencies (di GitHub)
+        run: npm ci
+
+      - name: 4. Buat File .env, Generate Prisma & Build Next.js (di GitHub)
+        run: |
+          cat << 'EOF' > .env
+          ${{ secrets.ENV_DEMO }}
+          EOF
+          npx prisma generate
+          npm run build
+        env:
+          NODE_ENV: production
+
+      - name: 5. Compress Hasil Build (.next)
+        run: tar -czf build-artifact.tar.gz .next
+
+      - name: 6. Kirim Hasil Build ke ~/project/WA-AKG via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "build-artifact.tar.gz"
+          target: "project/WA-AKG"
+
+      - name: 7. Update Kode, Sinkronisasi .env, Ekstrak Build & Restart PM2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            cd ~/project/WA-AKG
+            
+            # 1. Tarik update kode terbaru dari branch demo
+            git fetch origin demo
+            git reset --hard origin/demo
+            
+            # 2. Perbarui file .env di VPS sesuai dengan secret ENV_DEMO
+            cat << 'EOF' > .env
+            ${{ secrets.ENV_DEMO }}
+            EOF
+            
+            # 3. Install dependency production & jalankan migrasi Prisma
+            npm ci --omit=dev
+            npx prisma generate
+            npx prisma migrate deploy
+            
+            # 4. Ganti folder .next lama dengan hasil build baru dari GitHub
+            rm -rf .next
+            tar -xzf build-artifact.tar.gz
+            rm build-artifact.tar.gz
+            
+            # 5. Reload atau nyalakan aplikasi via PM2
+            pm2 reload wa-akg-demo || pm2 start npm --name "wa-akg-demo" -- start
