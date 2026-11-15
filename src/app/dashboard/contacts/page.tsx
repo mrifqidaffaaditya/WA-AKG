@@ -23,7 +23,7 @@ import {
     PaginationPrevious
 } from "@/components/ui/pagination";
 
-import { Search, Loader2, User, ChevronDown } from "lucide-react";
+import { Search, Loader2, User, ChevronDown, Download } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     Select,
@@ -95,6 +95,39 @@ export default function ContactListPage() {
         }
     };
 
+    const [exporting, setExporting] = useState(false);
+
+    const phoneFrom = (c: Contact) => {
+        const source = c.jid.endsWith("@s.whatsapp.net") ? c.jid : c.remoteJidAlt || "";
+        return source.endsWith("@s.whatsapp.net") ? source.split("@")[0] : "";
+    };
+
+    const exportCsv = async () => {
+        if (!sessionId) return;
+        setExporting(true);
+        try {
+            const params = new URLSearchParams({ limit: "all", search });
+            const res = await fetch(`/api/contacts/${sessionId}?${params}`);
+            const data = await res.json();
+            if (!res.ok) return;
+            const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
+            const rows = (data.data as Contact[]).map((c) =>
+                [c.name || c.notify || "", phoneFrom(c), c.jid].map(esc).join(";")
+            );
+            const csv = "\uFEFF" + ["nome;telefone;jid", ...rows].join("\r\n");
+            const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `contatos${search ? `-${search}` : ""}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setExporting(false);
+        }
+    };
+
     return (
         <SessionGuard>
             <div className="space-y-6">
@@ -130,6 +163,10 @@ export default function ContactListPage() {
                                         <SelectItem value="all">Show All</SelectItem>
                                     </SelectContent>
                                 </Select>
+                                <Button variant="outline" onClick={exportCsv} disabled={exporting || meta.total === 0}>
+                                    {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                                    <span className="ml-2">Exportar CSV</span>
+                                </Button>
                                 <div className="relative w-full md:w-64">
                                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                                     <Input
