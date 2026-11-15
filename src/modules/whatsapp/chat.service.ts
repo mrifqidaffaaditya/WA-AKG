@@ -5,17 +5,33 @@ import { onMessageSent } from "@/lib/webhook";
 import Sticker from "wa-sticker-formatter";
 import type { InteractiveMessagePayload, AlbumItem } from "./interactive";
 
+/**
+ * Chat list filter:
+ * - "all": every chat except status/broadcast lists
+ * - "private": only 1:1 chats (no groups, broadcasts or newsletters)
+ * - "groups": only group chats (@g.us)
+ */
+export type ChatListFilter = "all" | "private" | "groups";
+
+const CHAT_FILTER_SQL: Record<ChatListFilter, string> = {
+    all: "AND m1.remoteJid NOT LIKE '%@broadcast'",
+    private: "AND m1.remoteJid NOT LIKE '%@g.us' AND m1.remoteJid NOT LIKE '%@broadcast' AND m1.remoteJid NOT LIKE '%@newsletter'",
+    groups: "AND m1.remoteJid LIKE '%@g.us'",
+};
+
 export class ChatService {
     /**
      * Get active chats list for a session with last message preview.
      * Cursor-based pagination — `before` is ISO timestamp of last seen chat.
      * Returns chats with last message timestamp < before (older).
+     * `filter` is optional; when omitted no JID filtering is applied (API behavior).
      */
     static async getChatsList(
         dbSessionId: string,
         limit = 50,
         before?: string,
-        search?: string
+        search?: string,
+        filter?: ChatListFilter
     ) {
         // 1. Get latest message per remoteJid with cursor pagination
         // Uses m1.timestamp < before (when provided) to load older chats
@@ -40,6 +56,7 @@ export class ChatService {
             ) m2 ON m1.remoteJid = m2.remoteJid AND m1.timestamp = m2.max_ts
             WHERE m1.sessionId = ?
             ${before ? 'AND m1.timestamp < ?' : ''}
+            ${filter && Object.hasOwn(CHAT_FILTER_SQL, filter) ? CHAT_FILTER_SQL[filter] : ''}
             ORDER BY m1.timestamp DESC
             LIMIT ?
         `, ...qParams);
@@ -238,69 +255,8 @@ export class ChatService {
             }
         }
 
-        let msgPayload = { ...messagePayload };
-
-        // Normalize "text" to "caption" if a media message is sent with "text"
-        if (msgPayload.text && (msgPayload.image || msgPayload.video || msgPayload.document || msgPayload.audio)) {
-            if (!msgPayload.caption) {
-                msgPayload.caption = msgPayload.text;
-            }
-            delete msgPayload.text;
-        }
-
-        const { safeFetchBuffer } = await import("@/lib/security");
-
-        if (msgPayload.sticker && (msgPayload.sticker.url || typeof msgPayload.sticker === 'string')) {
-            const url = msgPayload.sticker.url || msgPayload.sticker;
-            try {
-                const { buffer } = await safeFetchBuffer(url, { maxBytes: 10 * 1024 * 1024 });
-                const sticker = new Sticker(buffer, {
-                    pack: msgPayload.sticker.pack || "WA-AKG Bot",
-                    author: msgPayload.sticker.author || "WA-AKG",
-                    type: "full",
-                    quality: 50
-                });
-                msgPayload = { sticker: await sticker.toBuffer() };
-            } catch (e: any) {
-                throw new Error(`Failed to generate sticker from URL: ${e.message}`);
-            }
-        }
-
-        if (msgPayload.image && typeof msgPayload.image === 'object' && msgPayload.image.url) {
-            try {
-                const { buffer } = await safeFetchBuffer(msgPayload.image.url, { maxBytes: 25 * 1024 * 1024 });
-                msgPayload.image = buffer;
-            } catch (e: any) {
-                throw new Error(`Failed to fetch image from URL: ${e.message}`);
-            }
-        }
-
-        if (msgPayload.video && typeof msgPayload.video === 'object' && msgPayload.video.url) {
-            try {
-                const { buffer } = await safeFetchBuffer(msgPayload.video.url, { maxBytes: 100 * 1024 * 1024 });
-                msgPayload.video = buffer;
-            } catch (e: any) {
-                throw new Error(`Failed to fetch video from URL: ${e.message}`);
-            }
-        }
-
-        if (msgPayload.document && typeof msgPayload.document === 'object' && msgPayload.document.url) {
-            try {
-                const { buffer } = await safeFetchBuffer(msgPayload.document.url, { maxBytes: 100 * 1024 * 1024 });
-                msgPayload.document = buffer;
-            } catch (e: any) {
-                throw new Error(`Failed to fetch document from URL: ${e.message}`);
-            }
-        }
-
-        if (msgPayload.audio && typeof msgPayload.audio === 'object' && msgPayload.audio.url) {
-            try {
-                const { buffer } = await safeFetchBuffer(msgPayload.audio.url, { maxBytes: 50 * 1024 * 1024 });
-                msgPayload.audio = buffer;
-            } catch (e: any) {
-                throw new Error(`Failed to fetch audio from URL: ${e.message}`);
-            }
-        }
+        const { materializeSafeMediaPayload } = await import("@/lib/security");
+        let msgPayload = await materializeSafeMediaPayload(messagePayload);
 
         if (msgPayload.text && mentions && Array.isArray(mentions)) {
             msgPayload.mentions = mentions;
@@ -446,8 +402,12 @@ export class ChatService {
             throw new Error("WhatsApp session is disconnected or not found");
         }
 
+        // Safely materialize media in interactive message payload
+        const { materializeSafeMediaPayload } = await import("@/lib/security");
+        const safePayload = await materializeSafeMediaPayload(payload);
+
         const sendResult = await instance.socket.sendMessage(jid, {
-            interactiveMessage: payload
+            interactiveMessage: safePayload
         } as any, options);
 
         // Fire webhook for sent interactive message
@@ -481,8 +441,14 @@ export class ChatService {
             throw new Error("WhatsApp session is disconnected or not found");
         }
 
+        // Safely materialize each item in the album payload
+        const { materializeSafeMediaPayload } = await import("@/lib/security");
+        const safeItems = await Promise.all(
+            items.map(item => materializeSafeMediaPayload(item))
+        );
+
         const sendResult = await instance.socket.sendMessage(jid, {
-            albumMessage: items
+            albumMessage: safeItems
         } as any, options);
 
         try {

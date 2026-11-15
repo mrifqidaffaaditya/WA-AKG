@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Trash2, Plus, CalendarClock, RefreshCw, Pencil, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import moment from "moment-timezone";
+import { useTranslations } from "next-intl";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -48,6 +49,8 @@ interface ScheduledMessage {
 }
 
 export default function SchedulerPage() {
+    const t = useTranslations("scheduler");
+    const tCommon = useTranslations("common");
     const { sessionId: selectedSessionId } = useSession();
 
     const [messages, setMessages] = useState<ScheduledMessage[]>([]);
@@ -125,7 +128,7 @@ export default function SchedulerPage() {
                 setMessages([]);
             }
         } catch (error) {
-            toast.error("Failed to fetch scheduled messages");
+            toast.error(t("toastFetchError"));
         } finally {
             setLoading(false);
         }
@@ -206,7 +209,7 @@ export default function SchedulerPage() {
 
     const handleSaveSchedule = async () => {
         if (!selectedSessionId || !newJid || (!newContent && !newMediaUrl)) {
-            toast.error("Please fill required fields (JID, Content/Media)");
+            toast.error(t("toastRequiredError"));
             return;
         }
 
@@ -214,7 +217,7 @@ export default function SchedulerPage() {
         if (isRecurring === "recurring") {
             if (recurrenceType === "days") {
                 if (!newSendTime) {
-                    toast.error("Please specify a Time of Day");
+                    toast.error(t("toastSpecifyTimeOfDay"));
                     return;
                 }
                 // Construct a valid local date-time string
@@ -225,7 +228,7 @@ export default function SchedulerPage() {
             }
         } else {
             if (!newSendAt) {
-                toast.error("Please specify Send At");
+                toast.error(t("toastSpecifySendAt"));
                 return;
             }
         }
@@ -254,7 +257,7 @@ export default function SchedulerPage() {
             });
 
             if (res.ok) {
-                toast.success("Message scheduled");
+                toast.success(t("toastScheduled"));
                 setShowForm(false);
                 setNewJid("");
                 setNewContent("");
@@ -265,16 +268,16 @@ export default function SchedulerPage() {
                 setNewJidType("personal");
                 fetchMessages(selectedSessionId, activeTab);
             } else {
-                toast.error("Failed to schedule message");
+                toast.error(t("toastScheduleFailed"));
             }
         } catch (error) {
-            toast.error("An error occurred");
+            toast.error(t("toastError"));
         }
     };
 
     const handleUpdateSchedule = async () => {
         if (!selectedSessionId || !editId || !editJid || (!editContent && !editMediaUrl)) {
-            toast.error("Please fill required fields");
+            toast.error(t("toastRequiredFields"));
             return;
         }
 
@@ -282,7 +285,7 @@ export default function SchedulerPage() {
         if (editIsRecurring === "recurring") {
             if (editRecurrenceType === "days") {
                 if (!editSendTime) {
-                    toast.error("Please specify a Time of Day");
+                    toast.error(t("toastSpecifyTimeOfDay"));
                     return;
                 }
                 finalSendAt = `${moment().format('YYYY-MM-DD')}T${editSendTime}:00`;
@@ -291,7 +294,7 @@ export default function SchedulerPage() {
             }
         } else {
             if (!editSendAt) {
-                toast.error("Please specify Send At");
+                toast.error(t("toastSpecifySendAt"));
                 return;
             }
         }
@@ -320,14 +323,14 @@ export default function SchedulerPage() {
             });
 
             if (res.ok) {
-                toast.success("Schedule updated");
+                toast.success(t("toastUpdated"));
                 setIsEditOpen(false);
                 fetchMessages(selectedSessionId, activeTab);
             } else {
-                toast.error("Failed to update schedule");
+                toast.error(t("toastUpdateFailed"));
             }
         } catch (error) {
-            toast.error("An error occurred");
+            toast.error(t("toastError"));
         }
     };
 
@@ -336,13 +339,13 @@ export default function SchedulerPage() {
         try {
             const res = await fetch(`/api/scheduler/${selectedSessionId}/${deleteId}`, { method: "DELETE" });
             if (res.ok) {
-                toast.success("Schedule deleted");
+                toast.success(t("toastDeleted"));
                 fetchMessages(selectedSessionId, activeTab);
             } else {
-                toast.error("Failed to delete schedule");
+                toast.error(t("toastDeleteFailed"));
             }
         } catch (error) {
-            toast.error("Failed to delete schedule");
+            toast.error(t("toastDeleteFailed"));
         } finally {
             setDeleteId(null);
         }
@@ -352,6 +355,16 @@ export default function SchedulerPage() {
         (m.content || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         m.jid.includes(searchTerm)
     );
+
+    const weekDays = [
+        { id: 0, label: t("days.sun") },
+        { id: 1, label: t("days.mon") },
+        { id: 2, label: t("days.tue") },
+        { id: 3, label: t("days.wed") },
+        { id: 4, label: t("days.thu") },
+        { id: 5, label: t("days.fri") },
+        { id: 6, label: t("days.sat") }
+    ];
 
     const renderRecurrenceForm = (
         isRec: string, setRec: any, 
@@ -364,79 +377,79 @@ export default function SchedulerPage() {
         sendTimeStr: string, setSendTimeStr: any
     ) => (
         <div className="space-y-4 border p-4 rounded-md bg-slate-50 mt-4">
-            <Label className="font-semibold text-base">Schedule Type</Label>
+            <Label className="font-semibold text-base">{t("scheduleType")}</Label>
             <RadioGroup value={isRec} onValueChange={setRec} className="flex gap-4">
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="once" id={`r-once-${type}`} />
-                    <Label htmlFor={`r-once-${type}`}>One-time</Label>
+                    <Label htmlFor={`r-once-${type}`}>{t("once")}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="recurring" id={`r-rec-${type}`} />
-                    <Label htmlFor={`r-rec-${type}`}>Recurring</Label>
+                    <Label htmlFor={`r-rec-${type}`}>{t("recurring")}</Label>
                 </div>
             </RadioGroup>
 
             {isRec === "once" && (
                 <div className="space-y-2 mt-4 pt-4 border-t border-slate-200">
-                    <Label>Send At (Date & Time)</Label>
+                    <Label>{t("sendAtLabel")}</Label>
                     <Input type="datetime-local" value={sendAtStr} onChange={e => setSendAtStr(e.target.value)} />
-                    <p className="text-xs text-muted-foreground">The exact date and time this message will be sent.</p>
+                    <p className="text-xs text-muted-foreground">{t("sendAtHint")}</p>
                 </div>
             )}
 
             {isRec === "recurring" && (
                 <div className="space-y-4 pt-4 mt-2 border-t border-slate-200">
-                    <Label className="font-medium">Repeat Interval</Label>
+                    <Label className="font-medium">{t("repeatInterval")}</Label>
                     <Select value={type} onValueChange={setType}>
                         <SelectTrigger>
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="minutes">Every X Minutes</SelectItem>
-                            <SelectItem value="hours">Every X Hours</SelectItem>
-                            <SelectItem value="days">Specific Days of Week</SelectItem>
-                            <SelectItem value="cron">Custom Cron</SelectItem>
+                            <SelectItem value="minutes">{t("repeatMinutes")}</SelectItem>
+                            <SelectItem value="hours">{t("repeatHours")}</SelectItem>
+                            <SelectItem value="days">{t("repeatDays")}</SelectItem>
+                            <SelectItem value="cron">{t("repeatCron")}</SelectItem>
                         </SelectContent>
                     </Select>
 
                     {type === "minutes" && (
                         <div className="flex items-center gap-2">
-                            <Label>Every</Label>
+                            <Label>{t("every")}</Label>
                             <Input type="number" min={1} value={mins} onChange={e => setMins(parseInt(e.target.value) || 1)} className="w-20" />
-                            <Label>Minutes</Label>
+                            <Label>{t("minutesUnit")}</Label>
                         </div>
                     )}
 
                     {type === "hours" && (
                         <div className="flex items-center gap-2">
-                            <Label>Every</Label>
+                            <Label>{t("every")}</Label>
                             <Input type="number" min={1} value={hrs} onChange={e => setHrs(parseInt(e.target.value) || 1)} className="w-20" />
-                            <Label>Hours</Label>
+                            <Label>{t("hoursUnit")}</Label>
                         </div>
                     )}
 
                     {type === "days" && (
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Select Days</Label>
+                                <Label>{t("selectDays")}</Label>
                                 <div className="flex flex-wrap gap-4">
-                                    {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d, i) => (
-                                        <div key={d} className="flex items-center space-x-2">
+                                    {weekDays.map(d => (
+                                        <div key={d.id} className="flex items-center space-x-2">
                                             <Checkbox 
-                                                id={`d-${d}-${type}`} 
-                                                checked={days.includes(i)}
+                                                id={`d-${d.id}-${type}`} 
+                                                checked={days.includes(d.id)}
                                                 onCheckedChange={(c) => {
-                                                    if (c) setDays([...days, i]);
-                                                    else setDays(days.filter(x => x !== i));
+                                                    if (c) setDays([...days, d.id]);
+                                                    else setDays(days.filter(x => x !== d.id));
                                                 }}
                                             />
-                                            <Label htmlFor={`d-${d}-${type}`}>{d}</Label>
+                                            <Label htmlFor={`d-${d.id}-${type}`}>{d.label}</Label>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                             <div className="space-y-2 pt-2 border-t border-slate-200">
-                                <Label>Time of Day</Label>
+                                <Label>{t("timeOfDay")}</Label>
                                 <Input type="time" value={sendTimeStr} onChange={e => setSendTimeStr(e.target.value)} className="w-32" />
                             </div>
                         </div>
@@ -444,14 +457,14 @@ export default function SchedulerPage() {
 
                     {type === "cron" && (
                         <div className="space-y-2">
-                            <Label>Cron Expression</Label>
+                            <Label>{t("cronExpression")}</Label>
                             <Input value={cron} onChange={e => setCron(e.target.value)} placeholder="0 12 * * *" />
                         </div>
                     )}
                     
                     {type !== "days" && (
                         <p className="text-xs text-muted-foreground mt-2">
-                            The schedule will be evaluated starting from the current time.
+                            {t("evalHint")}
                         </p>
                     )}
                 </div>
@@ -465,54 +478,54 @@ export default function SchedulerPage() {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
                         <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-                            <CalendarClock className="h-5 w-5 sm:h-6 sm:w-6" /> Scheduler
+                            <CalendarClock className="h-5 w-5 sm:h-6 sm:w-6" /> {t("title")}
                         </h1>
                         <p className="text-sm text-muted-foreground">
-                            {selectedSessionId ? "Schedule messages for active session." : "Select a session from the top bar."}
+                            {selectedSessionId ? t("subtitle") : t("selectSessionHint")}
                         </p>
                     </div>
 
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                         <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => selectedSessionId && fetchMessages(selectedSessionId, activeTab)} disabled={loading || !selectedSessionId}>
                             <RefreshCw className={`h-4 w-4 mr-1 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
-                            Refresh
+                            {tCommon("refresh")}
                         </Button>
                         <Button size="sm" className="flex-1 sm:flex-none" onClick={() => setShowForm(!showForm)} disabled={!selectedSessionId}>
-                            <Plus className="h-4 w-4 mr-1 sm:mr-2" /> Schedule
+                            <Plus className="h-4 w-4 mr-1 sm:mr-2" /> {t("buttonSchedule")}
                         </Button>
                     </div>
                 </div>
 
                 <SearchFilter
-                    placeholder="Search schedules..."
+                    placeholder={t("searchPlaceholder")}
                     onSearch={setSearchTerm}
                 />
 
                 {showForm && (
                     <Card className="border-2 border-primary/20">
                         <CardHeader>
-                            <CardTitle>Schedule New Message</CardTitle>
+                            <CardTitle>{t("newSchedule")}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-3">
                                 <div className="flex justify-between items-center">
-                                    <Label>Recipient JID</Label>
+                                    <Label>{t("recipientJid")}</Label>
                                     <RadioGroup value={newJidType} onValueChange={setNewJidType} className="flex gap-4">
                                         <div className="flex items-center space-x-2">
                                             <RadioGroupItem value="personal" id="new-personal" />
-                                            <Label htmlFor="new-personal" className="cursor-pointer">Personal</Label>
+                                            <Label htmlFor="new-personal" className="cursor-pointer">{t("personal")}</Label>
                                         </div>
                                         <div className="flex items-center space-x-2">
                                             <RadioGroupItem value="group" id="new-group" />
-                                            <Label htmlFor="new-group" className="cursor-pointer">Group</Label>
+                                            <Label htmlFor="new-group" className="cursor-pointer">{t("group")}</Label>
                                         </div>
                                         <div className="flex items-center space-x-2">
                                             <RadioGroupItem value="newsletter" id="new-newsletter" />
-                                            <Label htmlFor="new-newsletter" className="cursor-pointer">Newsletter</Label>
+                                            <Label htmlFor="new-newsletter" className="cursor-pointer">{t("newsletter")}</Label>
                                         </div>
                                     </RadioGroup>
                                 </div>
-                                <Input value={newJid} onChange={e => setNewJid(e.target.value)} placeholder={newJidType === 'group' ? "120363... (Group ID)" : newJidType === 'newsletter' ? "120363... (Channel ID)" : "62812345678"} />
+                                <Input value={newJid} onChange={e => setNewJid(e.target.value)} placeholder={newJidType === 'group' ? t("placeholderGroup") : newJidType === 'newsletter' ? t("placeholderNewsletter") : t("placeholderPersonal")} />
                             </div>
                             
                             {renderRecurrenceForm(
@@ -527,30 +540,30 @@ export default function SchedulerPage() {
                             )}
 
                             <div className="space-y-2 mt-4">
-                                <Label>Message (Optional)</Label>
-                                <Textarea value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="Hello!" />
+                                <Label>{t("messageOptional")}</Label>
+                                <Textarea value={newContent} onChange={e => setNewContent(e.target.value)} placeholder={t("messagePlaceholder")} />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Media URL (Optional)</Label>
+                                    <Label>{t("mediaUrlOptional")}</Label>
                                     <Input value={newMediaUrl} onChange={e => setNewMediaUrl(e.target.value)} placeholder="https://..." />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Media Type</Label>
+                                    <Label>{t("mediaType")}</Label>
                                     <Select value={newMediaType} onValueChange={setNewMediaType}>
                                         <SelectTrigger><SelectValue /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="image">Image</SelectItem>
-                                            <SelectItem value="video">Video</SelectItem>
-                                            <SelectItem value="document">Document</SelectItem>
+                                            <SelectItem value="image">{t("mediaImage")}</SelectItem>
+                                            <SelectItem value="video">{t("mediaVideo")}</SelectItem>
+                                            <SelectItem value="document">{t("mediaDocument")}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                             </div>
                             <div className="flex justify-end gap-2 mt-4">
-                                <Button variant="ghost" onClick={() => setShowForm(false)}>Cancel</Button>
-                                <Button onClick={handleSaveSchedule} disabled={(!newContent && !newMediaUrl) || !newJid}>Schedule</Button>
+                                <Button variant="ghost" onClick={() => setShowForm(false)}>{tCommon("cancel")}</Button>
+                                <Button onClick={handleSaveSchedule} disabled={(!newContent && !newMediaUrl) || !newJid}>{t("buttonSchedule")}</Button>
                             </div>
                         </CardContent>
                     </Card>
@@ -558,11 +571,11 @@ export default function SchedulerPage() {
 
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
                     <TabsList className="mb-4">
-                        <TabsTrigger value="pending">Pending Queue</TabsTrigger>
-                        <TabsTrigger value="history">History Logs</TabsTrigger>
+                        <TabsTrigger value="pending">{t("pendingQueue")}</TabsTrigger>
+                        <TabsTrigger value="history">{t("historyLogs")}</TabsTrigger>
                     </TabsList>
                     <TabsContent value="pending" className="mt-0">
-                        {loading ? <div className="text-center p-8">Loading...</div> : filteredMessages.length === 0 ? <div className="text-center p-8 text-muted-foreground border rounded bg-slate-50">No pending messages.</div> : (
+                        {loading ? <div className="text-center p-8">{tCommon("loading")}</div> : filteredMessages.length === 0 ? <div className="text-center p-8 text-muted-foreground border rounded bg-slate-50">{t("noPending")}</div> : (
                             <div className="grid gap-4">
                                 {filteredMessages.map(msg => (
                                     <Card key={msg.id}>
@@ -570,16 +583,16 @@ export default function SchedulerPage() {
                                             <div>
                                                 <div className="font-bold flex items-center gap-2">
                                                     {msg.jid.split('@')[0]}
-                                                    {msg.jid.includes("@g.us") ? <span className="text-xs px-2 py-0.5 rounded font-normal bg-purple-100 text-purple-800">Group</span> : null}
-                                                    {msg.jid.includes("@newsletter") ? <span className="text-xs px-2 py-0.5 rounded font-normal bg-orange-100 text-orange-800">Channel</span> : null}
+                                                    {msg.jid.includes("@g.us") ? <span className="text-xs px-2 py-0.5 rounded font-normal bg-purple-100 text-purple-800">{t("groupBadge")}</span> : null}
+                                                    {msg.jid.includes("@newsletter") ? <span className="text-xs px-2 py-0.5 rounded font-normal bg-orange-100 text-orange-800">{t("channelBadge")}</span> : null}
                                                     <span className="text-xs px-2 py-0.5 rounded font-normal bg-yellow-100 text-yellow-800">{msg.status}</span>
-                                                    {msg.cronExpression && <span className="text-xs px-2 py-0.5 rounded font-normal bg-blue-100 text-blue-800">Recurring</span>}
+                                                    {msg.cronExpression && <span className="text-xs px-2 py-0.5 rounded font-normal bg-blue-100 text-blue-800">{t("recurringBadge")}</span>}
                                                 </div>
-                                                <div className="text-sm font-medium mt-1">{msg.content || "[Media Only]"}</div>
-                                                <div className="text-xs text-muted-foreground mt-1">Next Run: {moment(msg.sendAt).tz(systemTimezone).format('YYYY-MM-DD HH:mm:ss')}</div>
+                                                <div className="text-sm font-medium mt-1">{msg.content || t("mediaOnly")}</div>
+                                                <div className="text-xs text-muted-foreground mt-1">{t("nextRun", { time: moment(msg.sendAt).tz(systemTimezone).format('YYYY-MM-DD HH:mm:ss') })}</div>
                                             </div>
                                             <div className="flex gap-2">
-                                                <Button variant="ghost" size="sm" onClick={() => handleEdit(msg)}>Edit</Button>
+                                                <Button variant="ghost" size="sm" onClick={() => handleEdit(msg)}>{tCommon("edit")}</Button>
                                                 <Button variant="ghost" size="icon" onClick={() => setDeleteId(msg.id)} className="text-red-500 hover:bg-red-50"><Trash2 className="w-4 h-4" /></Button>
                                             </div>
                                         </CardContent>
@@ -589,7 +602,7 @@ export default function SchedulerPage() {
                         )}
                     </TabsContent>
                     <TabsContent value="history" className="mt-0">
-                        {loading ? <div className="text-center p-8">Loading...</div> : filteredMessages.length === 0 ? <div className="text-center p-8 text-muted-foreground border rounded bg-slate-50">No history found.</div> : (
+                        {loading ? <div className="text-center p-8">{tCommon("loading")}</div> : filteredMessages.length === 0 ? <div className="text-center p-8 text-muted-foreground border rounded bg-slate-50">{t("noHistory")}</div> : (
                             <div className="grid gap-4">
                                 {filteredMessages.map(msg => (
                                     <Card key={msg.id} className="opacity-80">
@@ -597,12 +610,12 @@ export default function SchedulerPage() {
                                             <div>
                                                 <div className="font-bold flex items-center gap-2">
                                                     {msg.jid.split('@')[0]}
-                                                    {msg.jid.includes("@g.us") ? <span className="text-xs px-2 py-0.5 rounded font-normal bg-purple-100 text-purple-800">Group</span> : null}
-                                                    {msg.jid.includes("@newsletter") ? <span className="text-xs px-2 py-0.5 rounded font-normal bg-orange-100 text-orange-800">Channel</span> : null}
-                                                    {msg.status === 'SENT' ? <span className="text-xs px-2 py-0.5 rounded font-normal bg-green-100 text-green-800 flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> Sent</span> : <span className="text-xs px-2 py-0.5 rounded font-normal bg-red-100 text-red-800 flex items-center gap-1"><XCircle className="w-3 h-3"/> Failed</span>}
+                                                    {msg.jid.includes("@g.us") ? <span className="text-xs px-2 py-0.5 rounded font-normal bg-purple-100 text-purple-800">{t("groupBadge")}</span> : null}
+                                                    {msg.jid.includes("@newsletter") ? <span className="text-xs px-2 py-0.5 rounded font-normal bg-orange-100 text-orange-800">{t("channelBadge")}</span> : null}
+                                                    {msg.status === 'SENT' ? <span className="text-xs px-2 py-0.5 rounded font-normal bg-green-100 text-green-800 flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> {t("sentBadge")}</span> : <span className="text-xs px-2 py-0.5 rounded font-normal bg-red-100 text-red-800 flex items-center gap-1"><XCircle className="w-3 h-3"/> {t("failedBadge")}</span>}
                                                 </div>
-                                                <div className="text-sm font-medium mt-1">{msg.content || "[Media Only]"}</div>
-                                                <div className="text-xs text-muted-foreground mt-1">Processed: {moment(msg.sendAt).tz(systemTimezone).format('YYYY-MM-DD HH:mm:ss')}</div>
+                                                <div className="text-sm font-medium mt-1">{msg.content || t("mediaOnly")}</div>
+                                                <div className="text-xs text-muted-foreground mt-1">{t("processed", { time: moment(msg.sendAt).tz(systemTimezone).format('YYYY-MM-DD HH:mm:ss') })}</div>
                                             </div>
                                             <div className="flex gap-2">
                                                 <Button variant="ghost" size="icon" onClick={() => setDeleteId(msg.id)} className="text-red-500 hover:bg-red-50"><Trash2 className="w-4 h-4" /></Button>
@@ -618,12 +631,12 @@ export default function SchedulerPage() {
                 <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Record?</AlertDialogTitle>
-                            <AlertDialogDescription>Are you sure you want to delete this schedule record?</AlertDialogDescription>
+                            <AlertDialogTitle>{t("deleteRecordTitle")}</AlertDialogTitle>
+                            <AlertDialogDescription>{t("deleteRecordDesc")}</AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={confirmDelete} className="bg-red-600">Delete</AlertDialogAction>
+                            <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
+                            <AlertDialogAction onClick={confirmDelete} className="bg-red-600">{tCommon("delete")}</AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
@@ -631,28 +644,28 @@ export default function SchedulerPage() {
                 <Dialog open={isEditOpen} onOpenChange={o => !o && setIsEditOpen(false)}>
                     <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
-                            <DialogTitle>Edit Schedule</DialogTitle>
+                            <DialogTitle>{t("editSchedule")}</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4 py-4">
                             <div className="space-y-3">
                                 <div className="flex justify-between items-center">
-                                    <Label>Recipient JID</Label>
+                                    <Label>{t("recipientJid")}</Label>
                                     <RadioGroup value={editJidType} onValueChange={setEditJidType} className="flex gap-4">
                                         <div className="flex items-center space-x-2">
                                             <RadioGroupItem value="personal" id="edit-personal" />
-                                            <Label htmlFor="edit-personal" className="cursor-pointer">Personal</Label>
+                                            <Label htmlFor="edit-personal" className="cursor-pointer">{t("personal")}</Label>
                                         </div>
                                         <div className="flex items-center space-x-2">
                                             <RadioGroupItem value="group" id="edit-group" />
-                                            <Label htmlFor="edit-group" className="cursor-pointer">Group</Label>
+                                            <Label htmlFor="edit-group" className="cursor-pointer">{t("group")}</Label>
                                         </div>
                                         <div className="flex items-center space-x-2">
                                             <RadioGroupItem value="newsletter" id="edit-newsletter" />
-                                            <Label htmlFor="edit-newsletter" className="cursor-pointer">Newsletter</Label>
+                                            <Label htmlFor="edit-newsletter" className="cursor-pointer">{t("newsletter")}</Label>
                                         </div>
                                     </RadioGroup>
                                 </div>
-                                <Input value={editJid} onChange={e => setEditJid(e.target.value)} placeholder={editJidType === 'group' ? "120363... (Group ID)" : editJidType === 'newsletter' ? "120363... (Channel ID)" : "62812345678"} />
+                                <Input value={editJid} onChange={e => setEditJid(e.target.value)} placeholder={editJidType === 'group' ? t("placeholderGroup") : editJidType === 'newsletter' ? t("placeholderNewsletter") : t("placeholderPersonal")} />
                             </div>
                             
                             {renderRecurrenceForm(
@@ -667,30 +680,30 @@ export default function SchedulerPage() {
                             )}
 
                             <div className="space-y-2 mt-4">
-                                <Label>Message (Optional)</Label>
+                                <Label>{t("messageOptional")}</Label>
                                 <Textarea value={editContent} onChange={e => setEditContent(e.target.value)} />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Media URL (Optional)</Label>
+                                    <Label>{t("mediaUrlOptional")}</Label>
                                     <Input value={editMediaUrl} onChange={e => setEditMediaUrl(e.target.value)} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Media Type</Label>
+                                    <Label>{t("mediaType")}</Label>
                                     <Select value={editMediaType} onValueChange={setEditMediaType}>
                                         <SelectTrigger><SelectValue /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="image">Image</SelectItem>
-                                            <SelectItem value="video">Video</SelectItem>
-                                            <SelectItem value="document">Document</SelectItem>
+                                            <SelectItem value="image">{t("mediaImage")}</SelectItem>
+                                            <SelectItem value="video">{t("mediaVideo")}</SelectItem>
+                                            <SelectItem value="document">{t("mediaDocument")}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button variant="ghost" onClick={() => setIsEditOpen(false)}>Cancel</Button>
-                            <Button onClick={handleUpdateSchedule} disabled={(!editContent && !editMediaUrl) || !editJid}>Save Changes</Button>
+                            <Button variant="ghost" onClick={() => setIsEditOpen(false)}>{tCommon("cancel")}</Button>
+                            <Button onClick={handleUpdateSchedule} disabled={(!editContent && !editMediaUrl) || !editJid}>{t("saveChanges")}</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>

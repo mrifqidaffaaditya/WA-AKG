@@ -10,7 +10,8 @@ import { Users, Plus, RefreshCw } from "lucide-react";
 import { SearchFilter } from "@/components/dashboard/search-filter";
 import { useSession } from "@/components/dashboard/session-provider";
 import { SessionGuard } from "@/components/dashboard/session-guard";
-import { toast } from "sonner"; // Added import
+import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 // Define a type for Group if not already defined elsewhere
 interface Group {
@@ -21,6 +22,8 @@ interface Group {
 }
 
 export default function GroupsPage() {
+    const t = useTranslations("groups");
+    const tCommon = useTranslations("common");
     const { sessionId } = useSession();
 
     const [groups, setGroups] = useState<Group[]>([]);
@@ -40,7 +43,7 @@ export default function GroupsPage() {
                 setGroups([]);
             }
         } catch (error) {
-            toast.error("Failed to fetch groups");
+            toast.error(t("createdFailed"));
         } finally {
             setLoading(false);
         }
@@ -63,15 +66,15 @@ export default function GroupsPage() {
                 body: JSON.stringify({ sessionId, subject: newGroupName })
             });
             if (res.ok) {
-                toast.success("Group created");
+                toast.success(t("createdSuccess"));
                 setIsCreateOpen(false);
                 setNewGroupName("");
                 fetchGroups(sessionId);
             } else {
-                toast.error("Failed to create group");
+                toast.error(t("createdFailed"));
             }
         } catch (error) {
-            toast.error("Failed to create group");
+            toast.error(t("createdFailed"));
         }
     };
 
@@ -86,25 +89,25 @@ export default function GroupsPage() {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
                         <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-                            <Users className="h-5 w-5 sm:h-6 sm:w-6" /> Groups
+                            <Users className="h-5 w-5 sm:h-6 sm:w-6" /> {t("title")}
                         </h1>
                         <p className="text-sm text-muted-foreground">
-                            {sessionId ? "Manage groups for active session." : "Select a session from the top bar."}
+                            {sessionId ? t("subtitleActive") : t("subtitleNoSession")}
                         </p>
                     </div>
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                         <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => sessionId && fetchGroups(sessionId)} disabled={loading || !sessionId}>
                             <RefreshCw className={`h-4 w-4 mr-1 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
-                            Refresh
+                            {t("refresh")}
                         </Button>
                         <Button size="sm" className="flex-1 sm:flex-none" onClick={() => setIsCreateOpen(true)} disabled={!sessionId}>
-                            <Plus className="h-4 w-4 mr-1 sm:mr-2" /> Create
+                            <Plus className="h-4 w-4 mr-1 sm:mr-2" /> {t("create")}
                         </Button>
                     </div>
                 </div>
 
                 <SearchFilter
-                    placeholder="Search groups..."
+                    placeholder={t("searchPlaceholder")}
                     onSearch={setSearchTerm}
                 />
 
@@ -112,15 +115,15 @@ export default function GroupsPage() {
                 {isCreateOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                         <div className="bg-white dark:bg-background p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-sm">
-                            <h2 className="text-lg sm:text-xl font-bold mb-4">Create New Group</h2>
+                            <h2 className="text-lg sm:text-xl font-bold mb-4">{t("dialogCreateTitle")}</h2>
                             <div className="space-y-4">
                                 <div>
-                                    <Label>Group Subject</Label>
-                                    <Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder="My New Group" />
+                                    <Label>{t("subjectLabel")}</Label>
+                                    <Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={t("subjectPlaceholder")} />
                                 </div>
                                 <div className="flex justify-end gap-2">
-                                    <Button variant="ghost" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-                                    <Button onClick={handleCreateGroup}>Create</Button>
+                                    <Button variant="ghost" onClick={() => setIsCreateOpen(false)}>{tCommon("cancel")}</Button>
+                                    <Button onClick={handleCreateGroup}>{t("create")}</Button>
                                 </div>
                             </div>
                         </div>
@@ -129,10 +132,10 @@ export default function GroupsPage() {
 
                 {/* Groups List */}
                 {loading ? (
-                    <div className="text-center p-8">Loading groups...</div>
+                    <div className="text-center p-8">{tCommon("loading")}</div>
                 ) : filteredGroups.length === 0 ? (
                     <div className="text-center p-8 text-muted-foreground border rounded-lg bg-slate-50">
-                        {sessionId ? "No groups found matching criteria." : "No session selected."}
+                        {sessionId ? t("noGroupsMatching") : t("noSessionSelected")}
                     </div>
                 ) : (
                     <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -141,7 +144,7 @@ export default function GroupsPage() {
                                 <div>
                                     <h3 className="font-bold text-lg">{group.subject}</h3>
                                     <div className="text-xs text-muted-foreground mt-1">{group.jid}</div>
-                                    <div className="text-xs text-slate-500 mt-1">Participants: {group.participants?.length || 0}</div>
+                                    <div className="text-xs text-slate-500 mt-1">{t("participantsCount", { count: group.participants?.length || 0 })}</div>
                                 </div>
                             </div>
                         ))}

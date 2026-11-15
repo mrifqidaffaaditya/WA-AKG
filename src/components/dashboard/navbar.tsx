@@ -5,10 +5,11 @@ import { MobileNav } from "@/components/dashboard/mobile-nav";
 import { SessionSelector } from "@/components/dashboard/session-selector";
 import { Button } from "@/components/ui/button";
 import { RealtimeClock } from "@/components/dashboard/realtime-clock";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Bell, Inbox, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { formatDistanceToNow } from "date-fns";
+import { useFormatter, useNow, useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { io, Socket } from "socket.io-client";
@@ -30,6 +31,9 @@ interface Notification {
 export function Navbar({ appName }: NavbarProps) {
     const router = useRouter();
     const { data: session } = useSession();
+    const t = useTranslations("notifications");
+    const format = useFormatter();
+    const now = useNow({ updateInterval: 60_000 });
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
@@ -76,7 +80,7 @@ export function Navbar({ appName }: NavbarProps) {
                 toast.info(notification.title, {
                     description: notification.message,
                     action: notification.href ? {
-                        label: "View",
+                        label: t("view"),
                         onClick: () => router.push(notification.href!)
                     } : undefined,
                 });
@@ -123,11 +127,11 @@ export function Navbar({ appName }: NavbarProps) {
                     const notification = notifications.find(n => n.id === id);
                     return notification && !notification.read ? Math.max(0, prev - 1) : prev;
                 });
-                toast.success("Notification deleted");
+                toast.success(t("deleted"));
             }
         } catch (e) {
             console.error("Failed to delete notification");
-            toast.error("Failed to delete notification");
+            toast.error(t("deleteFailed"));
         }
     };
 
@@ -146,6 +150,7 @@ export function Navbar({ appName }: NavbarProps) {
             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
                 <span className="hidden sm:inline"><RealtimeClock /></span>
                 <SessionSelector />
+                <LanguageSwitcher className="hidden sm:flex" />
                 <div className="h-6 w-px bg-border/50 hidden sm:block" />
 
                 <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -160,18 +165,18 @@ export function Navbar({ appName }: NavbarProps) {
                     <PopoverContent className="w-80 p-0 rounded-2xl border border-border/50 shadow-2xl glass-panel" align="end">
                         <div className="p-4 border-b border-border/50 flex justify-between items-center bg-background/50">
                             <div>
-                                <h4 className="font-semibold leading-none text-foreground">Notifications</h4>
+                                <h4 className="font-semibold leading-none text-foreground">{t("title")}</h4>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                    {unreadCount > 0 ? `You have ${unreadCount} unread updates.` : "No new notifications."}
+                                    {t("unreadSummary", { count: unreadCount })}
                                 </p>
                             </div>
                             <div className="flex items-center gap-1">
                                 <Button variant="ghost" size="sm" className="h-auto py-1 px-2 text-xs" onClick={() => { router.push("/dashboard/inbox"); setIsOpen(false); }}>
-                                    See all
+                                    {t("seeAll")}
                                 </Button>
                                 {unreadCount > 0 && (
                                     <Button variant="ghost" size="sm" onClick={() => markAsRead()} className="h-auto py-1 px-2 text-xs">
-                                        Mark all read
+                                        {t("markAllRead")}
                                     </Button>
                                 )}
                             </div>
@@ -182,8 +187,8 @@ export function Navbar({ appName }: NavbarProps) {
                                     <div className="bg-slate-100 p-3 rounded-full mb-3">
                                         <Inbox className="h-6 w-6 text-slate-400" />
                                     </div>
-                                    <p className="text-sm font-medium">No new notifications</p>
-                                    <p className="text-xs text-muted-foreground max-w-[180px]">We'll notify you when something important arrives.</p>
+                                    <p className="text-sm font-medium">{t("emptyTitle")}</p>
+                                    <p className="text-xs text-muted-foreground max-w-[180px]">{t("emptyDescription")}</p>
                                 </div>
                             ) : (
                                 <div className="divide-y">
@@ -204,7 +209,7 @@ export function Navbar({ appName }: NavbarProps) {
                                                         {n.message}
                                                     </p>
                                                     <p className="text-[10px] text-slate-400">
-                                                        {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
+                                                        {format.relativeTime(new Date(n.createdAt), now)}
                                                     </p>
                                                 </div>
                                                 <div className="flex items-center gap-2">

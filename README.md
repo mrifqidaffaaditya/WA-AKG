@@ -6,13 +6,19 @@
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/)
-[![Version](https://img.shields.io/badge/Version-1.6.2-blue?style=for-the-badge)](https://github.com/mrifqidaffaaditya/WA-AKG/releases)
+[![Version](https://img.shields.io/badge/Version-1.7.0-blue?style=for-the-badge)](https://github.com/mrifqidaffaaditya/WA-AKG/releases)
 [![Main Branch](https://img.shields.io/badge/Branch-Main-green?style=for-the-badge&logo=git)](https://github.com/mrifqidaffaaditya/WA-AKG)
 
 [![Active Apps](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi-wa-akg.aikeigroup.net%2Fapi%2Factive-apps&query=%24.activeCount&style=flat-square&color=25D366&logo=whatsapp&logoColor=white&label=)](https://api-wa-akg.aikeigroup.net/)
 
+<div align="center">
+  <a href="https://trendshift.io/repositories/252310?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-252310" target="_blank" rel="noopener noreferrer">
+    <img src="https://trendshift.io/api/badge/repositories/252310" alt="mrifqidaffaaditya%2FWA-AKG | Trendshift" width="250" height="55"/>
+  </a>
+</div>
+
 **A professional, multi-session WhatsApp Gateway, Dashboard, and Automation System.**  
-Built with **Next.js 15**, **React**, and **Baileys** for high-performance messaging automation and real-time WhatsApp Bot Gateway services.
+Built with **Next.js 16**, **React**, and **Baileys** for high-performance messaging automation and real-time WhatsApp Bot Gateway services.
 
 > [!TIP]
 > **Looking for the latest features?** Check out the [beta branch](https://github.com/mrifqidaffaaditya/WA-AKG/tree/beta) or our [pre-releases](https://github.com/mrifqidaffaaditya/WA-AKG/releases) for experimental sources.
@@ -31,6 +37,7 @@ WA-AKG comes with extensive documentation designed for both developers and users
 - **[API Documentation](docs/API_DOCUMENTATION.md)**: Comprehensive OpenAPI / Swagger guide for all **109+ endpoints**.
 - **[API Quick Reference](docs/API-QUICK-REFERENCE.md)**: Instantly jumpstart your integration with ready-to-use cURL/JavaScript snippets.
 - **[Environment Variables](docs/ENVIRONMENT_VARIABLES.md)**: Configuration and security guide.
+- **[Internationalization (i18n)](docs/I18N.md)**: How UI languages work and how to add or translate one.
 
 ---
 
@@ -61,6 +68,7 @@ graph LR
 - **📇 Advanced Contacts**: Rich contact management with LID, verified names, and profile pictures.
 - **🎨 Creative Tools**: Built-in Sticker Maker with background removal (`remove.bg` integration).
 - **📘 Open API Spec**: Fully documented via `swagger-ui-react` at `/docs`.
+- **🌐 Multi-Language UI**: Dashboard available in English, Bahasa Indonesia and Português (Brasil) with a built-in language switcher ([guide](docs/I18N.md)).
 
 <details>
 <summary>📂 <b>View Webhook Payload Example</b></summary>

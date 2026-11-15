@@ -3,99 +3,20 @@
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu, ChevronDown } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 import Link from "next/link";
-import {
-    LayoutDashboard,
-    MessageSquare,
-    Users,
-    Settings,
-    LogOut,
-    QrCode,
-    ImageIcon,
-    Webhook,
-    CalendarClock,
-    Bot,
-    Bell,
-    FileText,
-    Code,
-    UserCheck,
-    Megaphone,
-    HardDrive,
-    Activity,
-    UserCircle,
-    Tag,
-    MessageCircleReply,
-    UserPlus,
-} from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { useTranslations } from "next-intl";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { navGroups } from "./sidebar-nav";
 import pkg from "../../../package.json";
-
-interface NavGroup {
-    label: string;
-    items: { href: string; label: string; icon: React.ElementType; external?: boolean; superadminOnly?: boolean }[];
-}
-
-// Keep in sync with sidebar-nav.tsx
-const navGroups: NavGroup[] = [
-    {
-        label: "Main",
-        items: [
-            { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-            { href: "/dashboard/sessions", label: "Sessions / QR", icon: QrCode },
-        ],
-    },
-    {
-        label: "Messaging",
-        items: [
-            { href: "/dashboard/chat", label: "Chat", icon: MessageSquare },
-            { href: "/dashboard/broadcast", label: "Broadcast", icon: Megaphone },
-            { href: "/dashboard/sticker", label: "Sticker Maker", icon: ImageIcon },
-        ],
-    },
-    {
-        label: "Contacts",
-        items: [
-            { href: "/dashboard/contacts", label: "Contacts", icon: UserCheck },
-            { href: "/dashboard/groups", label: "Groups", icon: Users },
-            { href: "/dashboard/labels", label: "Labels", icon: Tag },
-        ],
-    },
-    {
-        label: "Automation",
-        items: [
-            { href: "/dashboard/bot-settings", label: "Bot Settings", icon: Bot },
-            { href: "/dashboard/autoreply", label: "Auto Reply", icon: MessageCircleReply },
-            { href: "/dashboard/profile", label: "Bot Profile", icon: UserCircle },
-            { href: "/dashboard/scheduler", label: "Scheduler", icon: CalendarClock },
-            { href: "/dashboard/webhooks", label: "Webhooks & API", icon: Webhook },
-        ],
-    },
-    {
-        label: "Developer",
-        items: [
-            { href: "/docs", label: "API Docs", icon: FileText },
-            { href: "/swagger", label: "Swagger UI", icon: Code, external: true },
-        ],
-    },
-    {
-        label: "Administration",
-        items: [
-            { href: "/dashboard/media", label: "Media Manager", icon: HardDrive },
-            { href: "/dashboard/sessions/access", label: "Session Access", icon: UserPlus },
-            { href: "/dashboard/users", label: "Users", icon: Users },
-            { href: "/dashboard/settings", label: "Settings", icon: Settings },
-            { href: "/dashboard/system-monitor", label: "System Monitor", icon: Activity, superadminOnly: true },
-            { href: "/dashboard/notifications", label: "Notifications", icon: Bell, superadminOnly: true },
-        ],
-    },
-];
 
 export function MobileNav({ appName = "WA-AKG" }: { appName?: string }) {
     const [open, setOpen] = useState(false);
     const pathname = usePathname();
     const { data: session } = useSession();
+    const t = useTranslations();
     // @ts-ignore
     const userRole = session?.user?.role;
 
@@ -114,25 +35,27 @@ export function MobileNav({ appName = "WA-AKG" }: { appName?: string }) {
             <SheetContent side="left" className="w-[85vw] sm:w-[320px] p-0 flex flex-col">
                 <SheetHeader className="px-5 py-4 text-left border-b border-slate-100">
                     <SheetTitle className="text-xl font-bold text-slate-800">{appName}</SheetTitle>
-                    <SheetDescription className="text-[11px] text-slate-400 -mt-1">WhatsApp Gateway</SheetDescription>
+                    <SheetDescription className="text-[11px] text-slate-400 -mt-1">{t("common.tagline")}</SheetDescription>
                 </SheetHeader>
 
                 <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-1">
                     {navGroups.map((group) => {
-                        const visibleItems = group.items.filter(
-                            (item) => !item.superadminOnly || userRole === "SUPERADMIN"
-                        );
+                        const visibleItems = group.items.filter((item) => {
+                            if (item.superadminOnly && userRole !== "SUPERADMIN") return false;
+                            if (item.allowedRoles && (!userRole || !item.allowedRoles.includes(userRole))) return false;
+                            return true;
+                        });
                         if (visibleItems.length === 0) return null;
 
                         return (
-                            <div key={group.label} className="mb-1">
-                                {group.label !== "Main" && (
+                            <div key={group.key} className="mb-1">
+                                {group.key !== "main" && (
                                     <p className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                                        {group.label}
+                                        {t(`nav.groups.${group.key}`)}
                                     </p>
                                 )}
                                 <div className="space-y-0.5">
-                                    {visibleItems.map(({ href, label, icon: Icon, external }) => (
+                                    {visibleItems.map(({ href, key, icon: Icon, external }) => (
                                         <Link
                                             key={href}
                                             href={href}
@@ -155,7 +78,7 @@ export function MobileNav({ appName = "WA-AKG" }: { appName?: string }) {
                                                 size={17}
                                                 className={`flex-shrink-0 transition-colors duration-200 ${isActive(href) ? "text-primary" : "text-muted-foreground/70 group-hover:text-foreground"}`}
                                             />
-                                            <span className="truncate">{label}</span>
+                                            <span className="truncate">{t(`nav.items.${key}`)}</span>
                                         </Link>
                                     ))}
                                 </div>
@@ -170,10 +93,11 @@ export function MobileNav({ appName = "WA-AKG" }: { appName?: string }) {
                             {session?.user?.name?.charAt(0)?.toUpperCase() || "U"}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-700 truncate">{session?.user?.name || "User"}</p>
+                            <p className="text-sm font-medium text-slate-700 truncate">{session?.user?.name || t("common.user")}</p>
                             <p className="text-[11px] text-slate-400 truncate">{session?.user?.email}</p>
                         </div>
                     </div>
+                    <LanguageSwitcher className="w-full mb-2" />
                     <Button
                         variant="outline"
                         size="sm"
@@ -183,7 +107,7 @@ export function MobileNav({ appName = "WA-AKG" }: { appName?: string }) {
                             await signOut({ callbackUrl: "/auth/login" });
                         }}
                     >
-                        <LogOut size={14} /> Sign Out
+                        <LogOut size={14} /> {t("common.signOut")}
                     </Button>
                     <p className="text-[10px] text-slate-300 text-center mt-2 font-mono">v{pkg.version}</p>
                 </div>

@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "WA-AKG API Documentation",
-    "version": "1.7.0-beta.1",
+    "version": "1.7.0",
     "description": "\n# WhatsApp AI Gateway - Complete API Reference\n\nProfessional WhatsApp Gateway with **93 API endpoints** for complete WhatsApp automation.\n\n## 🔐 Authentication\nAll endpoints require authentication via:\n1. **API Key Header**: `X-API-Key: your-api-key`\n2. **Session Cookie**: `next-auth.session-token` (automatically sent by browser)\n\n## 📋 Common Parameters\n- **sessionId**: Unique session identifier (e.g., \"mysession-01\")\n- **jid**: WhatsApp JID format:\n  - Personal: `628123456789@s.whatsapp.net`\n  - Group: `120363123456789@g.us`\n\n## 📊 Rate Limits\n- Phone check: Max 50 numbers per request\n- Broadcast: 10-20s random delay between messages\n- Message history: Max 100 messages\n                "
   },
   "servers": [

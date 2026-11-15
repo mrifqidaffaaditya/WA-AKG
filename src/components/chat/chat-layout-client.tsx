@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { ChatList } from "./chat-list";
 import { ChatWindow } from "./chat-window";
 import { MessageCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface ChatLayoutClientProps {
     sessionId: string;
@@ -16,6 +17,7 @@ interface SelectedChat {
 }
 
 export function ChatLayoutClient({ sessionId, initialJid }: ChatLayoutClientProps) {
+    const t = useTranslations("chat");
     const [selectedChat, setSelectedChat] = useState<SelectedChat | null>(
         initialJid ? { jid: initialJid } : null
     );
@@ -98,7 +100,7 @@ export function ChatLayoutClient({ sessionId, initialJid }: ChatLayoutClientProp
                                 <MessageCircle className="h-8 w-8 text-muted-foreground/40" />
                             </div>
                             <p className="text-sm text-muted-foreground">
-                                Select a chat to start messaging
+                                {t("selectChat")}
                             </p>
                         </div>
                     </div>

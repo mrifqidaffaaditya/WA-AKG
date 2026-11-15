@@ -1,16 +1,19 @@
 "use client";
 
 import { ChatLayoutClient } from "./chat-layout-client";
+import { useTranslations } from "next-intl";
 
 interface ChatInterfaceProps {
     sessionId: string | null;
 }
 
 export function ChatInterface({ sessionId }: ChatInterfaceProps) {
+    const t = useTranslations("chat");
+
     if (!sessionId) {
         return (
             <div className="flex h-full items-center justify-center p-8 text-center text-muted-foreground">
-                No active WhatsApp session selected. Please select a session from the top bar.
+                {t("noActiveSession")}
             </div>
         );
     }
@@ -23,3 +26,4 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
         </div>
     );
 }
+

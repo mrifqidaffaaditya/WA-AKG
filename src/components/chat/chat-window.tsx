@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { getChatMessages, sendChatMessage, sendMediaMessage } from "@/app/dashboard/chat/actions";
 import { useSocket } from "./socket-context";
 import { InteractiveMessageDialog } from "./interactive-message-dialog";
+import { useTranslations } from "next-intl";
 
 interface Message {
     id: string;
@@ -89,6 +90,7 @@ function LazyVideo({ src }: { src: string }) {
 }
 
 function useDateLabel() {
+    const t = useTranslations("chat");
     const cache = useRef(new Map<string, string>());
     return (timestamp: string): string => {
         const cached = cache.current.get(timestamp);
@@ -97,8 +99,8 @@ function useDateLabel() {
         const now = new Date();
         const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
         let label: string;
-        if (diffDays === 0) label = "Today";
-        else if (diffDays === 1) label = "Yesterday";
+        if (diffDays === 0) label = t("today");
+        else if (diffDays === 1) label = t("yesterday");
         else label = date.toLocaleDateString([], { year: 'numeric', month: 'long', day: 'numeric' });
         cache.current.set(timestamp, label);
         return label;
@@ -124,6 +126,7 @@ interface ContextMenuState {
     msg: Message;
 }
 function ContextMenu({ state, onClose, onReply, onDelete }: { state: ContextMenuState; onClose: () => void; onReply: (msg: Message) => void; onDelete: (msg: Message) => void }) {
+    const t = useTranslations("chat");
     const ref = useRef<HTMLDivElement>(null);
     useEffect(() => {
         const handler = (e: MouseEvent) => {
@@ -134,10 +137,10 @@ function ContextMenu({ state, onClose, onReply, onDelete }: { state: ContextMenu
     }, [onClose]);
 
     const items = [
-        { label: "Reply", icon: CornerUpLeft, action: () => { onReply(state.msg); onClose(); } },
-        { label: "Copy", icon: Copy, action: () => { navigator.clipboard.writeText(state.msg.content || "").then(() => toast.success("Copied!")).catch(() => {}); onClose(); } },
-        { label: "Delete", icon: Trash2, action: () => { onDelete(state.msg); onClose(); }, dangerous: true },
-        { label: "Info", icon: Info, action: () => { toast.info(`ID: ${state.msg.keyId}\nStatus: ${state.msg.status}\nTime: ${new Date(state.msg.timestamp).toLocaleString()}`); onClose(); } },
+        { label: t("reply"), icon: CornerUpLeft, action: () => { onReply(state.msg); onClose(); } },
+        { label: t("copy"), icon: Copy, action: () => { navigator.clipboard.writeText(state.msg.content || "").then(() => toast.success(t("copied"))).catch(() => {}); onClose(); } },
+        { label: t("delete"), icon: Trash2, action: () => { onDelete(state.msg); onClose(); }, dangerous: true },
+        { label: t("info"), icon: Info, action: () => { toast.info(`ID: ${state.msg.keyId}\nStatus: ${state.msg.status}\nTime: ${new Date(state.msg.timestamp).toLocaleString()}`); onClose(); } },
     ];
 
     // Adjust position to not overflow viewport
@@ -162,6 +165,8 @@ function ContextMenu({ state, onClose, onReply, onDelete }: { state: ContextMenu
 
 // ─── Main Component ─────────────────
 export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
+    const t = useTranslations("chat");
+    const tCommon = useTranslations("common");
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -380,23 +385,23 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
             <AlertDialog open={!!deleteConfirmMsg} onOpenChange={(open) => { if (!open) setDeleteConfirmMsg(null); }}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete message?</AlertDialogTitle>
+                        <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will delete the message for everyone. This action cannot be undone.
+                            {t("deleteDescription")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
                         <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             onClick={() => {
                                 const msg = deleteConfirmMsg;
                                 if (!msg) return;
                                 fetch(`/api/messages/${sessionId}/${jid}/${msg.keyId}`, { method: "DELETE" })
-                                    .then(() => { setMessages(p => p.filter(m => m.keyId !== msg.keyId)); toast.success("Deleted"); })
-                                    .catch(() => toast.error("Delete failed"));
+                                    .then(() => { setMessages(p => p.filter(m => m.keyId !== msg.keyId)); toast.success(tCommon("deleted")); })
+                                    .catch(() => toast.error(tCommon("error")));
                                 setDeleteConfirmMsg(null);
                             }}
-                        >Delete</AlertDialogAction>
+                        >{t("delete")}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -405,7 +410,7 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
             {loadingMore && (
                 <div className="absolute top-2 left-1/2 -translate-x-1/2 z-40 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm border text-xs flex items-center gap-2">
                     <div className="h-3 w-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                    Loading older...
+                    {t("loadingOlder")}
                 </div>
             )}
 
@@ -439,11 +444,11 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
                     )}
                     {!hasMore && messages.length > 0 && (
                         <div className="text-center py-4">
-                            <span className="text-[10px] font-medium text-muted-foreground bg-background/80 px-3 py-1 rounded-full border border-border/30">Beginning of conversation</span>
+                            <span className="text-[10px] font-medium text-muted-foreground bg-background/80 px-3 py-1 rounded-full border border-border/30">{t("beginningOfConversation")}</span>
                         </div>
                     )}
                     {messages.length === 0 && !loading && (
-                        <div className="flex-1 flex items-center justify-center py-16"><p className="text-sm text-muted-foreground">No messages yet</p></div>
+                        <div className="flex-1 flex items-center justify-center py-16"><p className="text-sm text-muted-foreground">{t("noMessages")}</p></div>
                     )}
                     {messages.map((msg, idx) => {
                         const showDate = idx === 0 || getDateLabel(msg.timestamp) !== getDateLabel(messages[idx - 1].timestamp);
@@ -495,7 +500,7 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
                                                 }}
                                             >
                                                 <span className="font-semibold block text-[10px]">
-                                                    {msg.quoted.fromMe ? "You" : (msg.quoted.pushName || msg.quoted.senderJid?.split('@')[0] || "Contact")}
+                                                    {msg.quoted.fromMe ? t("you") : (msg.quoted.pushName || msg.quoted.senderJid?.split('@')[0] || "Contact")}
                                                 </span>
                                                 <span className="line-clamp-2 block break-all text-xs">
                                                     {msg.quoted.content || "Media"}
@@ -550,7 +555,7 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
                                                     "inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full",
                                                     msg.fromMe ? "bg-white/20 text-primary-foreground" : "bg-primary/10 text-primary border border-primary/20"
                                                 )}>
-                                                    <Sparkles className="h-2.5 w-2.5" /> Button Clicked
+                                                    <Sparkles className="h-2.5 w-2.5" /> {t("buttonClicked")}
                                                 </span>
                                             </div>
                                         )}
@@ -566,7 +571,7 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
                                     {!msg.fromMe && (
                                         <button onClick={() => { setReplyingTo(msg); scrollToBottom(true); }}
                                             className="self-center p-1.5 text-muted-foreground/40 hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100 cursor-pointer shrink-0"
-                                            title="Reply">
+                                            title={t("reply")}>
                                             <CornerUpLeft className="h-3.5 w-3.5" />
                                         </button>
                                     )}
@@ -582,7 +587,7 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
             {newMsgBadge && (
                 <button onClick={() => { scrollToBottom(true); setNewMsgBadge(false); }}
                     className="absolute bottom-[90px] right-6 z-20 flex items-center gap-2 rounded-full bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-lg hover:bg-primary/90 transition-all animate-bounce">
-                    <ArrowDown className="h-4 w-4" /> New messages
+                    <ArrowDown className="h-4 w-4" /> {t("newMessagesBadge")}
                 </button>
             )}
 
@@ -596,13 +601,13 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
                         </PopoverTrigger>
                         <PopoverContent className="w-48 p-1.5" side="top" align="start">
                             <div className="flex flex-col gap-0.5">
-                                <Button variant="ghost" size="sm" className="justify-start gap-2 h-8 text-xs" onClick={() => triggerUpload('image')}><ImageIcon className="h-3.5 w-3.5 text-blue-500" /> Image</Button>
-                                <Button variant="ghost" size="sm" className="justify-start gap-2 h-8 text-xs" onClick={() => triggerUpload('video')}><Video className="h-3.5 w-3.5 text-purple-500" /> Video</Button>
-                                <Button variant="ghost" size="sm" className="justify-start gap-2 h-8 text-xs" onClick={() => triggerUpload('audio')}><Music className="h-3.5 w-3.5 text-orange-500" /> Audio</Button>
-                                <Button variant="ghost" size="sm" className="justify-start gap-2 h-8 text-xs" onClick={() => triggerUpload('document')}><FileText className="h-3.5 w-3.5 text-emerald-500" /> Document</Button>
+                                <Button variant="ghost" size="sm" className="justify-start gap-2 h-8 text-xs" onClick={() => triggerUpload('image')}><ImageIcon className="h-3.5 w-3.5 text-blue-500" /> {t("image")}</Button>
+                                <Button variant="ghost" size="sm" className="justify-start gap-2 h-8 text-xs" onClick={() => triggerUpload('video')}><Video className="h-3.5 w-3.5 text-purple-500" /> {t("video")}</Button>
+                                <Button variant="ghost" size="sm" className="justify-start gap-2 h-8 text-xs" onClick={() => triggerUpload('audio')}><Music className="h-3.5 w-3.5 text-orange-500" /> {t("audio")}</Button>
+                                <Button variant="ghost" size="sm" className="justify-start gap-2 h-8 text-xs" onClick={() => triggerUpload('document')}><FileText className="h-3.5 w-3.5 text-emerald-500" /> {t("document")}</Button>
                                 <div className="my-1 border-t border-border/30" />
                                 <Button variant="ghost" size="sm" className="justify-start gap-2 h-8 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-500 hover:bg-amber-500/10 font-medium" onClick={() => setInteractiveDialogOpen(true)}>
-                                    <Sparkles className="h-3.5 w-3.5 text-amber-500" /> Interactive & Test
+                                    <Sparkles className="h-3.5 w-3.5 text-amber-500" /> {t("interactiveAndTest")}
                                 </Button>
                             </div>
                         </PopoverContent>
@@ -612,7 +617,7 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
                         variant="ghost"
                         size="icon"
                         className="h-9 w-9 rounded-full shrink-0 text-amber-500/80 hover:text-amber-500 hover:bg-amber-500/10"
-                        title="Interactive Message & Test Trigger"
+                        title={t("interactiveTitle")}
                         onClick={() => setInteractiveDialogOpen(true)}
                     >
                         <Sparkles className="h-4.5 w-4.5" />
@@ -623,7 +628,7 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
                         {replyingTo && (
                             <div className="mb-2 flex items-start gap-2 px-2 py-1.5 rounded-lg bg-muted/50 border-l-2 border-amber-500 text-xs animate-in slide-in-from-bottom-1 overflow-hidden">
                                 <div className="flex-1 min-w-0 overflow-hidden">
-                                    <span className="font-semibold text-amber-500 block text-[10px]">Replying to {replyingTo.fromMe ? "you" : (replyingTo.pushName || jid.split('@')[0])}</span>
+                                    <span className="font-semibold text-amber-500 block text-[10px]">{t("replyingTo", { name: replyingTo.fromMe ? t("you") : (replyingTo.pushName || jid.split('@')[0]) })}</span>
                                     <span className="text-muted-foreground truncate block w-full">{replyingTo.content || `[${replyingTo.type}]`}</span>
                                 </div>
                                 <button onClick={() => setReplyingTo(null)} className="p-0.5 text-muted-foreground hover:text-foreground shrink-0"><X className="h-3 w-3" /></button>
@@ -631,7 +636,7 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
                         )}
                         <div className="flex items-end gap-2 p-1 rounded-2xl border border-border/30 bg-background">
                             <textarea ref={inputRef} value={input} onChange={(e) => { setInput(e.target.value); const el = e.target; el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px"; }}
-                                onKeyDown={handleKeyDown} placeholder="Type a message..." rows={1} style={{ minHeight: "36px", maxHeight: "120px" }}
+                                onKeyDown={handleKeyDown} placeholder={t("typePlaceholder")} rows={1} style={{ minHeight: "36px", maxHeight: "120px" }}
                                 className="flex-1 resize-none bg-transparent px-2 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:outline-none leading-normal" />
                         </div>
                     </div>

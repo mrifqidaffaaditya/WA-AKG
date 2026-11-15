@@ -17,20 +17,34 @@ export function isPrivateOrReservedIp(ip: string): boolean {
             return true; // Invalid IPv4, treat as unsafe
         }
 
-        const [b0, b1] = parts;
+        const [b0, b1, b2] = parts;
 
-        // 0.0.0.0/8 (Current network)
+        // 0.0.0.0/8 (Current network / "this" network)
         if (b0 === 0) return true;
         // 10.0.0.0/8 (Private)
         if (b0 === 10) return true;
+        // 100.64.0.0/10 (Shared Address Space / CGNAT RFC 6598 - 100.64.0.0 to 100.127.255.255)
+        if (b0 === 100 && b1 >= 64 && b1 <= 127) return true;
         // 127.0.0.0/8 (Loopback)
         if (b0 === 127) return true;
         // 169.254.0.0/16 (Link-local / Cloud Metadata: AWS, GCP, Azure, DO, etc.)
         if (b0 === 169 && b1 === 254) return true;
-        // 172.16.0.0/12 (Private)
+        // 172.16.0.0/12 (Private - 172.16.0.0 to 172.31.255.255)
         if (b0 === 172 && b1 >= 16 && b1 <= 31) return true;
+        // 192.0.0.0/24 (IETF Protocol Assignments)
+        if (b0 === 192 && b1 === 0 && b2 === 0) return true;
+        // 192.0.2.0/24 (TEST-NET-1 Documentation)
+        if (b0 === 192 && b1 === 0 && b2 === 2) return true;
+        // 192.88.99.0/24 (6to4 Relay Anycast)
+        if (b0 === 192 && b1 === 88 && b2 === 99) return true;
         // 192.168.0.0/16 (Private)
         if (b0 === 192 && b1 === 168) return true;
+        // 198.18.0.0/15 (Network Interconnect Device Benchmark Testing)
+        if (b0 === 198 && (b1 === 18 || b1 === 19)) return true;
+        // 198.51.100.0/24 (TEST-NET-2 Documentation)
+        if (b0 === 198 && b1 === 51 && b2 === 100) return true;
+        // 203.0.113.0/24 (TEST-NET-3 Documentation)
+        if (b0 === 203 && b1 === 0 && b2 === 113) return true;
         // 224.0.0.0/4 (Multicast) & 240.0.0.0/4 (Reserved)
         if (b0 >= 224) return true;
         // Broadcast
@@ -47,8 +61,14 @@ export function isPrivateOrReservedIp(ip: string): boolean {
         if (lower === "::" || lower === "0:0:0:0:0:0:0:0") return true;
         // fe80::/10 (Link-local)
         if (lower.startsWith("fe8") || lower.startsWith("fe9") || lower.startsWith("fea") || lower.startsWith("feb")) return true;
-        // fc00::/7 (Unique local private)
+        // fc00::/7 (Unique local private - fc00::/7 or fd00::/8)
         if (lower.startsWith("fc") || lower.startsWith("fd")) return true;
+        // 64:ff9b::/96 (IPv4/IPv6 translation)
+        if (lower.startsWith("64:ff9b:")) return true;
+        // 2001:db8::/32 (Documentation)
+        if (lower.startsWith("2001:db8:") || lower.startsWith("2001:0db8:")) return true;
+        // 2002::/16 (6to4)
+        if (lower.startsWith("2002:")) return true;
 
         return false;
     }
@@ -239,3 +259,203 @@ export async function safeFetchBuffer(
 
     throw new Error(`Too many redirects (max ${maxRedirects})`);
 }
+
+/**
+ * Inspects an outgoing WhatsApp message payload and safely materializes
+ * any media URL (image, video, document, audio, sticker) into an in-memory Buffer.
+ * This guarantees that Baileys never receives a raw local file path or SSRF URL.
+ */
+export async function materializeSafeMediaPayload(messagePayload: any): Promise<any> {
+    if (!messagePayload || typeof messagePayload !== "object") {
+        return messagePayload;
+    }
+
+    const payload = { ...messagePayload };
+
+    // Normalize "text" to "caption" if a media message is sent with "text"
+    if (payload.text && (payload.image || payload.video || payload.document || payload.audio)) {
+        if (!payload.caption) {
+            payload.caption = payload.text;
+        }
+        delete payload.text;
+    }
+
+    // Sticker
+    if (payload.sticker) {
+        let stickerUrl: string | null = null;
+        if (typeof payload.sticker === "string") {
+            stickerUrl = payload.sticker;
+        } else if (typeof payload.sticker === "object" && payload.sticker.url) {
+            stickerUrl = payload.sticker.url;
+        }
+
+        if (stickerUrl) {
+            try {
+                const { buffer } = await safeFetchBuffer(stickerUrl, { maxBytes: 10 * 1024 * 1024 });
+                const Sticker = (await import("wa-sticker-formatter")).default;
+                const sticker = new Sticker(buffer, {
+                    pack: (typeof payload.sticker === "object" && payload.sticker.pack) || "WA-AKG Bot",
+                    author: (typeof payload.sticker === "object" && payload.sticker.author) || "WA-AKG",
+                    type: "full",
+                    quality: 50
+                });
+                payload.sticker = await sticker.toBuffer();
+            } catch (e: any) {
+                throw new Error(`Failed to process sticker media: ${e.message}`);
+            }
+        } else if (typeof payload.sticker === "object" && !Buffer.isBuffer(payload.sticker)) {
+            if ((payload.sticker as any).stream) {
+                throw new Error("Stream uploads are not permitted in message payload");
+            }
+        }
+    }
+
+    // Image
+    if (payload.image) {
+        let imageUrl: string | null = null;
+        if (typeof payload.image === "string") {
+            imageUrl = payload.image;
+        } else if (typeof payload.image === "object" && payload.image.url) {
+            imageUrl = payload.image.url;
+        }
+
+        if (imageUrl) {
+            try {
+                const { buffer } = await safeFetchBuffer(imageUrl, { maxBytes: 25 * 1024 * 1024 });
+                payload.image = buffer;
+            } catch (e: any) {
+                throw new Error(`Failed to process image media: ${e.message}`);
+            }
+        } else if (typeof payload.image === "object" && !Buffer.isBuffer(payload.image)) {
+            if ((payload.image as any).stream) {
+                throw new Error("Stream uploads are not permitted in message payload");
+            }
+        }
+    }
+
+    // Video
+    if (payload.video) {
+        let videoUrl: string | null = null;
+        if (typeof payload.video === "string") {
+            videoUrl = payload.video;
+        } else if (typeof payload.video === "object" && payload.video.url) {
+            videoUrl = payload.video.url;
+        }
+
+        if (videoUrl) {
+            try {
+                const { buffer } = await safeFetchBuffer(videoUrl, { maxBytes: 100 * 1024 * 1024 });
+                payload.video = buffer;
+            } catch (e: any) {
+                throw new Error(`Failed to process video media: ${e.message}`);
+            }
+        } else if (typeof payload.video === "object" && !Buffer.isBuffer(payload.video)) {
+            if ((payload.video as any).stream) {
+                throw new Error("Stream uploads are not permitted in message payload");
+            }
+        }
+    }
+
+    // Document
+    if (payload.document) {
+        let docUrl: string | null = null;
+        if (typeof payload.document === "string") {
+            docUrl = payload.document;
+        } else if (typeof payload.document === "object" && payload.document.url) {
+            docUrl = payload.document.url;
+        }
+
+        if (docUrl) {
+            try {
+                const { buffer, fileName } = await safeFetchBuffer(docUrl, { maxBytes: 100 * 1024 * 1024 });
+                payload.document = buffer;
+                if (!payload.fileName && fileName) {
+                    payload.fileName = fileName;
+                }
+            } catch (e: any) {
+                throw new Error(`Failed to process document media: ${e.message}`);
+            }
+        } else if (typeof payload.document === "object" && !Buffer.isBuffer(payload.document)) {
+            if ((payload.document as any).stream) {
+                throw new Error("Stream uploads are not permitted in message payload");
+            }
+        }
+    }
+
+    // Audio
+    if (payload.audio) {
+        let audioUrl: string | null = null;
+        if (typeof payload.audio === "string") {
+            audioUrl = payload.audio;
+        } else if (typeof payload.audio === "object" && payload.audio.url) {
+            audioUrl = payload.audio.url;
+        }
+
+        if (audioUrl) {
+            try {
+                const { buffer } = await safeFetchBuffer(audioUrl, { maxBytes: 50 * 1024 * 1024 });
+                payload.audio = buffer;
+            } catch (e: any) {
+                throw new Error(`Failed to process audio media: ${e.message}`);
+            }
+        } else if (typeof payload.audio === "object" && !Buffer.isBuffer(payload.audio)) {
+            if ((payload.audio as any).stream) {
+                throw new Error("Stream uploads are not permitted in message payload");
+            }
+        }
+    }
+
+    // Thumbnail
+    if (payload.thumbnail) {
+        let thumbUrl: string | null = null;
+        if (typeof payload.thumbnail === "string") {
+            thumbUrl = payload.thumbnail;
+        } else if (typeof payload.thumbnail === "object" && payload.thumbnail.url) {
+            thumbUrl = payload.thumbnail.url;
+        }
+
+        if (thumbUrl) {
+            try {
+                const { buffer } = await safeFetchBuffer(thumbUrl, { maxBytes: 25 * 1024 * 1024 });
+                payload.thumbnail = buffer;
+            } catch (e: any) {
+                throw new Error(`Failed to process thumbnail media: ${e.message}`);
+            }
+        } else if (typeof payload.thumbnail === "object" && !Buffer.isBuffer(payload.thumbnail)) {
+            if ((payload.thumbnail as any).stream) {
+                throw new Error("Stream uploads are not permitted in message payload");
+            }
+        }
+    }
+
+    // jpegThumbnail
+    if (payload.jpegThumbnail) {
+        let thumbUrl: string | null = null;
+        if (typeof payload.jpegThumbnail === "string") {
+            thumbUrl = payload.jpegThumbnail;
+        } else if (typeof payload.jpegThumbnail === "object" && payload.jpegThumbnail.url) {
+            thumbUrl = payload.jpegThumbnail.url;
+        }
+
+        if (thumbUrl) {
+            try {
+                const { buffer } = await safeFetchBuffer(thumbUrl, { maxBytes: 10 * 1024 * 1024 });
+                payload.jpegThumbnail = buffer;
+            } catch (e: any) {
+                throw new Error(`Failed to process jpegThumbnail media: ${e.message}`);
+            }
+        } else if (typeof payload.jpegThumbnail === "object" && !Buffer.isBuffer(payload.jpegThumbnail)) {
+            if ((payload.jpegThumbnail as any).stream) {
+                throw new Error("Stream uploads are not permitted in message payload");
+            }
+        }
+    }
+
+    // Header media (for interactive messages)
+    if (payload.header && typeof payload.header === "object" && !Buffer.isBuffer(payload.header)) {
+        payload.header = await materializeSafeMediaPayload(payload.header);
+    }
+
+    return payload;
+}
+

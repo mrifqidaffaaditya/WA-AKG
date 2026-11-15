@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -88,8 +89,8 @@ function getTypeIcon(type: string) {
     }
 }
 
-function getSenderDisplay(file: MediaFile): string {
-    if (file.fromMe) return "Me (Sent)";
+function getSenderDisplay(file: MediaFile, meSentText: string): string {
+    if (file.fromMe) return meSentText;
     if (file.fromName) return file.fromName;
     if (file.from && file.from !== "Unknown") return file.from.split("@")[0];
     return "Unknown";
@@ -118,6 +119,8 @@ interface UserGroup {
 }
 
 export default function MediaPage() {
+    const t = useTranslations("media");
+    const tCommon = useTranslations("common");
     const [files, setFiles] = useState<MediaFile[]>([]);
     const [totalSize, setTotalSize] = useState(0);
     const [totalCount, setTotalCount] = useState(0);
@@ -141,7 +144,7 @@ export default function MediaPage() {
             setTotalCount(mediaData.totalCount || 0);
         } catch (error) {
             console.error("Failed to load media:", error);
-            toast.error("Failed to load media files");
+            toast.error(t("toastLoadFailed"));
         } finally {
             setLoading(false);
         }
@@ -200,7 +203,7 @@ export default function MediaPage() {
             if (!senderGroup) {
                 senderGroup = {
                     senderKey,
-                    senderDisplay: getSenderDisplay(file),
+                    senderDisplay: getSenderDisplay(file, t("meSent")),
                     files: [],
                     totalSize: 0,
                 };
@@ -217,7 +220,7 @@ export default function MediaPage() {
             u.sessions.forEach(s => s.senders.sort((a, b) => b.totalSize - a.totalSize));
         });
         return result;
-    }, [filteredFiles]);
+    }, [filteredFiles, t]);
 
     // Collapse all by default when grouped dependencies change (e.g on initial load or search)
     useEffect(() => {
@@ -274,11 +277,11 @@ export default function MediaPage() {
             if (!res.ok) throw new Error("Failed to delete");
             const responseData = await res.json();
             const data = responseData?.data;
-            toast.success(`Deleted ${data?.deleted || 0} file(s)`);
-            if (data?.failed > 0) toast.warning(`Failed to delete ${data.failed} file(s)`);
+            toast.success(t("toastDeleted", { count: data?.deleted || 0 }));
+            if (data?.failed > 0) toast.warning(t("toastDeleteFailedPartial", { count: data.failed }));
             setSelected(new Set());
             fetchMedia();
-        } catch { toast.error("Failed to delete files"); }
+        } catch { toast.error(t("toastDeleteFailed")); }
         finally { setDeleting(false); }
     };
 
@@ -296,21 +299,21 @@ export default function MediaPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                    <h1 className="text-xl font-bold text-foreground">Media Manager</h1>
-                    <p className="text-sm text-muted-foreground mt-0.5">Manage downloaded media files</p>
+                    <h1 className="text-xl font-bold text-foreground">{t("title")}</h1>
+                    <p className="text-sm text-muted-foreground mt-0.5">{t("subtitle")}</p>
                 </div>
                 <Button variant="outline" size="sm" className="gap-2 self-start" onClick={fetchMedia} disabled={loading}>
-                    <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
+                    <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> {tCommon("refresh")}
                 </Button>
             </div>
 
             {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                    { icon: <HardDrive className="h-4 w-4 text-primary" />, bg: "bg-primary/10", value: formatFileSize(totalSize), label: "Total Size" },
-                    { icon: <Files className="h-4 w-4 text-blue-500" />, bg: "bg-blue-500/10", value: totalCount, label: "Total Files" },
-                    { icon: <ImageIcon className="h-4 w-4 text-blue-500" />, bg: "bg-blue-500/10", value: stats.image, label: "Images" },
-                    { icon: <Video className="h-4 w-4 text-purple-500" />, bg: "bg-purple-500/10", value: stats.video + stats.audio + stats.document, label: "Other" },
+                    { icon: <HardDrive className="h-4 w-4 text-primary" />, bg: "bg-primary/10", value: formatFileSize(totalSize), label: t("totalStorage") },
+                    { icon: <Files className="h-4 w-4 text-blue-500" />, bg: "bg-blue-500/10", value: totalCount, label: t("totalFiles") },
+                    { icon: <ImageIcon className="h-4 w-4 text-blue-500" />, bg: "bg-blue-500/10", value: stats.image, label: t("images") },
+                    { icon: <Video className="h-4 w-4 text-purple-500" />, bg: "bg-purple-500/10", value: stats.video + stats.audio + stats.document, label: t("other") },
                 ].map((s) => (
                     <Card key={s.label} className="border-border/40">
                         <CardContent className="p-3 flex items-center gap-3">
@@ -328,11 +331,17 @@ export default function MediaPage() {
             <div className="flex flex-col sm:flex-row gap-2">
                 <div className="relative flex-1">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                    <Input placeholder="Search by filename, session, user, or sender..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-9 pl-8 text-sm" />
+                    <Input placeholder={t("searchPlaceholder")} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-9 pl-8 text-sm" />
                 </div>
                 <div className="flex gap-1.5 flex-wrap">
-                    {["all", "image", "video", "audio", "document"].map((t) => (
-                        <Button key={t} variant={filterType === t ? "default" : "outline"} size="sm" className="h-9 text-xs capitalize px-3" onClick={() => setFilterType(t)}>{t}</Button>
+                    {[
+                        { key: "all", label: tCommon("all") },
+                        { key: "image", label: t("images") },
+                        { key: "video", label: t("videos") },
+                        { key: "audio", label: t("audio") },
+                        { key: "document", label: t("documents") },
+                    ].map((item) => (
+                        <Button key={item.key} variant={filterType === item.key ? "default" : "outline"} size="sm" className="h-9 text-xs capitalize px-3" onClick={() => setFilterType(item.key)}>{item.label}</Button>
                     ))}
                 </div>
             </div>
@@ -340,11 +349,11 @@ export default function MediaPage() {
             {/* Selection Bar */}
             {selected.size > 0 && (
                 <div className="flex items-center gap-3 p-2.5 bg-destructive/5 border border-destructive/20 rounded-lg">
-                    <span className="text-sm font-medium">{selected.size} selected</span>
+                    <span className="text-sm font-medium">{t("selectedCount", { count: selected.size })}</span>
                     <Button variant="destructive" size="sm" className="gap-1.5 h-8" onClick={() => setShowDeleteConfirm(true)} disabled={deleting}>
-                        <Trash2 className="h-3.5 w-3.5" /> {deleting ? "Deleting..." : "Delete"}
+                        <Trash2 className="h-3.5 w-3.5" /> {deleting ? tCommon("deleting") : tCommon("delete")}
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-8" onClick={() => setSelected(new Set())}><X className="h-3.5 w-3.5 mr-1" /> Clear</Button>
+                    <Button variant="ghost" size="sm" className="h-8" onClick={() => setSelected(new Set())}><X className="h-3.5 w-3.5 mr-1" /> {tCommon("clear")}</Button>
                 </div>
             )}
 
@@ -366,7 +375,7 @@ export default function MediaPage() {
                         <FolderOpen className="h-7 w-7 text-muted-foreground/40" />
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        {searchQuery || filterType !== "all" ? "No media files match your filters" : "No media files downloaded yet"}
+                        {searchQuery || filterType !== "all" ? t("emptyFiltered") : t("empty")}
                     </p>
                 </div>
             ) : (
@@ -387,13 +396,13 @@ export default function MediaPage() {
                                         </div>
                                         <div>
                                             <h2 className="text-sm font-bold text-foreground leading-tight text-left">{userGroup.ownerName}</h2>
-                                            <p className="text-[10px] text-muted-foreground text-left">User Account</p>
+                                            <p className="text-[10px] text-muted-foreground text-left">{t("userAccount")}</p>
                                         </div>
                                     </button>
                                     <div className="flex items-center gap-3 text-xs text-muted-foreground bg-muted/30 px-3 py-1 rounded-full">
-                                        <span>{userGroup.sessions.length} Session{userGroup.sessions.length !== 1 ? "s" : ""}</span>
+                                        <span>{t("sessionCount", { count: userGroup.sessions.length })}</span>
                                         <span className="w-1 h-1 rounded-full bg-border"></span>
-                                        <span>{userFileCount} Media</span>
+                                        <span>{t("mediaCount", { count: userFileCount })}</span>
                                         <span className="w-1 h-1 rounded-full bg-border"></span>
                                         <span className="font-semibold">{formatFileSize(userGroup.totalSize)}</span>
                                     </div>
@@ -402,110 +411,110 @@ export default function MediaPage() {
                                 {!isUserCollapsed && (
                                     <div className="space-y-4 pl-2 sm:pl-4 border-l-2 border-border/30 ml-2">
                                         {userGroup.sessions.map((sessionGroup) => {
-                                            const sessionKey = `session:${userGroup.ownerId}:${sessionGroup.sessionId}`;
-                                            const isSessionCollapsed = collapsed.has(sessionKey);
-                                            const sessionFileCount = sessionGroup.senders.reduce((sum, s) => sum + s.files.length, 0);
+                                             const sessionKey = `session:${userGroup.ownerId}:${sessionGroup.sessionId}`;
+                                             const isSessionCollapsed = collapsed.has(sessionKey);
+                                             const sessionFileCount = sessionGroup.senders.reduce((sum, s) => sum + s.files.length, 0);
 
-                                            return (
-                                                <Card key={sessionGroup.sessionId} className="overflow-hidden border-border/50 shadow-sm">
-                                                    {/* Session Level Header */}
-                                                    <div className="bg-muted/20 px-4 py-3 flex items-center justify-between border-b border-border/50">
-                                                        <button className="flex items-center gap-2.5 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity" onClick={() => toggleCollapse(sessionKey)}>
-                                                            <ChevronIcon id={sessionKey} />
-                                                            <div className="h-6 w-6 rounded bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                                                                <Smartphone className="h-3 w-3 text-blue-500" />
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="text-sm font-semibold text-foreground truncate">{sessionGroup.sessionName}</p>
-                                                                <p className="text-[10px] text-muted-foreground truncate">{sessionGroup.sessionId}</p>
-                                                            </div>
-                                                        </button>
-                                                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                                            <span>{sessionFileCount} Media</span>
-                                                            <span className="w-1 h-1 rounded-full bg-border"></span>
-                                                            <span className="font-medium text-foreground">{formatFileSize(sessionGroup.totalSize)}</span>
-                                                        </div>
-                                                    </div>
+                                             return (
+                                                 <Card key={sessionGroup.sessionId} className="overflow-hidden border-border/50 shadow-sm">
+                                                     {/* Session Level Header */}
+                                                     <div className="bg-muted/20 px-4 py-3 flex items-center justify-between border-b border-border/50">
+                                                         <button className="flex items-center gap-2.5 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity" onClick={() => toggleCollapse(sessionKey)}>
+                                                             <ChevronIcon id={sessionKey} />
+                                                             <div className="h-6 w-6 rounded bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                                                                 <Smartphone className="h-3 w-3 text-blue-500" />
+                                                             </div>
+                                                             <div className="flex-1 min-w-0">
+                                                                 <p className="text-sm font-semibold text-foreground truncate">{sessionGroup.sessionName}</p>
+                                                                 <p className="text-[10px] text-muted-foreground truncate">{sessionGroup.sessionId}</p>
+                                                             </div>
+                                                         </button>
+                                                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                                             <span>{t("mediaCount", { count: sessionFileCount })}</span>
+                                                             <span className="w-1 h-1 rounded-full bg-border"></span>
+                                                             <span className="font-medium text-foreground">{formatFileSize(sessionGroup.totalSize)}</span>
+                                                         </div>
+                                                     </div>
 
-                                                    {/* Senders List */}
-                                                    {!isSessionCollapsed && (
-                                                        <div className="divide-y divide-border/20">
-                                                            {sessionGroup.senders.map((sender) => {
-                                                                const senderKey = `sender:${userGroup.ownerId}:${sessionGroup.sessionId}:${sender.senderKey}`;
-                                                                const isSenderCollapsed = collapsed.has(senderKey);
-                                                                const allSelected = sender.files.length > 0 && sender.files.every(f => selected.has(f.name));
+                                                     {/* Senders List */}
+                                                     {!isSessionCollapsed && (
+                                                         <div className="divide-y divide-border/20">
+                                                             {sessionGroup.senders.map((sender) => {
+                                                                 const senderKey = `sender:${userGroup.ownerId}:${sessionGroup.sessionId}:${sender.senderKey}`;
+                                                                 const isSenderCollapsed = collapsed.has(senderKey);
+                                                                 const allSelected = sender.files.length > 0 && sender.files.every(f => selected.has(f.name));
 
-                                                                return (
-                                                                    <div key={sender.senderKey} className="bg-background">
-                                                                        {/* Sender Level Header */}
-                                                                        <div className="flex items-center gap-2 px-4 py-2 hover:bg-muted/10 transition-colors">
-                                                                            <button className="flex items-center gap-2 flex-1 min-w-0 text-left" onClick={() => toggleCollapse(senderKey)}>
-                                                                                <ChevronIcon id={senderKey} />
-                                                                                <Contact className="h-3.5 w-3.5 text-muted-foreground/70 flex-shrink-0" />
-                                                                                <span className="text-xs font-medium text-foreground truncate">{sender.senderDisplay}</span>
-                                                                                <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-1">
-                                                                                    {sender.files.length} • {formatFileSize(sender.totalSize)}
-                                                                                </span>
-                                                                            </button>
-                                                                            <button onClick={() => selectAllInGroup(sender.files)} className="p-1 hover:bg-muted rounded transition-colors" title={allSelected ? "Deselect All" : "Select All"}>
-                                                                                {allSelected ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4 text-muted-foreground/40" />}
-                                                                            </button>
-                                                                        </div>
+                                                                 return (
+                                                                     <div key={sender.senderKey} className="bg-background">
+                                                                         {/* Sender Level Header */}
+                                                                         <div className="flex items-center gap-2 px-4 py-2 hover:bg-muted/10 transition-colors">
+                                                                             <button className="flex items-center gap-2 flex-1 min-w-0 text-left" onClick={() => toggleCollapse(senderKey)}>
+                                                                                 <ChevronIcon id={senderKey} />
+                                                                                 <Contact className="h-3.5 w-3.5 text-muted-foreground/70 flex-shrink-0" />
+                                                                                 <span className="text-xs font-medium text-foreground truncate">{sender.senderDisplay}</span>
+                                                                                 <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-1">
+                                                                                     {sender.files.length} • {formatFileSize(sender.totalSize)}
+                                                                                 </span>
+                                                                             </button>
+                                                                             <button onClick={() => selectAllInGroup(sender.files)} className="p-1 hover:bg-muted rounded transition-colors" title={allSelected ? t("deselectAll") : t("selectAll")}>
+                                                                                 {allSelected ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4 text-muted-foreground/40" />}
+                                                                             </button>
+                                                                         </div>
 
-                                                                        {/* Files Grid */}
-                                                                        {!isSenderCollapsed && (
-                                                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 px-4 pb-4 pt-1">
-                                                                                {sender.files.map((file) => {
-                                                                                    const isSelected = selected.has(file.name);
-                                                                                    return (
-                                                                                        <Card key={file.name} className={`group relative overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected ? "ring-2 ring-primary border-primary" : "border-border/40 hover:border-border"}`} onClick={() => toggleSelect(file.name)}>
-                                                                                            <CardContent className="p-0">
-                                                                                                <div className={`h-24 flex items-center justify-center ${getTypeBg(file.type)} relative`}>
-                                                                                                    {file.type === "image" ? (
-                                                                                                        <img src={file.url} alt={file.name} className="h-full w-full object-cover" loading="lazy" />
-                                                                                                    ) : (
-                                                                                                        <div className="flex flex-col items-center gap-1">
-                                                                                                            {getTypeIcon(file.type)}
-                                                                                                            <span className="text-[9px] text-muted-foreground uppercase font-medium">{file.ext}</span>
-                                                                                                        </div>
-                                                                                                    )}
-                                                                                                    <div className={`absolute top-1 left-1 transition-opacity ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
-                                                                                                        {isSelected ? <CheckSquare className="h-4 w-4 text-primary drop-shadow" /> : <Square className="h-4 w-4 text-white/80 drop-shadow" />}
-                                                                                                    </div>
-                                                                                                    <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                                                        {file.type === "image" && (
-                                                                                                            <button onClick={(e) => { e.stopPropagation(); setPreviewFile(file); }} className="h-6 w-6 rounded bg-black/50 hover:bg-black/70 flex items-center justify-center text-white">
-                                                                                                                <Eye className="h-3 w-3" />
-                                                                                                            </button>
-                                                                                                        )}
-                                                                                                        <a href={file.url} download={file.name} onClick={(e) => e.stopPropagation()} className="h-6 w-6 rounded bg-black/50 hover:bg-black/70 flex items-center justify-center text-white">
-                                                                                                            <Download className="h-3 w-3" />
-                                                                                                        </a>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                                <div className="p-1.5 px-2">
-                                                                                                    <p className="text-[10px] font-medium text-foreground truncate" title={file.name}>{file.name}</p>
-                                                                                                    <div className="flex items-center justify-between mt-1">
-                                                                                                        <span className="text-[9px] text-muted-foreground font-medium">{formatFileSize(file.size)}</span>
-                                                                                                        <span className="text-[8px] text-muted-foreground">{new Date(file.createdAt).toLocaleDateString([], { month: "short", day: "numeric" })}</span>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            </CardContent>
-                                                                                        </Card>
-                                                                                    );
-                                                                                })}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    )}
-                                                </Card>
-                                            );
-                                        })}
-                                    </div>
-                                )}
+                                                                         {/* Files Grid */}
+                                                                         {!isSenderCollapsed && (
+                                                                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 px-4 pb-4 pt-1">
+                                                                                 {sender.files.map((file) => {
+                                                                                     const isSelected = selected.has(file.name);
+                                                                                     return (
+                                                                                         <Card key={file.name} className={`group relative overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected ? "ring-2 ring-primary border-primary" : "border-border/40 hover:border-border"}`} onClick={() => toggleSelect(file.name)}>
+                                                                                             <CardContent className="p-0">
+                                                                                                 <div className={`h-24 flex items-center justify-center ${getTypeBg(file.type)} relative`}>
+                                                                                                     {file.type === "image" ? (
+                                                                                                         <img src={file.url} alt={file.name} className="h-full w-full object-cover" loading="lazy" />
+                                                                                                     ) : (
+                                                                                                         <div className="flex flex-col items-center gap-1">
+                                                                                                             {getTypeIcon(file.type)}
+                                                                                                             <span className="text-[9px] text-muted-foreground uppercase font-medium">{file.ext}</span>
+                                                                                                         </div>
+                                                                                                     )}
+                                                                                                     <div className={`absolute top-1 left-1 transition-opacity ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                                                                                                         {isSelected ? <CheckSquare className="h-4 w-4 text-primary drop-shadow" /> : <Square className="h-4 w-4 text-white/80 drop-shadow" />}
+                                                                                                     </div>
+                                                                                                     <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                                         {file.type === "image" && (
+                                                                                                             <button onClick={(e) => { e.stopPropagation(); setPreviewFile(file); }} className="h-6 w-6 rounded bg-black/50 hover:bg-black/70 flex items-center justify-center text-white">
+                                                                                                                 <Eye className="h-3 w-3" />
+                                                                                                             </button>
+                                                                                                         )}
+                                                                                                         <a href={file.url} download={file.name} onClick={(e) => e.stopPropagation()} className="h-6 w-6 rounded bg-black/50 hover:bg-black/70 flex items-center justify-center text-white">
+                                                                                                             <Download className="h-3 w-3" />
+                                                                                                         </a>
+                                                                                                     </div>
+                                                                                                 </div>
+                                                                                                 <div className="p-1.5 px-2">
+                                                                                                     <p className="text-[10px] font-medium text-foreground truncate" title={file.name}>{file.name}</p>
+                                                                                                     <div className="flex items-center justify-between mt-1">
+                                                                                                         <span className="text-[9px] text-muted-foreground font-medium">{formatFileSize(file.size)}</span>
+                                                                                                         <span className="text-[8px] text-muted-foreground">{new Date(file.createdAt).toLocaleDateString([], { month: "short", day: "numeric" })}</span>
+                                                                                                     </div>
+                                                                                                 </div>
+                                                                                             </CardContent>
+                                                                                         </Card>
+                                                                                     );
+                                                                                 })}
+                                                                             </div>
+                                                                         )}
+                                                                     </div>
+                                                                 );
+                                                             })}
+                                                         </div>
+                                                     )}
+                                                 </Card>
+                                             );
+                                         })}
+                                     </div>
+                                 )}
                             </div>
                         );
                     })}
@@ -533,14 +542,14 @@ export default function MediaPage() {
             <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete {selected.size} file(s)?</AlertDialogTitle>
+                        <AlertDialogTitle>{t("deleteConfirmTitle")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. The selected files will be permanently removed from the server.
+                            {t("deleteConfirmDescription")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                        <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">{tCommon("delete")}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

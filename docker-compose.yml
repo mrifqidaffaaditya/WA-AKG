@@ -42,6 +42,7 @@ services:
       - NEXT_PUBLIC_SWAGGER_ENABLED=${NEXT_PUBLIC_SWAGGER_ENABLED:-true}
       - TZ=${TZ:-Asia/Jakarta}
       - LOCALE=${LOCALE:-id-ID}
+      - DEFAULT_LANGUAGE=${DEFAULT_LANGUAGE:-en}
       - ADMIN_EMAIL=${ADMIN_EMAIL}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
     depends_on:

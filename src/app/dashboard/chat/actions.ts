@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { ChatService } from "@/modules/whatsapp/chat.service";
+import { ChatService, type ChatListFilter } from "@/modules/whatsapp/chat.service";
 import { getAuthenticatedUserForAction } from "@/lib/server-action-auth";
 import { canAccessSession } from "@/lib/api-auth";
 
@@ -12,7 +12,8 @@ export async function getChatsStatus(
     sessionId: string,
     limit = CHAT_PAGE_SIZE,
     before?: string,
-    search?: string
+    search?: string,
+    filter: ChatListFilter = "all"
 ) {
     const user = await getAuthenticatedUserForAction();
     if (!user) throw new Error("Unauthorized");
@@ -27,7 +28,7 @@ export async function getChatsStatus(
 
     if (!session) throw new Error("Session not found");
 
-    return await ChatService.getChatsList(session.id, limit, before, search);
+    return await ChatService.getChatsList(session.id, limit, before, search, filter);
 }
 
 // Fetch messages for a specific chat with cursor pagination

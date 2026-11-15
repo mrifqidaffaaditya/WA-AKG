@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { WhatsAppInstance } from "./instance";
 import { Server } from "socket.io";
@@ -68,7 +69,7 @@ export class WhatsAppManager {
             throw new Error("Socket.IO not initialized");
         }
 
-        const sessionId = customSessionId || Math.random().toString(36).substring(7);
+        const sessionId = customSessionId || crypto.randomUUID();
 
         const session = await prisma.session.create({
             data: {

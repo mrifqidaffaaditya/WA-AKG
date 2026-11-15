@@ -8,7 +8,7 @@ export const getApiDocs = () => {
             openapi: "3.0.0",
             info: {
                 title: "WA-AKG API Documentation",
-                version: "1.7.0-beta.1",
+                version: "1.7.0",
                 description: `
 # WhatsApp AI Gateway - Complete API Reference
 

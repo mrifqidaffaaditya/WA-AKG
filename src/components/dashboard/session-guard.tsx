@@ -5,12 +5,14 @@ import { Bot, QrCode } from "lucide-react";
 import { ReactNode } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 
 export function SessionGuard({ children }: { children: ReactNode }) {
     const { sessionId, loading, sessions } = useSession();
+    const t = useTranslations("sessions.guard");
 
     if (loading) {
-        return <div className="flex h-full items-center justify-center p-8">Loading session...</div>;
+        return <div className="flex h-full items-center justify-center p-8">{t("loading")}</div>;
     }
 
     if (!sessionId) {
@@ -20,17 +22,17 @@ export function SessionGuard({ children }: { children: ReactNode }) {
                     <QrCode className="h-12 w-12 text-green-600" />
                 </div>
                 <div className="space-y-2 max-w-md">
-                    <h2 className="text-2xl font-bold tracking-tight">No Active Session</h2>
+                    <h2 className="text-2xl font-bold tracking-tight">{t("noActiveTitle")}</h2>
                     <p className="text-gray-500">
-                        Please select a WhatsApp session from the top navigation bar to access this feature.
+                        {t("noActiveDescription")}
                     </p>
                 </div>
 
                 {sessions.length === 0 && (
                     <div className="flex flex-col gap-2">
-                        <p className="text-sm text-gray-500">You don't have any sessions yet.</p>
+                        <p className="text-sm text-gray-500">{t("noSessionsYet")}</p>
                         <Link href="/dashboard/sessions">
-                            <Button variant="outline">Create a Session</Button>
+                            <Button variant="outline">{t("createSession")}</Button>
                         </Link>
                     </div>
                 )}
@@ -40,3 +42,4 @@ export function SessionGuard({ children }: { children: ReactNode }) {
 
     return <>{children}</>;
 }
+

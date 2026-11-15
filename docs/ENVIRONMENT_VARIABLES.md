@@ -103,6 +103,7 @@ Rate limiting parameters and upload size thresholds.
 | :--- | :--- | :--- | :--- |
 | `TZ` | string | `Asia/Jakarta` | Timezone database string (e.g. `Asia/Jakarta`, `UTC`) for cron campaigns. |
 | `LOCALE` | string | `id-ID` | Preferred locale for formatting dates and numbers. |
+| `DEFAULT_LANGUAGE` | string | `en` | Default dashboard UI language (`en`, `id`, `pt-BR`) for users who haven't picked one with the language switcher. See [I18N.md](I18N.md). |
 | `MEDIA_STORAGE_PATH` | string | `uploads` | Directory folder (relative to project root) where downloaded media attachments are stored. |
 | `NEXT_PUBLIC_GA_ID` | string | — | Google Analytics tracking ID. |
 

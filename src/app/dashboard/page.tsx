@@ -19,6 +19,7 @@ import {
 import { auth } from "@/lib/auth";
 import { getAccessibleSessions } from "@/lib/api-auth";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +28,8 @@ export default async function DashboardPage() {
     if (!session?.user) {
         redirect("/login");
     }
+
+    const t = await getTranslations("dashboard");
 
     const sessions = await getAccessibleSessions(session.user.id!, session.user.role || "USER");
 
@@ -50,44 +53,44 @@ export default async function DashboardPage() {
 
     const stats = [
         {
-            title: "Total Sessions",
+            title: t("stats.totalSessions"),
             value: totalSessions,
             icon: QrCode,
-            description: "Registered sessions",
+            description: t("stats.totalSessionsDesc"),
             color: "text-blue-600",
             bg: "bg-blue-50",
         },
         {
-            title: "Connected",
+            title: t("stats.connected"),
             value: connectedSessions,
             icon: Wifi,
-            description: "Online & ready",
+            description: t("stats.connectedDesc"),
             color: "text-emerald-600",
             bg: "bg-emerald-50",
         },
         {
-            title: "Disconnected",
+            title: t("stats.disconnected"),
             value: disconnectedSessions,
             icon: WifiOff,
-            description: "Needs reconnection",
+            description: t("stats.disconnectedDesc"),
             color: "text-red-500",
             bg: "bg-red-50",
         },
         {
-            title: "Auto-Reply Rules",
+            title: t("stats.autoReplyRules"),
             value: autoReplyCount,
             icon: Zap,
-            description: "Active automations",
+            description: t("stats.autoReplyRulesDesc"),
             color: "text-amber-600",
             bg: "bg-amber-50",
         },
     ];
 
     const quickActions = [
-        { href: "/dashboard/sessions", label: "New Session", icon: Plus, description: "Connect a new device" },
-        { href: "/dashboard/chat", label: "Send Message", icon: Send, description: "Open chat interface" },
-        { href: "/dashboard/bot-settings", label: "Bot Settings", icon: Bot, description: "Configure chatbot" },
-        { href: "/dashboard/system-monitor", label: "System Monitor", icon: Activity, description: "View server metrics" },
+        { href: "/dashboard/sessions", label: t("quickActions.newSession"), icon: Plus, description: t("quickActions.newSessionDesc") },
+        { href: "/dashboard/chat", label: t("quickActions.sendMessage"), icon: Send, description: t("quickActions.sendMessageDesc") },
+        { href: "/dashboard/bot-settings", label: t("quickActions.botSettings"), icon: Bot, description: t("quickActions.botSettingsDesc") },
+        { href: "/dashboard/system-monitor", label: t("quickActions.systemMonitor"), icon: Activity, description: t("quickActions.systemMonitorDesc") },
     ];
 
     return (
@@ -95,12 +98,12 @@ export default async function DashboardPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div>
-                    <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Dashboard</h2>
-                    <p className="text-sm text-slate-500 mt-1">Overview of your WhatsApp gateway</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">{t("title")}</h2>
+                    <p className="text-sm text-slate-500 mt-1">{t("subtitle")}</p>
                 </div>
                 <Link href="/dashboard/sessions">
                     <Button size="sm" className="gap-2">
-                        <Plus className="h-4 w-4" /> Add Session
+                        <Plus className="h-4 w-4" /> {t("addSession")}
                     </Button>
                 </Link>
             </div>
@@ -130,7 +133,7 @@ export default async function DashboardPage() {
 
             {/* Quick Actions */}
             <div>
-                <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Quick Actions</h3>
+                <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">{t("quickActions.title")}</h3>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                     {quickActions.map((action) => {
                         const Icon = action.icon;
@@ -156,9 +159,9 @@ export default async function DashboardPage() {
             {/* Sessions List */}
             <div>
                 <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Sessions</h3>
+                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("sessions.title")}</h3>
                     <Link href="/dashboard/sessions" className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors">
-                        View all <ArrowRight size={14} />
+                        {t("sessions.viewAll")} <ArrowRight size={14} />
                     </Link>
                 </div>
 
@@ -168,11 +171,11 @@ export default async function DashboardPage() {
                             <div className="bg-slate-100 h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3">
                                 <QrCode className="h-6 w-6 text-slate-400" />
                             </div>
-                            <p className="text-sm font-medium text-slate-600 mb-1">No sessions yet</p>
-                            <p className="text-xs text-slate-400 mb-4">Connect your first WhatsApp device to get started</p>
+                            <p className="text-sm font-medium text-slate-600 mb-1">{t("sessions.emptyTitle")}</p>
+                            <p className="text-xs text-slate-400 mb-4">{t("sessions.emptyDescription")}</p>
                             <Link href="/dashboard/sessions">
                                 <Button size="sm" variant="outline" className="gap-2">
-                                    <Plus className="h-4 w-4" /> Create Session
+                                    <Plus className="h-4 w-4" /> {t("sessions.createSession")}
                                 </Button>
                             </Link>
                         </CardContent>

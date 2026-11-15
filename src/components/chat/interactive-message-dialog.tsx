@@ -37,6 +37,7 @@ import {
     Layers
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 interface InteractiveMessageDialogProps {
     open: boolean;
@@ -64,6 +65,7 @@ export function InteractiveMessageDialog({
     recipientName,
     onSuccess,
 }: InteractiveMessageDialogProps) {
+    const t = useTranslations("interactive");
     const [activeTab, setActiveTab] = useState("presets");
     const [sendingPreset, setSendingPreset] = useState<string | null>(null);
 
@@ -83,10 +85,10 @@ export function InteractiveMessageDialog({
     const presets = [
         {
             id: "quick_reply",
-            title: "Quick Reply Buttons",
-            subtitle: "3 Tombol Respon Cepat",
-            description: "Mengirim pesan interaktif dengan tombol respon instan (Ya, Tidak, Bantuan).",
-            badge: "Paling Populer",
+            title: t("presets.quickReplyTitle"),
+            subtitle: t("presets.quickReplySubtitle"),
+            description: t("presets.quickReplyDescription"),
+            badge: t("presets.quickReplyBadge"),
             payload: {
                 title: "Konfirmasi Layanan",
                 body: `Halo kak ${displayName}! Apakah Anda ingin melanjutkan transaksi dan mengonfirmasi pesanan hari ini?`,
@@ -100,10 +102,10 @@ export function InteractiveMessageDialog({
         },
         {
             id: "cta_actions",
-            title: "Call To Action (CTA)",
-            subtitle: "Link Web, Telepon & Salin Kode",
-            description: "Mengirim tombol aksi native: membuka link web, menelpon nomor telepon, dan menyalin kode promo.",
-            badge: "Multi-Aksi",
+            title: t("presets.ctaTitle"),
+            subtitle: t("presets.ctaSubtitle"),
+            description: t("presets.ctaDescription"),
+            badge: t("presets.ctaBadge"),
             payload: {
                 title: "Promo Spesial Hari Ini! 🎉",
                 body: "Dapatkan diskon potongan hingga 50% untuk pesanan Anda. Gunakan kode promo eksklusif berikut sebelum habis!",
@@ -117,10 +119,10 @@ export function InteractiveMessageDialog({
         },
         {
             id: "single_select",
-            title: "Interactive List Menu",
-            subtitle: "Dropdown Menu Pilihan",
-            description: "Mengirim tombol menu yang membuka daftar pilihan/kategori (single select).",
-            badge: "Katalog",
+            title: t("presets.listTitle"),
+            subtitle: t("presets.listSubtitle"),
+            description: t("presets.listDescription"),
+            badge: t("presets.listBadge"),
             payload: {
                 title: "Katalog Layanan Kami",
                 body: "Pilih salah satu menu atau layanan yang ingin Anda ketahui lebih detail melalui tombol menu di bawah:",
@@ -152,10 +154,10 @@ export function InteractiveMessageDialog({
         },
         {
             id: "announcement",
-            title: "Pengumuman & Feedback",
-            subtitle: "Header Card & Feedback",
-            description: "Pesan kartu pengumuman dengan judul besar, teks isi, dan tombol konfirmasi.",
-            badge: "Pengumuman",
+            title: t("presets.announcementTitle"),
+            subtitle: t("presets.announcementSubtitle"),
+            description: t("presets.announcementDescription"),
+            badge: t("presets.announcementBadge"),
             payload: {
                 title: "📢 PEMBERITAHUAN SISTEM",
                 body: "Halo, sistem kami akan melakukan pemeliharaan rutin pada malam ini pukul 23:00 WIB. Terima kasih atas pengertian Anda.",
@@ -171,7 +173,7 @@ export function InteractiveMessageDialog({
     const handleSendPreset = async (preset: typeof presets[0]) => {
         setSendingPreset(preset.id);
         try {
-            toast.info(`Mengirim test "${preset.title}" ke ${displayName}...`);
+            toast.info(t("sendingTo", { target: displayName }));
             const res = await fetch(`/api/messages/${sessionId}/${encodeURIComponent(jid)}/interactive`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -179,14 +181,14 @@ export function InteractiveMessageDialog({
             });
             const data = await res.json();
             if (!res.ok || !data.status) {
-                throw new Error(data.message || data.error || "Gagal mengirim pesan interaktif");
+                throw new Error(data.message || data.error || t("failedToast", { error: "" }));
             }
-            toast.success(`Berhasil! Pesan interaktif telah dikirim ke ${displayName}`);
+            toast.success(t("successToast", { target: displayName }));
             onSuccess?.();
             onOpenChange(false);
         } catch (error: any) {
             console.error("Test trigger error:", error);
-            toast.error(error.message || "Gagal mengirim pesan interaktif");
+            toast.error(error.message || t("failedToast", { error: "" }));
         } finally {
             setSendingPreset(null);
         }
@@ -194,13 +196,13 @@ export function InteractiveMessageDialog({
 
     const handleAddButton = () => {
         if (buttons.length >= 10) {
-            toast.warning("Maksimal 10 tombol interaktif");
+            toast.warning(t("maxButtonsWarning"));
             return;
         }
         const newId = String(Date.now());
         setButtons(prev => [
             ...prev,
-            { id: newId, type: "quick_reply", displayText: `Tombol ${prev.length + 1}`, value: `action_${newId}` }
+            { id: newId, type: "quick_reply", displayText: t("buttonDefaultLabel", { index: prev.length + 1 }), value: `action_${newId}` }
         ]);
     };
 
@@ -227,7 +229,7 @@ export function InteractiveMessageDialog({
 
     const handleSendCustom = async () => {
         if (!body.trim() && !title.trim()) {
-            toast.error("Isi pesan atau judul wajib diisi");
+            toast.error(t("bodyOrTitleRequired"));
             return;
         }
 
@@ -276,15 +278,15 @@ export function InteractiveMessageDialog({
 
             const data = await res.json();
             if (!res.ok || !data.status) {
-                throw new Error(data.message || data.error || "Gagal mengirim pesan interaktif");
+                throw new Error(data.message || data.error || t("failedToast", { error: "" }));
             }
 
-            toast.success("Pesan interaktif berhasil dikirim!");
+            toast.success(t("successToast", { target: displayName }));
             onSuccess?.();
             onOpenChange(false);
         } catch (error: any) {
             console.error("Custom interactive send error:", error);
-            toast.error(error.message || "Gagal mengirim pesan interaktif");
+            toast.error(error.message || t("failedToast", { error: "" }));
         } finally {
             setSubmittingCustom(false);
         }
@@ -302,10 +304,10 @@ export function InteractiveMessageDialog({
                             </div>
                             <div>
                                 <DialogTitle className="text-base font-semibold flex items-center gap-2">
-                                    Interactive Message & Test Trigger
+                                    {t("dialogTitle")}
                                 </DialogTitle>
                                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                                    Kirim pesan WhatsApp Native Flow interaktif ke <span className="font-semibold text-foreground">{displayName}</span>
+                                    {t("dialogDesc", { name: displayName })}
                                 </DialogDescription>
                             </div>
                         </div>
@@ -318,11 +320,11 @@ export function InteractiveMessageDialog({
                         <TabsList className="grid grid-cols-2 w-full max-w-sm">
                             <TabsTrigger value="presets" className="text-xs flex items-center gap-2">
                                 <Zap className="h-3.5 w-3.5 text-amber-500" />
-                                1-Click Test Triggers
+                                {t("tabPresets")}
                             </TabsTrigger>
                             <TabsTrigger value="custom" className="text-xs flex items-center gap-2">
                                 <Layers className="h-3.5 w-3.5 text-blue-500" />
-                                Custom Builder
+                                {t("tabCustom")}
                             </TabsTrigger>
                         </TabsList>
                     </div>
@@ -332,9 +334,9 @@ export function InteractiveMessageDialog({
                         <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-3 text-xs text-amber-900 dark:text-amber-200">
                             <Zap className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
                             <div>
-                                <p className="font-semibold">Uji Langsung Tombol Interaktif WhatsApp</p>
+                                <p className="font-semibold">{t("bannerTitle")}</p>
                                 <p className="text-muted-foreground mt-0.5">
-                                    Klik tombol <span className="font-medium text-foreground">"Trigger Test Sekarang"</span> pada salah satu template berikut untuk menguji penerimaan tombol di nomor penerima.
+                                    {t("bannerDesc")}
                                 </p>
                             </div>
                         </div>
@@ -391,12 +393,12 @@ export function InteractiveMessageDialog({
                                         {sendingPreset === preset.id ? (
                                             <>
                                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                Mengirim...
+                                                {t("sendingTest")}
                                             </>
                                         ) : (
                                             <>
                                                 <Zap className="h-3.5 w-3.5 text-amber-400" />
-                                                Trigger Test Sekarang
+                                                {t("triggerTestNow")}
                                             </>
                                         )}
                                     </Button>
@@ -411,32 +413,32 @@ export function InteractiveMessageDialog({
                             {/* Editor Left Column (7 cols) */}
                             <div className="lg:col-span-7 space-y-4">
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-medium">Header / Judul (Opsional)</Label>
+                                    <Label className="text-xs font-medium">{t("headerTitleLabel")}</Label>
                                     <Input
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
-                                        placeholder="Contoh: Pengumuman Layanan"
+                                        placeholder={t("headerTitlePlaceholder")}
                                         className="text-xs h-9"
                                     />
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-medium">Isi Pesan / Body (Wajib)</Label>
+                                    <Label className="text-xs font-medium">{t("bodyLabel")}</Label>
                                     <Textarea
                                         value={body}
                                         onChange={(e) => setBody(e.target.value)}
-                                        placeholder="Tuliskan isi pesan Anda di sini..."
+                                        placeholder={t("bodyPlaceholder")}
                                         rows={4}
                                         className="text-xs resize-none"
                                     />
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-medium">Footer Text (Opsional)</Label>
+                                    <Label className="text-xs font-medium">{t("footerLabel")}</Label>
                                     <Input
                                         value={footer}
                                         onChange={(e) => setFooter(e.target.value)}
-                                        placeholder="Contoh: Balas pesan ini untuk info lebih lanjut"
+                                        placeholder={t("footerPlaceholder")}
                                         className="text-xs h-9"
                                     />
                                 </div>
@@ -446,7 +448,7 @@ export function InteractiveMessageDialog({
                                     <div className="flex items-center justify-between">
                                         <Label className="text-xs font-medium flex items-center gap-1.5">
                                             <MousePointerClick className="h-3.5 w-3.5 text-primary" />
-                                            Tombol Aksi ({buttons.length}/10)
+                                            {t("buttonsCount", { count: buttons.length })}
                                         </Label>
                                         <Button
                                             type="button"
@@ -457,14 +459,14 @@ export function InteractiveMessageDialog({
                                             className="h-7 text-xs gap-1.5"
                                         >
                                             <Plus className="h-3.5 w-3.5" />
-                                            Tambah Tombol
+                                            {t("addButton")}
                                         </Button>
                                     </div>
 
                                     <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
                                         {buttons.length === 0 && (
                                             <p className="text-xs text-muted-foreground text-center py-4 bg-muted/20 rounded-lg border border-dashed">
-                                                Belum ada tombol. Klik "Tambah Tombol" di atas.
+                                                {t("noButtons")}
                                             </p>
                                         )}
                                         {buttons.map((btn, index) => (
@@ -487,11 +489,11 @@ export function InteractiveMessageDialog({
                                                                 <SelectValue />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                <SelectItem value="quick_reply">Quick Reply</SelectItem>
-                                                                <SelectItem value="cta_url">Open URL</SelectItem>
-                                                                <SelectItem value="cta_call">Call Phone</SelectItem>
-                                                                <SelectItem value="cta_copy">Copy Code</SelectItem>
-                                                                <SelectItem value="single_select">List Menu</SelectItem>
+                                                                <SelectItem value="quick_reply">{t("btnTypeQuickReply")}</SelectItem>
+                                                                <SelectItem value="cta_url">{t("btnTypeUrl")}</SelectItem>
+                                                                <SelectItem value="cta_call">{t("btnTypeCall")}</SelectItem>
+                                                                <SelectItem value="cta_copy">{t("btnTypeCopy")}</SelectItem>
+                                                                <SelectItem value="single_select">{t("btnTypeList")}</SelectItem>
                                                             </SelectContent>
                                                         </Select>
                                                     </div>
@@ -500,7 +502,7 @@ export function InteractiveMessageDialog({
                                                         onChange={(e) =>
                                                             handleUpdateButton(btn.id, "displayText", e.target.value)
                                                         }
-                                                        placeholder="Label Tombol"
+                                                        placeholder={t("buttonLabelPlaceholder")}
                                                         className="h-8 text-xs flex-1"
                                                     />
                                                     <Button
@@ -522,7 +524,7 @@ export function InteractiveMessageDialog({
                                                             onChange={(e) =>
                                                                 handleUpdateButton(btn.id, "value", e.target.value)
                                                             }
-                                                            placeholder="https://example.com/promo"
+                                                            placeholder={t("placeholderUrl")}
                                                             className="h-7 text-[11px]"
                                                         />
                                                     )}
@@ -532,7 +534,7 @@ export function InteractiveMessageDialog({
                                                             onChange={(e) =>
                                                                 handleUpdateButton(btn.id, "value", e.target.value)
                                                             }
-                                                            placeholder="+6281234567890"
+                                                            placeholder={t("placeholderPhone")}
                                                             className="h-7 text-[11px]"
                                                         />
                                                     )}
@@ -542,7 +544,7 @@ export function InteractiveMessageDialog({
                                                             onChange={(e) =>
                                                                 handleUpdateButton(btn.id, "value", e.target.value)
                                                             }
-                                                            placeholder="Kode yang akan disalin (contoh: DISKON50)"
+                                                            placeholder={t("placeholderCopy")}
                                                             className="h-7 text-[11px]"
                                                         />
                                                     )}
@@ -552,7 +554,7 @@ export function InteractiveMessageDialog({
                                                             onChange={(e) =>
                                                                 handleUpdateButton(btn.id, "value", e.target.value)
                                                             }
-                                                            placeholder="ID Tombol (contoh: btn_confirm)"
+                                                            placeholder={t("placeholderQuickId")}
                                                             className="h-7 text-[11px]"
                                                         />
                                                     )}
@@ -562,7 +564,7 @@ export function InteractiveMessageDialog({
                                                             onChange={(e) =>
                                                                 handleUpdateButton(btn.id, "value", e.target.value)
                                                             }
-                                                            placeholder="Item dipisah koma (Opsi 1, Opsi 2, Opsi 3)"
+                                                            placeholder={t("placeholderListItems")}
                                                             className="h-7 text-[11px]"
                                                         />
                                                     )}
@@ -577,7 +579,7 @@ export function InteractiveMessageDialog({
                             <div className="lg:col-span-5 flex flex-col">
                                 <Label className="text-xs font-medium mb-2 flex items-center gap-1.5 text-muted-foreground">
                                     <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                                    Live WhatsApp Preview
+                                    {t("mockupTitle")}
                                 </Label>
 
                                 {/* WhatsApp bubble mockup */}
@@ -590,7 +592,7 @@ export function InteractiveMessageDialog({
                                                 </h4>
                                             )}
                                             <p className="text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed">
-                                                {body || "Ketik isi pesan di sebelah kiri..."}
+                                                {body || t("bodyPlaceholder")}
                                             </p>
                                             {footer && (
                                                 <p className="text-[10px] text-muted-foreground pt-1 border-t border-border/20">
@@ -615,7 +617,7 @@ export function InteractiveMessageDialog({
                                                         {btn.type === "cta_copy" && <Copy className="h-3.5 w-3.5" />}
                                                         {btn.type === "single_select" && <ListFilter className="h-3.5 w-3.5" />}
                                                         {btn.type === "quick_reply" && <MousePointerClick className="h-3.5 w-3.5" />}
-                                                        <span className="truncate">{btn.displayText || "Tombol"}</span>
+                                                        <span className="truncate">{btn.displayText || t("buttonDefaultLabel", { index: buttons.indexOf(btn) + 1 })}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -623,7 +625,7 @@ export function InteractiveMessageDialog({
                                     </div>
 
                                     <span className="text-[10px] text-muted-foreground mt-3">
-                                        Native Flow UI WhatsApp Client
+                                        {t("nativeFlowClient")}
                                     </span>
                                 </div>
 
@@ -635,12 +637,12 @@ export function InteractiveMessageDialog({
                                     {submittingCustom ? (
                                         <>
                                             <Loader2 className="h-4 w-4 animate-spin" />
-                                            Mengirim Pesan...
+                                            {t("sendingCustom")}
                                         </>
                                     ) : (
                                         <>
                                             <Send className="h-4 w-4" />
-                                            Kirim Pesan Interaktif
+                                            {t("sendCustomButton")}
                                         </>
                                     )}
                                 </Button>

@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import { useSession } from "@/components/dashboard/session-provider";
 import { SessionGuard } from "@/components/dashboard/session-guard";
 import { ButtonType, InteractiveButtonItem } from "@/components/chat/interactive-message-dialog";
+import { useTranslations } from "next-intl";
 
 interface TriggerLog {
     id: string;
@@ -57,6 +58,7 @@ export default function InteractivePage() {
 }
 
 function InteractiveContent() {
+    const t = useTranslations("interactive");
     const { sessionId, sessions } = useSession();
     const [targetPhone, setTargetPhone] = useState("");
     const [activeTab, setActiveTab] = useState("presets");
@@ -89,12 +91,12 @@ function InteractiveContent() {
 
     const validateTarget = (): string | null => {
         if (!targetPhone.trim()) {
-            toast.error("Nomor tujuan WhatsApp wajib diisi");
+            toast.error(t("targetRequired"));
             return null;
         }
         const jid = formatJid(targetPhone);
         if (!jid.startsWith("62") && !jid.startsWith("1") && jid.length < 10) {
-            toast.error("Format nomor WhatsApp tidak valid. Masukkan format 08xx atau 628xx");
+            toast.error(t("targetInvalid"));
             return null;
         }
         return jid;
@@ -104,10 +106,10 @@ function InteractiveContent() {
     const presets = [
         {
             id: "quick_reply",
-            title: "Quick Reply Buttons",
-            subtitle: "3 Tombol Respon Cepat (Quick Reply)",
-            description: "Penerima dapat memilih jawaban instan dengan 1 ketukan tanpa mengetik.",
-            badge: "Paling Populer",
+            title: t("presets.quickReplyTitle"),
+            subtitle: t("presets.quickReplySubtitle"),
+            description: t("presets.quickReplyDescription"),
+            badge: t("presets.quickReplyBadge"),
             payload: {
                 title: "Konfirmasi Layanan",
                 body: "Halo! Apakah Anda ingin melanjutkan konfirmasi dan aktivasi layanan sekarang?",
@@ -121,10 +123,10 @@ function InteractiveContent() {
         },
         {
             id: "cta_actions",
-            title: "Call To Action (CTA)",
-            subtitle: "Link Web, Telepon & Salin Kode Promo",
-            description: "Tombol aksi native yang membuka browser web, dialer telepon, dan otomatis menyalin teks.",
-            badge: "Multi-Aksi",
+            title: t("presets.ctaTitle"),
+            subtitle: t("presets.ctaSubtitle"),
+            description: t("presets.ctaDescription"),
+            badge: t("presets.ctaBadge"),
             payload: {
                 title: "Promo Spesial Hari Ini! 🎉",
                 body: "Dapatkan penawaran terbatas! Gunakan tombol di bawah untuk langsung membuka promo, menghubungi kami, atau menyalin kode voucher.",
@@ -138,10 +140,10 @@ function InteractiveContent() {
         },
         {
             id: "single_select",
-            title: "Interactive List Menu",
-            subtitle: "Daftar Menu Dropdown (Single Select)",
-            description: "Mengirim tombol menu yang membuka drawer daftar opsi / kategori produk WhatsApp.",
-            badge: "Katalog",
+            title: t("presets.listTitle"),
+            subtitle: t("presets.listSubtitle"),
+            description: t("presets.listDescription"),
+            badge: t("presets.listBadge"),
             payload: {
                 title: "Katalog Pilihan Layanan",
                 body: "Silakan tekan tombol 'Buka Pilihan Menu' untuk melihat daftar layanan dan memilih opsi yang diinginkan:",
@@ -173,10 +175,10 @@ function InteractiveContent() {
         },
         {
             id: "announcement",
-            title: "Pengumuman / Announcement Card",
-            subtitle: "Header Card & Konfirmasi Baca",
-            description: "Pesan kartu informasi dengan header judul tebal, pesan pengumuman, dan tombol feedback.",
-            badge: "Broadcast Card",
+            title: t("presets.announcementTitle"),
+            subtitle: t("presets.announcementSubtitle"),
+            description: t("presets.announcementDescription"),
+            badge: t("presets.announcementBadge"),
             payload: {
                 title: "📢 PEMBERITAHUAN PEMELIHARAAN SISTEM",
                 body: "Halo rekan-rekan, sistem server akan melakukan peningkatan infrastruktur pada malam ini pukul 23:00 - 01:00 WIB. Layanan akan kembali normal setelah proses selesai.",
@@ -196,7 +198,7 @@ function InteractiveContent() {
 
         setSendingPresetId(preset.id);
         try {
-            toast.info(`Mengirim test "${preset.title}" ke ${targetPhone}...`);
+            toast.info(t("sendingTo", { target: targetPhone }));
             const res = await fetch(`/api/messages/${sessionId}/${encodeURIComponent(jid)}/interactive`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -204,9 +206,9 @@ function InteractiveContent() {
             });
             const data = await res.json();
             if (!res.ok || !data.status) {
-                throw new Error(data.message || data.error || "Gagal mengirim test interaktif");
+                throw new Error(data.message || data.error || t("failedToast", { error: "" }));
             }
-            toast.success(`Berhasil! Pesan interaktif telah terkirim ke ${targetPhone}`);
+            toast.success(t("successToast", { target: targetPhone }));
 
             setTriggerLogs(prev => [
                 {
@@ -220,7 +222,7 @@ function InteractiveContent() {
             ]);
         } catch (error: any) {
             console.error("Test trigger error:", error);
-            toast.error(error.message || "Gagal mengirim test interaktif");
+            toast.error(error.message || t("failedToast", { error: "" }));
             setTriggerLogs(prev => [
                 {
                     id: String(Date.now()),
@@ -240,13 +242,13 @@ function InteractiveContent() {
     // Custom button handlers
     const handleAddButton = () => {
         if (buttons.length >= 10) {
-            toast.warning("Maksimal 10 tombol interaktif");
+            toast.warning(t("maxButtonsWarning"));
             return;
         }
         const newId = String(Date.now());
         setButtons(prev => [
             ...prev,
-            { id: newId, type: "quick_reply", displayText: `Tombol ${prev.length + 1}`, value: `action_${newId}` }
+            { id: newId, type: "quick_reply", displayText: `Button ${prev.length + 1}`, value: `action_${newId}` }
         ]);
     };
 
@@ -262,8 +264,8 @@ function InteractiveContent() {
                 if (field === "type") {
                     if (value === "cta_url" && !b.value.startsWith("http")) updated.value = "https://";
                     else if (value === "cta_call" && !b.value.startsWith("+")) updated.value = "+62";
-                    else if (value === "cta_copy") updated.value = "KODEPROMO";
-                    else if (value === "single_select") updated.value = "Pilihan 1, Pilihan 2";
+                    else if (value === "cta_copy") updated.value = "PROMOCODE";
+                    else if (value === "single_select") updated.value = "Option 1, Option 2";
                 }
                 return updated;
             })
@@ -275,7 +277,7 @@ function InteractiveContent() {
         if (!jid) return;
 
         if (!body.trim() && !title.trim()) {
-            toast.error("Isi pesan atau judul wajib diisi");
+            toast.error(t("bodyOrTitleRequired"));
             return;
         }
 
@@ -285,18 +287,18 @@ function InteractiveContent() {
                 if (b.type === "cta_url") {
                     return { type: "cta_url", displayText: b.displayText || `Link ${idx + 1}`, url: b.value || "https://google.com" };
                 } else if (b.type === "cta_call") {
-                    return { type: "cta_call", displayText: b.displayText || `Telepon ${idx + 1}`, phoneNumber: b.value || "+628123456789" };
+                    return { type: "cta_call", displayText: b.displayText || `Call ${idx + 1}`, phoneNumber: b.value || "+628123456789" };
                 } else if (b.type === "cta_copy") {
-                    return { type: "cta_copy", displayText: b.displayText || `Salin Kode`, copyCode: b.value || "CODE" };
+                    return { type: "cta_copy", displayText: b.displayText || `Copy Code`, copyCode: b.value || "CODE" };
                 } else if (b.type === "single_select") {
-                    const items = (b.value || "Opsi 1, Opsi 2").split(",").map(s => s.trim()).filter(Boolean);
+                    const items = (b.value || "Option 1, Option 2").split(",").map(s => s.trim()).filter(Boolean);
                     return {
                         type: "single_select",
-                        title: b.displayText || "Pilihan",
-                        buttonText: b.displayText || "Pilih Opsi",
+                        title: b.displayText || "Menu",
+                        buttonText: b.displayText || "Select Option",
                         sections: [
                             {
-                                title: "Daftar Opsi",
+                                title: "Options",
                                 rows: items.map((it, i) => ({ id: `row_${i}`, title: it, description: "" }))
                             }
                         ]
@@ -304,7 +306,7 @@ function InteractiveContent() {
                 } else {
                     return {
                         type: "quick_reply",
-                        displayText: b.displayText || `Tombol ${idx + 1}`,
+                        displayText: b.displayText || `Button ${idx + 1}`,
                         id: b.value || `btn_${idx + 1}`
                     };
                 }
@@ -323,30 +325,30 @@ function InteractiveContent() {
 
             const data = await res.json();
             if (!res.ok || !data.status) {
-                throw new Error(data.message || data.error || "Gagal mengirim pesan interaktif");
+                throw new Error(data.message || data.error || t("failedToast", { error: "" }));
             }
 
-            toast.success(`Pesan interaktif berhasil dikirim ke ${targetPhone}!`);
+            toast.success(t("successToast", { target: targetPhone }));
 
             setTriggerLogs(prev => [
                 {
                     id: String(Date.now()),
                     timestamp: new Date().toLocaleTimeString(),
                     target: targetPhone,
-                    type: `Custom (${buttons.length} Tombol)`,
+                    type: `Custom (${buttons.length})`,
                     status: "success"
                 },
                 ...prev.slice(0, 19)
             ]);
         } catch (error: any) {
             console.error("Custom interactive send error:", error);
-            toast.error(error.message || "Gagal mengirim pesan interaktif");
+            toast.error(error.message || t("failedToast", { error: "" }));
             setTriggerLogs(prev => [
                 {
                     id: String(Date.now()),
                     timestamp: new Date().toLocaleTimeString(),
                     target: targetPhone,
-                    type: `Custom (${buttons.length} Tombol)`,
+                    type: `Custom (${buttons.length})`,
                     status: "error",
                     error: error.message
                 },
@@ -364,10 +366,10 @@ function InteractiveContent() {
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
                         <Sparkles className="h-6 w-6 text-primary" />
-                        Interactive Message & Test Trigger
+                        {t("title")}
                     </h1>
                     <p className="text-sm text-muted-foreground mt-1">
-                        Kirim dan uji coba pesan interaktif WhatsApp Native Flow (Quick Reply, CTA Link, Call, Copy Code, List Menu) langsung dari dashboard.
+                        {t("subtitle")}
                     </p>
                 </div>
             </div>
@@ -378,28 +380,28 @@ function InteractiveContent() {
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                         <div className="md:col-span-4 space-y-1.5">
                             <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                                Sesi WhatsApp Aktif
+                                {t("activeSessionLabel")}
                             </Label>
                             <div className="text-sm font-medium px-3 py-2 rounded-lg bg-muted/40 border border-border/50 truncate">
-                                {sessions.find(s => s.sessionId === sessionId)?.name || sessionId || "Tidak ada sesi aktif"}
+                                {sessions.find(s => s.sessionId === sessionId)?.name || sessionId || t("noActiveSession")}
                             </div>
                         </div>
 
                         <div className="md:col-span-8 space-y-1.5">
                             <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                                 <Phone className="h-3.5 w-3.5 text-primary" />
-                                Nomor WhatsApp Tujuan Pengujian (Penerima)
+                                {t("targetLabel")}
                             </Label>
                             <div className="flex gap-2">
                                 <Input
                                     value={targetPhone}
                                     onChange={(e) => setTargetPhone(e.target.value)}
-                                    placeholder="Contoh: 08123456789 atau 628123456789"
+                                    placeholder={t("targetPlaceholder")}
                                     className="text-sm font-mono h-10"
                                 />
                             </div>
                             <p className="text-[11px] text-muted-foreground">
-                                Masukkan nomor WhatsApp yang akan menerima pesan interaktif untuk menguji tampilannya.
+                                {t("targetDescription")}
                             </p>
                         </div>
                     </div>
@@ -411,11 +413,11 @@ function InteractiveContent() {
                 <TabsList className="grid grid-cols-2 max-w-md h-10">
                     <TabsTrigger value="presets" className="text-xs flex items-center gap-2">
                         <Zap className="h-4 w-4 text-amber-500" />
-                        1-Click Test Triggers
+                        {t("tabPresets")}
                     </TabsTrigger>
                     <TabsTrigger value="custom" className="text-xs flex items-center gap-2">
                         <Layers className="h-4 w-4 text-blue-500" />
-                        Custom Message Builder
+                        {t("tabCustom")}
                     </TabsTrigger>
                 </TabsList>
 
@@ -424,9 +426,9 @@ function InteractiveContent() {
                     <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-start gap-3 text-xs text-amber-900 dark:text-amber-200">
                         <Zap className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
                         <div>
-                            <p className="font-semibold text-sm">Mode Uji Coba Cepat (1-Click Test Trigger)</p>
+                            <p className="font-semibold text-sm">{t("quickTestMode")}</p>
                             <p className="text-muted-foreground mt-1 leading-relaxed">
-                                Pastikan nomor tujuan telah dimasukkan pada kolom di atas, lalu klik salah satu tombol <span className="font-semibold text-foreground">"Trigger Test Sekarang"</span> untuk langsung mengirimkan contoh pesan interaktif ke nomor tersebut.
+                                {t("quickTestDesc")}
                             </p>
                         </div>
                     </div>
@@ -485,12 +487,12 @@ function InteractiveContent() {
                                         {sendingPresetId === preset.id ? (
                                             <>
                                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                Mengirim ke {targetPhone}...
+                                                {t("sendingTo", { target: targetPhone })}
                                             </>
                                         ) : (
                                             <>
                                                 <Zap className="h-3.5 w-3.5 text-amber-400" />
-                                                Trigger Test Sekarang
+                                                {t("triggerTestNow")}
                                             </>
                                         )}
                                     </Button>
@@ -508,40 +510,40 @@ function InteractiveContent() {
                             <CardHeader className="pb-4">
                                 <CardTitle className="text-base font-semibold flex items-center gap-2">
                                     <Layers className="h-4 w-4 text-primary" />
-                                    Komposisi Pesan Interaktif
+                                    {t("customComposerTitle")}
                                 </CardTitle>
                                 <CardDescription className="text-xs">
-                                    Rancang pesan dengan teks custom dan kombinasi tombol native flow.
+                                    {t("customComposerDesc")}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-medium">Header / Judul Pesan (Opsional)</Label>
+                                    <Label className="text-xs font-medium">{t("headerTitleLabel")}</Label>
                                     <Input
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
-                                        placeholder="Contoh: Pengumuman Layanan"
+                                        placeholder={t("headerTitlePlaceholder")}
                                         className="text-xs h-9"
                                     />
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-medium">Isi Pesan Utama / Body (Wajib)</Label>
+                                    <Label className="text-xs font-medium">{t("bodyLabel")}</Label>
                                     <Textarea
                                         value={body}
                                         onChange={(e) => setBody(e.target.value)}
-                                        placeholder="Ketik isi pesan interaktif..."
+                                        placeholder={t("bodyPlaceholder")}
                                         rows={4}
                                         className="text-xs resize-none"
                                     />
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-medium">Footer Text (Opsional)</Label>
+                                    <Label className="text-xs font-medium">{t("footerLabel")}</Label>
                                     <Input
                                         value={footer}
                                         onChange={(e) => setFooter(e.target.value)}
-                                        placeholder="Contoh: Balas pesan ini untuk info lebih lanjut"
+                                        placeholder={t("footerPlaceholder")}
                                         className="text-xs h-9"
                                     />
                                 </div>
@@ -551,7 +553,7 @@ function InteractiveContent() {
                                     <div className="flex items-center justify-between">
                                         <Label className="text-xs font-medium flex items-center gap-1.5">
                                             <MousePointerClick className="h-3.5 w-3.5 text-primary" />
-                                            Daftar Tombol Interaktif ({buttons.length}/10)
+                                            {t("buttonsCount", { count: buttons.length })}
                                         </Label>
                                         <Button
                                             type="button"
@@ -562,14 +564,14 @@ function InteractiveContent() {
                                             className="h-8 text-xs gap-1.5"
                                         >
                                             <Plus className="h-3.5 w-3.5" />
-                                            Tambah Tombol
+                                            {t("addButton")}
                                         </Button>
                                     </div>
 
                                     <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
                                         {buttons.length === 0 && (
                                             <p className="text-xs text-muted-foreground text-center py-6 bg-muted/20 rounded-xl border border-dashed">
-                                                Belum ada tombol. Klik "Tambah Tombol" untuk menambahkan.
+                                                {t("noButtons")}
                                             </p>
                                         )}
                                         {buttons.map((btn, index) => (
@@ -605,7 +607,7 @@ function InteractiveContent() {
                                                         onChange={(e) =>
                                                             handleUpdateButton(btn.id, "displayText", e.target.value)
                                                         }
-                                                        placeholder="Label Tombol"
+                                                        placeholder={t("buttonLabelPlaceholder")}
                                                         className="h-8 text-xs flex-1"
                                                     />
                                                     <Button
@@ -646,7 +648,7 @@ function InteractiveContent() {
                                                             onChange={(e) =>
                                                                 handleUpdateButton(btn.id, "value", e.target.value)
                                                             }
-                                                            placeholder="Kode yang akan disalin (contoh: DISKON50)"
+                                                            placeholder="CODE50"
                                                             className="h-8 text-xs"
                                                         />
                                                     )}
@@ -656,7 +658,7 @@ function InteractiveContent() {
                                                             onChange={(e) =>
                                                                 handleUpdateButton(btn.id, "value", e.target.value)
                                                             }
-                                                            placeholder="ID Tombol (contoh: btn_confirm)"
+                                                            placeholder="btn_confirm"
                                                             className="h-8 text-xs"
                                                         />
                                                     )}
@@ -666,7 +668,7 @@ function InteractiveContent() {
                                                             onChange={(e) =>
                                                                 handleUpdateButton(btn.id, "value", e.target.value)
                                                             }
-                                                            placeholder="Item dipisah koma (Opsi 1, Opsi 2, Opsi 3)"
+                                                            placeholder="Option 1, Option 2, Option 3"
                                                             className="h-8 text-xs"
                                                         />
                                                     )}
@@ -684,10 +686,10 @@ function InteractiveContent() {
                                 <CardHeader className="pb-3">
                                     <CardTitle className="text-sm font-semibold flex items-center gap-2">
                                         <Sparkles className="h-4 w-4 text-amber-500" />
-                                        Live WhatsApp Mockup
+                                        {t("mockupTitle")}
                                     </CardTitle>
                                     <CardDescription className="text-xs">
-                                        Pratinjau tampilan pesan interaktif di aplikasi WhatsApp penerima.
+                                        {t("mockupDesc")}
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="pt-0">
@@ -700,7 +702,7 @@ function InteractiveContent() {
                                                     </h4>
                                                 )}
                                                 <p className="text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed">
-                                                    {body || "Ketik isi pesan di formulir..."}
+                                                    {body || "..."}
                                                 </p>
                                                 {footer && (
                                                     <p className="text-[10px] text-muted-foreground pt-1 border-t border-border/20">
@@ -716,7 +718,7 @@ function InteractiveContent() {
                                                 <div className="border-t border-border/30 divide-y divide-border/30 bg-muted/10">
                                                     {buttons.map((btn) => (
                                                         <div
-                                                            key={btn.id}
+                                                             key={btn.id}
                                                             className="py-2.5 px-3 text-center text-xs font-medium text-primary hover:bg-primary/5 cursor-pointer flex items-center justify-center gap-1.5 transition-colors"
                                                         >
                                                             {btn.type === "cta_url" && <ExternalLink className="h-3.5 w-3.5" />}
@@ -724,7 +726,7 @@ function InteractiveContent() {
                                                             {btn.type === "cta_copy" && <Copy className="h-3.5 w-3.5" />}
                                                             {btn.type === "single_select" && <ListFilter className="h-3.5 w-3.5" />}
                                                             {btn.type === "quick_reply" && <MousePointerClick className="h-3.5 w-3.5" />}
-                                                            <span className="truncate">{btn.displayText || "Tombol"}</span>
+                                                            <span className="truncate">{btn.displayText || "Action"}</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -744,12 +746,12 @@ function InteractiveContent() {
                                         {isSendingCustom ? (
                                             <>
                                                 <Loader2 className="h-4 w-4 animate-spin" />
-                                                Mengirim ke {targetPhone}...
+                                                {t("sendingTo", { target: targetPhone })}
                                             </>
                                         ) : (
                                             <>
                                                 <Send className="h-4 w-4" />
-                                                Kirim Pesan Interaktif Custom
+                                                {t("sendCustomButton")}
                                             </>
                                         )}
                                     </Button>
@@ -766,7 +768,7 @@ function InteractiveContent() {
                     <CardHeader className="py-3 px-6 border-b border-border/40">
                         <CardTitle className="text-sm font-semibold flex items-center gap-2">
                             <History className="h-4 w-4 text-muted-foreground" />
-                            Riwayat Uji Coba Pengiriman
+                            {t("historyTitle")}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
@@ -781,7 +783,7 @@ function InteractiveContent() {
                                         )}
                                         <div>
                                             <span className="font-semibold text-foreground">{log.type}</span>
-                                            <span className="text-muted-foreground mx-1.5">ke</span>
+                                            <span className="text-muted-foreground mx-1.5">{t("to")}</span>
                                             <span className="font-mono text-foreground">{log.target}</span>
                                             {log.error && (
                                                 <p className="text-[11px] text-destructive mt-0.5">{log.error}</p>

@@ -1,3 +1,129 @@
+## [v1.7.1-beta.2] - 2026-10-26
+
+WA-AKG v1.7.1-beta.2 expands on the security remediations covering GitHub Security Advisories (`GHSA-49fm-mp8x-p3hh`, `GHSA-ccjm-wfv6-qf2v`, and `GHSA-wmvv-wg8q-hqpv`), delivering complete defense-in-depth sanitization across album messages, interactive messages, and path confinement.
+
+### Security & Hardening
+- **Album & Interactive Media Sanitization**:
+  - Hardened album messages (`POST /api/messages/[sessionId]/[jid]/album` and `ChatService.sendAlbumMessage`) to sanitize all media items through `materializeSafeMediaPayload`, eliminating local file read and SSRF vectors.
+  - Hardened interactive messages (`POST /api/messages/[sessionId]/[jid]/interactive`, `ChatService.sendInteractiveMessage`, and `buildInteractiveMessage`) to sanitize headers, thumbnails, and media attachments through `materializeSafeMediaPayload`.
+  - Added safe buffer extraction for product interactive messages (`sendProductMessage`).
+- **Path Traversal Boundary Hardening**:
+  - Enforced strict directory confinement with path separator boundary verification in `GET /api/messages/[sessionId]/download/[messageId]/media` to prevent sibling directory traversal.
+- **Automated Security Test Suite**:
+  - Expanded unit test suite `src/lib/__tests__/security.test.ts` to verify thumbnail, header media, and album item local file access rejections.
+
+---
+
+## [v1.7.1-beta.1] - 2026-10-19
+
+WA-AKG v1.7.1-beta.1 delivers critical security remediations covering three GitHub Security Advisories (`GHSA-49fm-mp8x-p3hh`, `GHSA-ccjm-wfv6-qf2v`, and `GHSA-wmvv-wg8q-hqpv`), automated security test suites, and core hardening.
+
+### Security & Hardening
+- **Baileys Media URL Local File Disclosure & Auth Bypass Mitigation** (`GHSA-49fm-mp8x-p3hh`):
+  - Implemented `materializeSafeMediaPayload` in `src/lib/security.ts` to inspect and safely download media URLs into in-memory `Buffer`s before reaching Baileys, ensuring Baileys never receives a raw URL object or local file path.
+  - Routed message reply endpoints (`POST /api/messages/[sessionId]/[jid]/reply` and `POST /api/messages/[sessionId]/[jid]/[messageId]/reply`) through `materializeSafeMediaPayload` to eliminate file read vectors.
+  - Hardened recurring scheduler cron runner in `src/lib/cron.ts` to download media via `safeFetchBuffer` instead of passing raw `{ url }` objects directly to Baileys `sendMessage`.
+  - Added strict `validateSafeUrl` validation on scheduler creation and update endpoints (`/api/scheduler/[sessionId]`).
+  - Added directory confinement check in `GET /api/messages/[sessionId]/download/[messageId]/media` to prevent directory traversal outside `data/media` or `public/uploads`.
+- **SSRF Hardening & Full-Read Response Disclosure Elimination** (`GHSA-ccjm-wfv6-qf2v`):
+  - Expanded `isPrivateOrReservedIp` to block Carrier-Grade NAT (`100.64.0.0/10`), benchmark testing (`198.18.0.0/15`), documentation ranges (`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`), 6to4 (`2002::/16`), and IPv6 translation addresses.
+  - Redacted `responseBody` in `testWebhook` and webhook log persistence to return safe metadata status summaries, completely preventing attackers from extracting internal/cloud metadata responses via SSRF.
+- **Socket.IO Room Join Authorization & Session ID Entropy Hardening** (`GHSA-wmvv-wg8q-hqpv`):
+  - Upgraded session ID generator in `WhatsAppManager.createSession` from low-entropy `Math.random().toString(36).substring(7)` to CSPRNG `crypto.randomUUID()`.
+  - Enforced strict Socket.IO handshake authentication middleware with support for NextAuth session cookies, API keys, and authorization bearer tokens (`socket.handshake.auth.token`).
+  - Restricted `join-session` room access to verified session owners via `canAccessSession(userId, role, sessionId)` and restricted `join-user-room` to the user's own ID or SUPERADMIN.
+  - Hardened CORS origin allowlist in `src/server/index.ts` to block wildcard browser origins, supporting `BASE_URL`, `NEXTAUTH_URL`, localhost, and optional `CORS_ORIGIN`.
+  - Updated dashboard `SessionManager` to join authenticated session rooms on connect for real-time status and QR updates.
+
+### Added
+- **Automated Security Test Suite**:
+  - Added unit test suite `src/lib/__tests__/security.test.ts` verifying IP filtering, anti-SSRF protections, and local file access rejections.
+  - Updated npm test script in `package.json` to automatically run all test suites under `src/**/__tests__/*.test.ts`.
+
+---
+
+## [v1.7.0] - 2026-10-19
+
+WA-AKG v1.7.0 is a major milestone release delivering a Pure Baileys v7 WhatsApp engine, native flow interactive messages, full multi-language (i18n) support across the entire platform, granular role-based access control (RBAC), and critical security remediations.
+
+### Added
+- **Multi-Language UI (i18n)** (#103): Complete internationalization system powered by `next-intl`:
+  - **Supported Locales**: Indonesian (`id`), English (`en`), and Brazilian Portuguese (`pt-BR`).
+  - **Comprehensive Dashboard Coverage**: Over 1,000+ localized UI keys with 100% key parity across all 3 catalogs covering headers, cards, tables, filters, forms, placeholders, dialogs, badges, empty states, and toast notifications.
+  - **All Pages Localized**: Dashboard Overview, Sessions & Session Access Management, Live Chat Interface & Interactive Message Builder Dialog, Interactive Tester, Broadcast, Recurring Scheduler, Auto Reply, Bot Settings, Contacts, Groups, Labels, Media Gallery, Sticker Maker, Inbox & Notifications Manager, Webhooks & Live Webhook Logs Dialog, System Resource Monitor, System Settings, User Management, Profile, and API Documentation.
+  - **Language Selection & Persistence**: Cookie-based language selection persistence (`NEXT_LOCALE`), automatic fallback to `DEFAULT_LANGUAGE` or browser preference, and seamless language switcher dropdown in the navigation bar.
+  - **Automated Verification**: Automated ICU message syntax validation, placeholder/tag matching tests, and locale resolution test suites with zero ICU formatting errors.
+- **Pure Baileys v7 Core**:
+  - Upgraded WhatsApp engine to pure `@whiskeysockets/baileys@7.0.0-rc14` with `@whiskeysockets/whatsapp-rust-bridge@0.5.5` override.
+  - Completely eliminated all `patch-package` dependencies and legacy patch folders for a clean, stable open-source distribution.
+- **Native Flow Interactive Messages**:
+  - Native WhatsApp interactive message support: `quick_reply`, `cta_url`, `cta_call`, `cta_copy`, and `single_select` (drawer list menu with sections and rows).
+  - Dedicated **Interactive Message Tester** at `/dashboard/interactive` featuring 1-click test triggers and custom composer.
+  - **Chat Window Interactive Dialog**: Integrated interactive message builder dialog (`✨`) directly into `/dashboard/chat`.
+  - **REST Endpoint**: Added `POST /api/messages/[sessionId]/[jid]/interactive` with complete validation and OpenAPI/Swagger documentation.
+  - **Binary Protocol Stanza Injection**: Injected WhatsApp `<biz>` and `<bot>` binary nodes at protocol level to ensure native button rendering across WhatsApp Web, Android, and iOS clients.
+- **Chat List Categorization Filter** (#99):
+  - Added `All` / `Chats` (direct personal chats) / `Groups` tab filters to the chat list.
+  - Executed directly at database level via optimized SQL queries to maintain accurate pagination, unread counts, and infinite scroll performance.
+  - Real-time Socket.IO incoming message updates dynamically respect the active filter tab.
+  - Active tab preference is persisted per browser session via `localStorage`.
+- **Unified Navigation Architecture**:
+  - Centralized navigation groups and route items into a single source of truth configuration (`src/config/navigation.ts`).
+  - Achieved complete feature and RBAC role visibility parity between desktop sidebar and mobile navigation drawer.
+- **Session Access & Security Controls**: Added Session Access authorization page (`/dashboard/sessions/access`) and session guard components for granular user-session assignment and role validation.
+
+### Security & Architecture
+- **User Role Architecture (`OWNER` → `USER`)**: Migrated user RBAC hierarchy to `SUPERADMIN` > `STAFF` > `USER` (default least privilege: `USER`). All Prisma schemas, Zod validators, API routes, and dashboard pages updated accordingly.
+- **Zero-Downtime Database Auto-Migrations**: Embedded runtime auto-migration in `src/server/index.ts` and `scripts/migrate.js` to automatically convert legacy database enum values and records on startup without manual SQL execution.
+- **Comprehensive Vulnerability Remediation**: Remediated 13 security review findings:
+  - **Socket.IO Hardening**: Added JWT & API key authentication middleware (`io.use`), session authorization checks, and restricted CORS origins.
+  - **SSRF & LFI Mitigation**: Implemented strict safe fetching (`safeFetchBuffer`) with private IP/cloud-metadata blocking (`validateSafeUrl`) for media downloads, webhooks, chat, and scheduler.
+  - **Auth & Secrets Protection**: Encrypted WhatsApp `AuthState` session keys at rest with AES-256-GCM, changed default role to `USER`, disabled public registration by default, and migrated API key generation to CSPRNG.
+  - **Swagger & API Security**: Eliminated client-side credentials from Swagger UI, enforced session checks, and strengthened defense-in-depth API key validation in proxy middleware.
+  - **Media & Container Hardening**: Sanitized mimetype file extensions to prevent path traversal, enforced session prefix ownership, and migrated Docker runner to non-root user `node`.
+- **Telemetry Privacy Hardening**: Replaced private instance deployment hostname/URL in monitoring heartbeat with official WA-AKG application version and added `ENABLE_TELEMETRY` opt-out support.
+
+### Changed
+- **Pure Interactive Payload**: Removed legacy `viewOnceMessage` wrapping in favor of pure `interactiveMessage` stanzas to ensure button visibility on modern WhatsApp clients.
+- **Real-Time Store Sync**: Interactive messages sent via `relayMessage` are now automatically stored in SQLite database and emitted via Socket.IO to the web dashboard.
+- **Scheduler Form UX**: Localized dynamic schedule types, interval selectors (minutes, hours, cron), day-of-week checkboxes, pending/history tabs, and execution status badges.
+- **Search & Filter Component**: Integrated fallback localization for search input placeholders and sorting selectors.
+
+### Fixed
+- **Status Broadcast Filter**: Filtered out `status@broadcast` system entries from appearing in the dashboard chat list while preserving raw backend REST API endpoints intact.
+- **Mobile Navigation Parity**: Synchronized Interactive Tester and Superadmin role visibility on mobile navigation drawer.
+- **Dev Server Startup Stability**: Decoupled NextAuth evaluation from Socket.IO and session access queries to eliminate Next.js 16 `Invariant: AsyncLocalStorage accessed in runtime where it is not available` crash on server startup.
+- **NTFS / Windows Path Panic**: Added Webpack fallback in `src/server/index.ts` to eliminate Turbopack NTFS colon chunk naming panic (`os error 22`) in dev mode.
+
+---
+
+## [v1.7.0-beta.2] - 2026-10-19
+
+### Added
+- **Comprehensive Multi-Language UI (i18n)** (#103): Full internationalization coverage powered by `next-intl` across the entire application:
+  - **Supported Locales**: English (`en`), Indonesian (`id`), and Brazilian Portuguese (`pt-BR`).
+  - **Full Dashboard Coverage**: Over 1,000+ localized UI keys with 100% key parity across all 3 catalogs covering headers, cards, tables, filters, forms, placeholders, dialogs, badges, empty states, and toast notifications.
+  - **All Pages Localized**: Dashboard Overview, Sessions & Session Access Management, Live Chat Interface & Interactive Message Builder Dialog, Interactive Tester, Broadcast, Recurring Scheduler, Auto Reply, Bot Settings, Contacts, Groups, Labels, Media Gallery, Sticker Maker, Inbox & Notifications Manager, Webhooks & Live Webhook Logs Dialog, System Resource Monitor, System Settings, User Management, Profile, and API Documentation.
+  - **Persistence & Fallback**: Cookie-based language selection persistence (`NEXT_LOCALE`), automatic fallback to `DEFAULT_LANGUAGE` or browser preference, and seamless language switcher dropdown in the navigation bar.
+  - **Automated Verification**: Automated ICU message syntax validation, placeholder/tag matching tests, and locale resolution test suites with zero ICU formatting errors.
+- **Chat List Categorization Filter** (#99): Added `All` / `Chats` (direct personal messages) / `Groups` tab filters to the chat list:
+  - Executed directly at database level via optimized SQL queries to maintain accurate pagination, unread counts, and infinite scroll performance.
+  - Real-time Socket.IO incoming message updates dynamically respect the active filter tab.
+  - Active tab preference is persisted per browser session via `localStorage`.
+- **Unified Navigation Architecture**:
+  - Centralized navigation groups and route items into a single source of truth configuration (`src/config/navigation.ts`).
+  - Achieved complete feature and RBAC role visibility parity between desktop sidebar and mobile navigation drawer.
+- **Session Access & Security Controls**: Added Session Access authorization page (`/dashboard/sessions/access`) and session guard components for granular user-session assignment and role validation.
+
+### Changed
+- **Interactive Message Dialog**: Refactored the interactive WhatsApp message trigger dialog in chat window to use `next-intl` translation keys with localized 1-click test triggers, custom composer inputs, button type selectors, and live WhatsApp bubble preview mockup.
+- **Scheduler Form UX**: Localized dynamic schedule types, interval selectors (minutes, hours, cron), day-of-week checkboxes, pending/history tabs, and execution status badges.
+- **Search & Filter Component**: Integrated fallback localization for search input placeholders and sorting selectors.
+
+### Fixed
+- **Status Broadcast Filter**: Filtered out `status@broadcast` system entries from appearing in the dashboard chat list while preserving raw backend REST API endpoints intact.
+- **Mobile Navigation Parity**: Fixed missing Interactive Message Tester item on mobile drawer navigation and aligned Superadmin-only menu visibility across devices.
+
 ## [v1.7.0-beta.1] - 2026-09-21
 
 ### Added

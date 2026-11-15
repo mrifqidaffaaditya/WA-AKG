@@ -4,8 +4,11 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { FileText, Code, ExternalLink } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export default function ApiDocsPage() {
+    const t = useTranslations("apiDocs");
+    const tCommon = useTranslations("common");
     const { data: session, status } = useSession();
     const router = useRouter();
     const [filter, setFilter] = useState("");
@@ -222,7 +225,7 @@ export default function ApiDocsPage() {
     if (status === "loading") {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <div className="text-gray-600">Loading...</div>
+                <div className="text-gray-600">{tCommon("loading")}</div>
             </div>
         );
     }
@@ -235,10 +238,10 @@ export default function ApiDocsPage() {
                     <div>
                         <h1 className="text-xl sm:text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
                             <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
-                            API Documentation
+                            {t("title")}
                         </h1>
                         <p className="text-gray-500 mt-2">
-                            Complete reference for all {apiEndpoints.length} API endpoints.
+                            {t("subtitle", { count: apiEndpoints.length })}
                         </p>
                     </div>
                     <a
@@ -247,7 +250,7 @@ export default function ApiDocsPage() {
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                     >
                         <Code className="w-4 h-4" />
-                        Open Swagger UI
+                        {t("openSwagger")}
                         <ExternalLink className="w-4 h-4" />
                     </a>
                 </div>
@@ -259,11 +262,13 @@ export default function ApiDocsPage() {
                             <FileText className="h-5 w-5 text-blue-600" />
                         </div>
                         <div className="ml-3">
-                            <h3 className="text-sm font-medium text-blue-800">📘 Project Documentation Available</h3>
+                            <h3 className="text-sm font-medium text-blue-800">📘 {t("masterDocTitle")}</h3>
                             <div className="mt-2 text-sm text-blue-700">
                                 <p>
-                                    For a deep dive into the <strong>Project Architecture</strong>, <strong>Database Schema</strong>, and <strong>Frontend Routing</strong>,
-                                    please refer to the <a href="/docs/PROJECT_DOCUMENTATION.md" className="font-bold underline hover:text-blue-900">Master Project Documentation</a> file in your codebase.
+                                    {t("masterDocDescription")}{" "}
+                                    <a href="/docs/PROJECT_DOCUMENTATION.md" className="font-bold underline hover:text-blue-900">
+                                        {t("masterDocLink")}
+                                    </a>
                                 </p>
                             </div>
                         </div>
@@ -272,7 +277,7 @@ export default function ApiDocsPage() {
 
                 {/* Quick Links */}
                 <div className="bg-white rounded-lg shadow p-6 mb-6">
-                    <h2 className="text-lg font-semibold mb-4">Quick Links</h2>
+                    <h2 className="text-lg font-semibold mb-4">{t("quickLinks")}</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <a
                             href="/docs"
@@ -281,8 +286,8 @@ export default function ApiDocsPage() {
                         >
                             <Code className="w-10 h-10 text-blue-600 mr-4" />
                             <div className="flex-1">
-                                <h3 className="font-medium text-gray-800 group-hover:text-blue-600">Swagger UI</h3>
-                                <p className="text-sm text-gray-600">Interactive API testing</p>
+                                <h3 className="font-medium text-gray-800 group-hover:text-blue-600">{t("swaggerTitle")}</h3>
+                                <p className="text-sm text-gray-600">{t("swaggerSubtitle")}</p>
                             </div>
                             <ExternalLink className="w-5 h-5 text-gray-400" />
                         </a>
@@ -293,14 +298,14 @@ export default function ApiDocsPage() {
                         >
                             <FileText className="w-10 h-10 text-green-600 mr-4" />
                             <div className="flex-1">
-                                <h3 className="font-medium text-gray-800 group-hover:text-green-600">OpenAPI Spec</h3>
-                                <p className="text-sm text-gray-600">JSON specification</p>
+                                <h3 className="font-medium text-gray-800 group-hover:text-green-600">{t("openapiTitle")}</h3>
+                                <p className="text-sm text-gray-600">{t("openapiSubtitle")}</p>
                             </div>
                             <ExternalLink className="w-5 h-5 text-gray-400" />
                         </a>
                         <div className="flex items-center p-4 border rounded-lg bg-gray-50">
                             <div className="flex-1">
-                                <h3 className="font-medium text-gray-800">Base URL</h3>
+                                <h3 className="font-medium text-gray-800">{t("baseUrl")}</h3>
                                 <p className="text-sm text-gray-600 font-mono break-all">{process.env.NEXT_PUBLIC_API_URL || '/api'}</p>
                             </div>
                         </div>
@@ -311,24 +316,24 @@ export default function ApiDocsPage() {
                 <div className="bg-white rounded-lg shadow p-6 mb-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">{t("searchLabel")}</label>
                             <input
                                 type="text"
                                 value={filter}
                                 onChange={(e) => setFilter(e.target.value)}
-                                placeholder="Search endpoints..."
+                                placeholder={t("searchPlaceholder")}
                                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">{t("categoryLabel")}</label>
                             <select
                                 value={selectedCategory}
                                 onChange={(e) => setSelectedCategory(e.target.value)}
                                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             >
                                 {categories.map(cat => (
-                                    <option key={cat} value={cat}>{cat}</option>
+                                    <option key={cat} value={cat}>{cat === "All" ? t("categoryAll") : cat}</option>
                                 ))}
                             </select>
                         </div>
@@ -341,11 +346,11 @@ export default function ApiDocsPage() {
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Endpoint</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Params</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t("tableMethod")}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t("tableEndpoint")}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t("tableParams")}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t("tableDescription")}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t("tableCategory")}</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
@@ -376,7 +381,7 @@ export default function ApiDocsPage() {
 
                     {filteredEndpoints.length === 0 && (
                         <div className="text-center py-12 text-gray-500">
-                            No endpoints found matching your criteria
+                            {t("noEndpoints")}
                         </div>
                     )}
                 </div>
@@ -385,19 +390,19 @@ export default function ApiDocsPage() {
                 <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-white rounded-lg shadow p-4">
                         <div className="text-2xl font-bold text-blue-600">{apiEndpoints.length}</div>
-                        <div className="text-sm text-gray-600">Total Endpoints</div>
+                        <div className="text-sm text-gray-600">{t("statTotal")}</div>
                     </div>
                     <div className="bg-white rounded-lg shadow p-4">
                         <div className="text-2xl font-bold text-green-600">{categories.length - 1}</div>
-                        <div className="text-sm text-gray-600">Categories</div>
+                        <div className="text-sm text-gray-600">{t("statCategories")}</div>
                     </div>
                     <div className="bg-white rounded-lg shadow p-4">
                         <div className="text-2xl font-bold text-yellow-600">{apiEndpoints.filter(e => e.method === "POST").length}</div>
-                        <div className="text-sm text-gray-600">POST Endpoints</div>
+                        <div className="text-sm text-gray-600">{t("statPost")}</div>
                     </div>
                     <div className="bg-white rounded-lg shadow p-4">
                         <div className="text-2xl font-bold text-purple-600">{apiEndpoints.filter(e => e.method === "GET").length}</div>
-                        <div className="text-sm text-gray-600">GET Endpoints</div>
+                        <div className="text-sm text-gray-600">{t("statGet")}</div>
                     </div>
                 </div>
             </div>

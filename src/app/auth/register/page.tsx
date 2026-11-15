@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -17,24 +17,28 @@ import {
 import { Input } from "@/components/ui/input"
 import { Bot, ArrowRight, Loader2 } from "lucide-react";
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { LanguageSwitcher } from '@/components/language-switcher';
 
-const formSchema = z.object({
-    name: z.string().min(2, "Name must be at least 2 characters"),
-    email: z.string().email("Please enter a valid email address"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string()
-}).refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-});
+type RegisterValues = { name: string; email: string; password: string; confirmPassword: string };
 
 export default function RegisterPage() {
+    const t = useTranslations('auth');
+    const formSchema = useMemo(() => z.object({
+        name: z.string().min(2, t('register.nameMin', { min: 2 })),
+        email: z.string().email(t('invalidEmail')),
+        password: z.string().min(6, t('register.passwordMin', { min: 6 })),
+        confirmPassword: z.string()
+    }).refine((data) => data.password === data.confirmPassword, {
+        message: t('register.passwordMismatch'),
+        path: ["confirmPassword"],
+    }), [t]);
     const router = useRouter();
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    const form = useForm<z.infer<typeof formSchema>>({
+    const form = useForm<RegisterValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: "",
@@ -44,7 +48,7 @@ export default function RegisterPage() {
         },
     });
 
-    async function onSubmit(values: z.infer<typeof formSchema>) {
+    async function onSubmit(values: RegisterValues) {
         setLoading(true);
         setError(null);
         try {
@@ -62,7 +66,7 @@ export default function RegisterPage() {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || "Failed to register");
+                throw new Error(errorData.error || t('register.failed'));
             }
 
             setSuccess(true);
@@ -71,7 +75,7 @@ export default function RegisterPage() {
             }, 2000);
 
         } catch (err: any) {
-            setError(err.message || "An unexpected error occurred");
+            setError(err.message || t('unexpectedError'));
         } finally {
             setLoading(false);
         }
@@ -85,8 +89,8 @@ export default function RegisterPage() {
                     <div className="h-16 w-16 bg-emerald-500 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-emerald-500/30">
                         <Bot className="h-8 w-8 text-white" />
                     </div>
-                    <h2 className="text-2xl font-bold text-foreground mb-2">Registration Successful!</h2>
-                    <p className="text-muted-foreground">Redirecting you to the login page...</p>
+                    <h2 className="text-2xl font-bold text-foreground mb-2">{t('register.successTitle')}</h2>
+                    <p className="text-muted-foreground">{t('register.successDescription')}</p>
                 </div>
             </div>
         );
@@ -94,6 +98,9 @@ export default function RegisterPage() {
 
     return (
         <div className="flex items-center justify-center min-h-screen relative overflow-hidden bg-background py-12">
+            <div className="absolute top-4 right-4 z-20">
+                <LanguageSwitcher />
+            </div>
             {/* Background Orbs */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
                 <div className="absolute top-0 right-0 translate-x-1/3 -translate-y-1/4 w-[40rem] h-[40rem] bg-emerald-500/10 rounded-full blur-[120px]" />
@@ -105,8 +112,8 @@ export default function RegisterPage() {
                     <div className="relative flex h-16 w-16 mb-4 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-primary text-white shadow-lg shadow-primary/30">
                         <Bot className="h-8 w-8" />
                     </div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Create Account</h1>
-                    <p className="text-muted-foreground mt-2">Join WA-AKG today</p>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('register.title')}</h1>
+                    <p className="text-muted-foreground mt-2">{t('register.subtitle', { appName: 'WA-AKG' })}</p>
                 </div>
 
                 <div className="glass-panel rounded-3xl p-8 shadow-2xl shadow-black/5 dark:shadow-black/40">
@@ -123,10 +130,10 @@ export default function RegisterPage() {
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-foreground/80">Full Name</FormLabel>
+                                        <FormLabel className="text-foreground/80">{t('register.fullName')}</FormLabel>
                                         <FormControl>
                                             <Input
-                                                placeholder="John Doe"
+                                                placeholder={t('register.fullNamePlaceholder')}
                                                 className="h-12 px-4 rounded-xl bg-background/50 border-white/20 dark:border-white/10 focus-visible:ring-primary/50 transition-all font-medium"
                                                 {...field}
                                             />
@@ -140,10 +147,10 @@ export default function RegisterPage() {
                                 name="email"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-foreground/80">Email</FormLabel>
+                                        <FormLabel className="text-foreground/80">{t('email')}</FormLabel>
                                         <FormControl>
                                             <Input
-                                                placeholder="name@example.com"
+                                                placeholder={t('emailPlaceholder')}
                                                 className="h-12 px-4 rounded-xl bg-background/50 border-white/20 dark:border-white/10 focus-visible:ring-primary/50 transition-all font-medium"
                                                 {...field}
                                             />
@@ -157,7 +164,7 @@ export default function RegisterPage() {
                                 name="password"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-foreground/80">Password</FormLabel>
+                                        <FormLabel className="text-foreground/80">{t('password')}</FormLabel>
                                         <FormControl>
                                             <Input
                                                 type="password"
@@ -175,7 +182,7 @@ export default function RegisterPage() {
                                 name="confirmPassword"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-foreground/80">Confirm Password</FormLabel>
+                                        <FormLabel className="text-foreground/80">{t('register.confirmPassword')}</FormLabel>
                                         <FormControl>
                                             <Input
                                                 type="password"
@@ -196,23 +203,26 @@ export default function RegisterPage() {
                                 disabled={loading}
                             >
                                 {loading ? (
-                                    <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Creating Account...</>
+                                    <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> {t('register.submitting')}</>
                                 ) : (
-                                    <>Register <ArrowRight className="ml-2 h-5 w-5" /></>
+                                    <>{t('register.submit')} <ArrowRight className="ml-2 h-5 w-5" /></>
                                 )}
                             </Button>
                         </form>
                     </Form>
 
                     <div className="mt-6 text-xs text-center text-muted-foreground leading-relaxed">
-                        By registering, you agree to our <Link href="/terms" className="underline hover:text-foreground">Terms of Service</Link> and <Link href="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>.
+                        {t.rich('register.terms', {
+                            terms: (chunks) => <Link href="/terms" className="underline hover:text-foreground">{chunks}</Link>,
+                            privacy: (chunks) => <Link href="/privacy" className="underline hover:text-foreground">{chunks}</Link>,
+                        })}
                     </div>
                 </div>
 
                 <div className="mt-8 text-center text-sm text-muted-foreground">
-                    Already have an account?{" "}
+                    {t('register.haveAccount')}{" "}
                     <Link href="/auth/login" className="font-semibold text-primary hover:text-primary/80 transition-colors">
-                        Sign in
+                        {t('register.signIn')}
                     </Link>
                 </div>
             </div>
