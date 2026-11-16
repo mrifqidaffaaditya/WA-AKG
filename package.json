@@ -75,7 +75,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19",
     "@types/swagger-ui-react": "^5.18.0",
-    "eslint": "^9",
+    "eslint": "^10",
     "eslint-config-next": "^16.4.6",
     "next-swagger-doc": "^0.4.1",
     "openapi-types": "^12.1.3",
