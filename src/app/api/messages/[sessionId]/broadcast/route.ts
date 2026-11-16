@@ -8,6 +8,9 @@ import { z } from "zod";
 
 export const normalizeBroadcastJid = sanitizePhoneToJid;
 
+const DEFAULT_MIN_DELAY_MS = 10_000;
+const DEFAULT_MAX_DELAY_MS = 30_000;
+
 const broadcastBodySchema = z.object({
     recipients: z.array(z.string()),
     message: z.string().min(1),
@@ -62,7 +65,7 @@ export async function POST(
                 sessionId,
                 message,
                 total: normalizedRecipients.length,
-                delay: delay || 2000,
+                delay: delay || DEFAULT_MIN_DELAY_MS,
                 status: "running",
                 recipients: {
                     create: normalizedRecipients.map(jid => ({
@@ -144,8 +147,10 @@ export async function POST(
 
                 // Delay between sends
                 if (i < normalizedRecipients.length - 1) {
-                    const baseDelay = delay || 2000;
-                    const randomDelay = baseDelay + Math.floor(Math.random() * (baseDelay * 0.5));
+                    // No delay given: random 10-30s (anti-ban default). Custom delay: base + up to 50% jitter.
+                    const randomDelay = delay
+                        ? delay + Math.floor(Math.random() * (delay * 0.5))
+                        : DEFAULT_MIN_DELAY_MS + Math.floor(Math.random() * (DEFAULT_MAX_DELAY_MS - DEFAULT_MIN_DELAY_MS));
                     await new Promise(r => setTimeout(r, randomDelay));
                 }
             }

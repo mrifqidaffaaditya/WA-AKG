@@ -1799,7 +1799,7 @@ All endpoints require authentication via:
                                         properties: {
                                             message: { type: "string", example: "Check our new catalog!" },
                                             count: { type: "integer", default: 10, example: 5 },
-                                            delay: { type: "integer", default: 500, example: 1000, description: "Delay in ms" }
+                                            delay: { type: "integer", example: 10000, description: "Base delay in ms between sends (+ up to 50% jitter). Default: random 10000-30000" }
                                         }
                                     }
                                 }
