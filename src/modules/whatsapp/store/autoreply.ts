@@ -3,6 +3,30 @@ import type { WASocket } from "@whiskeysockets/baileys";
 import { normalizeMessageContent } from "@whiskeysockets/baileys";
 import { logger } from "@/lib/logger";
 
+/**
+ * Replaces every {{url:https://...}} in a response with the text returned by that URL
+ * (fetched at reply time, so the content is always current). On failure the token becomes "".
+ */
+async function resolveDynamicResponse(text: string): Promise<string> {
+    const re = /\{\{\s*url:\s*(https?:\/\/[^\s}]+)\s*\}\}/gi;
+    const matches = Array.from(text.matchAll(re));
+    if (matches.length === 0) return text;
+
+    const { safeFetchBuffer } = await import("@/lib/security");
+    let result = text;
+    for (const m of matches) {
+        let replacement = "";
+        try {
+            const { buffer } = await safeFetchBuffer(m[1], { maxBytes: 100 * 1024, timeoutMs: 8000 });
+            replacement = buffer.toString("utf8").trim();
+        } catch (err: any) {
+            logger.error("AutoReply", `Dynamic content fetch failed for ${m[1]}: ${err.message}`);
+        }
+        result = result.replace(m[0], () => replacement);
+    }
+    return result;
+}
+
 // Helper for permission check (Deduplicate from command-handler if possible, but keep simple here)
 function canAutoReply(config: any, fromMe: boolean, senderJid: string): boolean {
     if (!config || !config.enabled) return false;
@@ -147,6 +171,7 @@ export async function bindAutoReply(sock: WASocket, sessionId: string) {
                         if (triggerType === 'PRIVATE' && isGroup) continue;
 
                         logger.info("AutoReply", `Match: ${rule.keyword} -> ${remoteJid}`);
+                        const responseText = rule.response ? await resolveDynamicResponse(rule.response) : rule.response;
 
                         if (rule.isMedia && rule.mediaUrl) {
                             const url = rule.mediaUrl;
@@ -160,8 +185,8 @@ export async function bindAutoReply(sock: WASocket, sessionId: string) {
                                 });
 
                                 let payload: any = {};
-                                if (rule.response) {
-                                    payload.caption = rule.response;
+                                if (responseText) {
+                                    payload.caption = responseText;
                                 }
 
                                 if (type === "image") {
@@ -182,12 +207,12 @@ export async function bindAutoReply(sock: WASocket, sessionId: string) {
                                 await sock.sendMessage(remoteJid, payload, { quoted: msg });
                             } catch (err: any) {
                                 logger.error("AutoReply", `Failed to send media auto-reply: ${err.message}. Falling back to text if response exists.`);
-                                if (rule.response) {
-                                    await sock.sendMessage(remoteJid, { text: rule.response }, { quoted: msg });
+                                if (responseText) {
+                                    await sock.sendMessage(remoteJid, { text: responseText }, { quoted: msg });
                                 }
                             }
-                        } else if (rule.response) {
-                            await sock.sendMessage(remoteJid, { text: rule.response }, { quoted: msg });
+                        } else if (responseText) {
+                            await sock.sendMessage(remoteJid, { text: responseText }, { quoted: msg });
                         }
 
                         break;

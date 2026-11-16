@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "@/components/dashboard/session-provider";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { BotMessageSquare, Loader2, Plus, Trash2, MessageCircleReply, Image as ImageIcon, Pencil } from "lucide-react";
+import { BotMessageSquare, Loader2, Plus, Trash2, MessageCircleReply, Image as ImageIcon, Pencil, Link2 } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -45,6 +45,55 @@ interface AutoReply {
     mediaType: string | null;
     triggerType: string;
     createdAt: Date;
+}
+
+// Textarea with a formatting toolbar: wraps the selection (or inserts markers) for WhatsApp styles
+// and inserts the {{url:...}} dynamic-content token.
+function ResponseEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+    const t = useTranslations("autoreply");
+    const ref = useRef<HTMLTextAreaElement>(null);
+
+    // Replace the selection with before + selected + after, then restore selection on `selected` (or the placeholder)
+    const apply = (before: string, after: string, placeholder = "") => {
+        const el = ref.current;
+        if (!el) return;
+        const start = el.selectionStart ?? value.length;
+        const end = el.selectionEnd ?? value.length;
+        const selected = value.slice(start, end) || placeholder;
+        onChange(value.slice(0, start) + before + selected + after + value.slice(end));
+        requestAnimationFrame(() => {
+            el.focus();
+            el.setSelectionRange(start + before.length, start + before.length + selected.length);
+        });
+    };
+
+    const tools: { label: React.ReactNode; title: string; run: () => void; className?: string }[] = [
+        { label: "B", title: t("toolBold"), run: () => apply("*", "*"), className: "font-bold" },
+        { label: "I", title: t("toolItalic"), run: () => apply("_", "_"), className: "italic" },
+        { label: "S", title: t("toolStrike"), run: () => apply("~", "~"), className: "line-through" },
+        { label: "</>", title: t("toolMono"), run: () => apply("```", "```"), className: "font-mono text-xs" },
+        { label: <><Link2 className="mr-1 h-3.5 w-3.5" />{t("toolDynamicLink")}</>, title: t("toolDynamicLinkHint"), run: () => apply("{{url:", "}}", "https://") },
+    ];
+
+    return (
+        <div className="space-y-2">
+            <div className="flex flex-wrap gap-1">
+                {tools.map((tool, i) => (
+                    <Button key={i} type="button" variant="outline" size="sm" className={`h-8 px-2.5 ${tool.className ?? ""}`} title={tool.title} onMouseDown={e => e.preventDefault()} onClick={tool.run}>
+                        {tool.label}
+                    </Button>
+                ))}
+            </div>
+            <Textarea
+                ref={ref}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder={t("responsePlaceholder")}
+                className="min-h-[120px]"
+            />
+            <p className="text-xs text-muted-foreground">{t("formattingTip")}</p>
+        </div>
+    );
 }
 
 export default function AutoReplyPage() {
@@ -257,13 +306,7 @@ export default function AutoReplyPage() {
 
                             <div className="space-y-2">
                                 <Label>{t("response")}</Label>
-                                <Textarea 
-                                    value={response} 
-                                    onChange={(e) => setResponse(e.target.value)} 
-                                    placeholder={t("responsePlaceholder")} 
-                                    className="min-h-[120px]"
-                                />
-                                <p className="text-xs text-muted-foreground">{t("formattingTip")}</p>
+                                <ResponseEditor value={response} onChange={setResponse} />
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -357,7 +400,7 @@ export default function AutoReplyPage() {
                                 </div>
                             </CardHeader>
                             <CardContent className="pt-4 flex-grow flex flex-col">
-                                <div className="text-sm text-foreground bg-muted/30 p-3 rounded-md border whitespace-pre-wrap flex-grow">
+                                <div className="text-sm text-foreground bg-muted/30 p-3 rounded-md border whitespace-pre-wrap break-words [overflow-wrap:anywhere] min-w-0 flex-grow">
                                     {rule.response}
                                 </div>
                                 {rule.isMedia && (
@@ -423,13 +466,7 @@ export default function AutoReplyPage() {
 
                         <div className="space-y-2">
                             <Label>{t("response")}</Label>
-                            <Textarea 
-                                value={editResponse} 
-                                onChange={(e) => setEditResponse(e.target.value)} 
-                                placeholder={t("responsePlaceholder")} 
-                                className="min-h-[120px]"
-                            />
-                            <p className="text-xs text-muted-foreground">{t("formattingTip")}</p>
+                            <ResponseEditor value={editResponse} onChange={setEditResponse} />
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
