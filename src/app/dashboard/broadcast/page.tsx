@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
-import { RefreshCw, Send, CheckCircle2, XCircle, Radio, Clock, AlertTriangle, History, Eye, Calendar } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Users, RefreshCw, Send, CheckCircle2, XCircle, Radio, Clock, AlertTriangle, History, Eye, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/components/dashboard/session-provider";
 import { SessionGuard } from "@/components/dashboard/session-guard";
@@ -56,7 +57,9 @@ export default function BroadcastPage() {
     const t = useTranslations("broadcast");
     const tCommon = useTranslations("common");
     const { sessionId } = useSession();
-    const [contacts, setContacts] = useState("");
+    type Row = { number: string; name: string };
+    const emptyRows = (n: number): Row[] => Array.from({ length: n }, () => ({ number: "", name: "" }));
+    const [rows, setRows] = useState<Row[]>(() => emptyRows(8));
     const [message, setMessage] = useState("");
     const [delay, setDelay] = useState([2000]);
     const [antiBan, setAntiBan] = useState(true);
@@ -162,6 +165,105 @@ export default function BroadcastPage() {
         return `${clean}@s.whatsapp.net`;
     };
 
+    // Excel paste: "number<TAB>name" per line (name is parsed but not used yet). Plain lists/commas still work.
+    const parseContacts = (raw: string): Map<string, string> => {
+        const map = new Map<string, string>();
+        for (const line of raw.split(/\r?\n/)) {
+            if (line.includes("\t")) {
+                const [num, ...rest] = line.split("\t");
+                const jid = normalizeRecipientInput(num);
+                if (jid && !map.has(jid)) map.set(jid, rest.join(" ").trim());
+            } else {
+                for (const part of line.split(",")) {
+                    const jid = normalizeRecipientInput(part);
+                    if (jid && !map.has(jid)) map.set(jid, "");
+                }
+            }
+        }
+        return map;
+    };
+    const parsedContacts = parseContacts(rows.map(r => `${r.number}\t${r.name}`).join("\n"));
+
+    // --- Import contacts synced from the phone ---
+    type PhoneContact = { phone: string; name: string };
+    const [importOpen, setImportOpen] = useState(false);
+    const [importLoading, setImportLoading] = useState(false);
+    const [phoneContacts, setPhoneContacts] = useState<PhoneContact[]>([]);
+    const [importSearch, setImportSearch] = useState("");
+    const [importSelected, setImportSelected] = useState<Set<string>>(new Set());
+
+    const openImport = async () => {
+        if (!sessionId) return toast.error(t("noActiveSession"));
+        setImportOpen(true);
+        setImportSelected(new Set());
+        setImportSearch("");
+        setImportLoading(true);
+        try {
+            const res = await fetch(`/api/contacts/${sessionId}?limit=all`);
+            const data = await res.json();
+            const list: PhoneContact[] = [];
+            const seen = new Set<string>();
+            for (const c of data.data || []) {
+                const source = c.jid?.endsWith("@s.whatsapp.net") ? c.jid : c.remoteJidAlt || "";
+                if (!source.endsWith("@s.whatsapp.net")) continue; // skip groups/LIDs without a phone
+                const phone = source.split("@")[0];
+                if (seen.has(phone)) continue;
+                seen.add(phone);
+                list.push({ phone, name: c.name || c.notify || c.verifiedName || "" });
+            }
+            setPhoneContacts(list);
+        } catch (e) {
+            console.error(e);
+            toast.error(t("importError"));
+        } finally {
+            setImportLoading(false);
+        }
+    };
+
+    const importFiltered = phoneContacts.filter(c => {
+        const q = importSearch.trim().toLowerCase();
+        return !q || c.phone.includes(q) || c.name.toLowerCase().includes(q);
+    });
+    const allFilteredSelected = importFiltered.length > 0 && importFiltered.every(c => importSelected.has(c.phone));
+    const toggleImport = (phone: string) =>
+        setImportSelected(prev => { const n = new Set(prev); if (n.has(phone)) n.delete(phone); else n.add(phone); return n; });
+    const toggleImportAll = () =>
+        setImportSelected(prev => {
+            const n = new Set(prev);
+            importFiltered.forEach(c => (allFilteredSelected ? n.delete(c.phone) : n.add(c.phone)));
+            return n;
+        });
+    const addImported = () => {
+        const existing = rows.filter(r => r.number.trim() || r.name.trim());
+        const have = new Set(existing.map(r => r.number.replace(/\D/g, "")));
+        const added = phoneContacts
+            .filter(c => importSelected.has(c.phone) && !have.has(c.phone))
+            .map(c => ({ number: c.phone, name: c.name }));
+        setRows(withSpareRow([...existing, ...added]));
+        setImportOpen(false);
+    };
+
+    // Keep one spare empty row at the end so the grid always grows while typing/pasting
+    const withSpareRow = (list: Row[]): Row[] =>
+        list.length === 0 || list[list.length - 1].number || list[list.length - 1].name ? [...list, ...emptyRows(1)] : list;
+    const updateRow = (i: number, field: keyof Row, value: string) =>
+        setRows(prev => withSpareRow(prev.map((r, idx) => (idx === i ? { ...r, [field]: value } : r))));
+    // Excel paste: "number<TAB>name" lines spread across rows starting at the focused row
+    const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>, start: number) => {
+        const text = e.clipboardData.getData("text");
+        if (!/[\t\r\n]/.test(text)) return; // single value: normal paste
+        e.preventDefault();
+        const lines = text.replace(/\r/g, "").replace(/\n+$/, "").split("\n").map(l => {
+            const [number = "", ...rest] = l.split("\t");
+            return { number: number.trim(), name: rest.join(" ").trim() };
+        }).filter(l => /\d/.test(l.number)); // drops Excel header rows
+        setRows(prev => {
+            const next = [...prev];
+            lines.forEach((l, k) => { next[start + k] = l; });
+            return withSpareRow(next.map(r => r ?? { number: "", name: "" }));
+        });
+    };
+
     const handleSend = async () => {
         if (!sessionId) return toast.error(t("noActiveSession"));
         if (!message.trim()) return toast.error(t("messageRequired"));
@@ -169,9 +271,7 @@ export default function BroadcastPage() {
         setBroadcastProgress(null);
 
         try {
-            const recipients = Array.from(
-                new Set(contacts.split(/[\n,]+/).map(normalizeRecipientInput).filter((s): s is string => Boolean(s)))
-            );
+            const recipients = Array.from(parsedContacts.keys());
 
             if (recipients.length === 0) {
                 toast.error(t("recipientsRequired"));
@@ -184,6 +284,7 @@ export default function BroadcastPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     recipients,
+                    recipientNames: Object.fromEntries(Array.from(parsedContacts).filter(([, name]) => name)),
                     message,
                     delay: delay[0],
                     antiBan
@@ -205,9 +306,7 @@ export default function BroadcastPage() {
         }
     };
 
-    const recipientCount = Array.from(
-        new Set(contacts.split(/[\n,]+/).map(normalizeRecipientInput).filter((s): s is string => Boolean(s)))
-    ).length;
+    const recipientCount = parsedContacts.size;
     const formatJid = (jid: string) => {
         if (!jid) return "-";
         return jid.replace("@s.whatsapp.net", "").replace("@g.us", " (Group)");
@@ -260,14 +359,40 @@ export default function BroadcastPage() {
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div className="space-y-2">
-                                        <Label>{t("targetLabel")}</Label>
-                                        <Textarea
-                                            placeholder={"628123456789\n628987654321"}
-                                            className="min-h-[200px] font-mono text-sm"
-                                            value={contacts}
-                                            onChange={e => setContacts(e.target.value)}
-                                            disabled={loading}
-                                        />
+                                        <div className="flex items-center justify-between gap-2">
+                                            <Label>{t("targetLabel")}</Label>
+                                            <Button type="button" variant="outline" size="sm" onClick={openImport} disabled={loading}>
+                                                <Users className="mr-2 h-4 w-4" />
+                                                {t("importContacts")}
+                                            </Button>
+                                        </div>
+                                        <div className="max-h-[320px] overflow-y-auto rounded-md border border-input">
+                                            <div className="sticky top-0 z-10 grid grid-cols-2 border-b bg-muted text-xs font-medium text-muted-foreground">
+                                                <span className="px-3 py-2">{t("colNumber")}</span>
+                                                <span className="border-l px-3 py-2">{t("colName")}</span>
+                                            </div>
+                                            {rows.map((row, i) => (
+                                                <div key={i} className="grid grid-cols-2 border-b last:border-b-0">
+                                                    <input
+                                                        value={row.number}
+                                                        onChange={e => updateRow(i, "number", e.target.value)}
+                                                        onPaste={e => handlePaste(e, i)}
+                                                        inputMode="tel"
+                                                        placeholder={i === 0 ? "5511999999999" : ""}
+                                                        disabled={loading}
+                                                        className="min-w-0 bg-transparent px-3 py-2 font-mono text-sm outline-none focus:bg-accent/40"
+                                                    />
+                                                    <input
+                                                        value={row.name}
+                                                        onChange={e => updateRow(i, "name", e.target.value)}
+                                                        onPaste={e => handlePaste(e, i)}
+                                                        placeholder={i === 0 ? "João" : ""}
+                                                        disabled={loading}
+                                                        className="min-w-0 border-l bg-transparent px-3 py-2 text-sm outline-none focus:bg-accent/40"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
                                         <p className="text-xs text-muted-foreground">{t("numbersIdentified", { count: recipientCount })}</p>
                                     </div>
                                 </CardContent>
@@ -288,6 +413,7 @@ export default function BroadcastPage() {
                                             onChange={e => setMessage(e.target.value)}
                                             disabled={loading}
                                         />
+                                        <p className="text-xs text-muted-foreground">{t("messageNameHint")}</p>
                                     </div>
 
                                     <div className="space-y-4 pt-4">
@@ -302,7 +428,7 @@ export default function BroadcastPage() {
                                                 onValueChange={setDelay}
                                                 disabled={loading}
                                             />
-                                            <p className="text-xs text-muted-foreground">{t("delayAntarPesan")}</p>
+                                            <p className="text-xs text-muted-foreground">{t("delayAntarPesan", { min: (delay[0] / 1000).toFixed(1), max: (delay[0] * 1.5 / 1000).toFixed(1) })}</p>
                                         </div>
 
                                         <div className="flex items-center justify-between gap-4">
@@ -472,6 +598,43 @@ export default function BroadcastPage() {
                 )}
 
                 {/* Detail Modal */}
+                <Dialog open={importOpen} onOpenChange={setImportOpen}>
+                    <DialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+                        <DialogHeader>
+                            <DialogTitle>{t("importTitle")}</DialogTitle>
+                        </DialogHeader>
+                        <Input
+                            autoFocus
+                            value={importSearch}
+                            onChange={e => setImportSearch(e.target.value)}
+                            placeholder={t("importSearch")}
+                            autoComplete="off"
+                        />
+                        <label className="flex items-center gap-2 px-1 text-sm">
+                            <input type="checkbox" checked={allFilteredSelected} onChange={toggleImportAll} disabled={importFiltered.length === 0} />
+                            {t("importSelectAll", { count: importFiltered.length })}
+                        </label>
+                        <div className="min-h-[120px] flex-1 overflow-y-auto rounded-md border">
+                            {importLoading ? (
+                                <p className="p-4 text-center text-sm text-muted-foreground">{t("importLoading")}</p>
+                            ) : importFiltered.length === 0 ? (
+                                <p className="p-4 text-center text-sm text-muted-foreground">{t("importEmpty")}</p>
+                            ) : (
+                                importFiltered.map(c => (
+                                    <label key={c.phone} className="flex cursor-pointer items-center gap-3 border-b px-3 py-2 text-sm last:border-b-0 hover:bg-accent/40">
+                                        <input type="checkbox" checked={importSelected.has(c.phone)} onChange={() => toggleImport(c.phone)} />
+                                        <span className="flex-1 truncate">{c.name || "—"}</span>
+                                        <span className="font-mono text-xs text-muted-foreground">{c.phone}</span>
+                                    </label>
+                                ))
+                            )}
+                        </div>
+                        <Button onClick={addImported} disabled={importSelected.size === 0}>
+                            {t("importAdd", { count: importSelected.size })}
+                        </Button>
+                    </DialogContent>
+                </Dialog>
+
                 <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
                     <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
                         <DialogHeader>

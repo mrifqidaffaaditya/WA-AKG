@@ -19,6 +19,8 @@ const HOUR_MS = 3_600_000;
 
 const broadcastBodySchema = z.object({
     recipients: z.array(z.string()),
+    // Optional name per recipient (keyed by the same value sent in `recipients`), used for the @Nome placeholder
+    recipientNames: z.record(z.string(), z.string()).optional(),
     message: z.string().min(1),
     delay: z.number().optional(),
     antiBan: z.boolean().default(true)
@@ -42,7 +44,12 @@ export async function POST(
             return NextResponse.json({ error: parseResult.error.flatten() }, { status: 400 });
         }
 
-        const { recipients, message, delay, antiBan } = parseResult.data;
+        const { recipients, message, delay, antiBan, recipientNames } = parseResult.data;
+        const nameByJid = new Map<string, string>();
+        for (const [raw, name] of Object.entries(recipientNames ?? {})) {
+            const jid = normalizeBroadcastJid(raw);
+            if (jid) nameByJid.set(jid, name);
+        }
 
         // Sanitize & normalize recipients (strip '+', whitespace, non-digits, ensure valid WhatsApp JID format)
         const normalizedRecipients = Array.from(
@@ -84,7 +91,15 @@ export async function POST(
             include: { recipients: true }
         });
 
-        const messageContent: AnyMessageContent = { text: message };
+        // @Nome (case-insensitive) is replaced by the recipient's name; empty if none was given
+        const hasNameTag = /@nome\b/i.test(message);
+        const buildContent = (jid: string): AnyMessageContent => {
+            if (!hasNameTag) return { text: message };
+            const name = nameByJid.get(jid) ?? "";
+            const text = message.replace(/@nome\b/gi, () => name);
+            // Without a name, avoid leaving double spaces like "Hi , how are you"
+            return { text: name ? text : text.replace(/[ \t]{2,}/g, " ").replace(/ ([,.!?])/g, "$1").trim() };
+        };
         const io = (global as any).io;
         const broadcastId = log.id;
 
@@ -121,7 +136,21 @@ export async function POST(
                 sendTimes.push(Date.now());
 
                 try {
-                    await instance.socket!.sendMessage(jid, messageContent);
+                    // Resolve the real WhatsApp JID first: sendMessage "succeeds" even for numbers that
+                    // don't exist (e.g. BR numbers with a wrong 9th digit), so check and use the canonical JID.
+                    let targetJid = jid;
+                    if (jid.endsWith("@s.whatsapp.net")) {
+                        let lookup: { jid: string; exists?: boolean } | undefined;
+                        try {
+                            [lookup] = (await instance.socket!.onWhatsApp(jid)) ?? [];
+                        } catch (lookupErr) {
+                            console.warn(`onWhatsApp lookup failed for ${jid}, sending as-is`, lookupErr);
+                        }
+                        if (lookup && !lookup.exists) throw new Error("Number is not on WhatsApp");
+                        if (lookup?.jid) targetJid = lookup.jid;
+                    }
+
+                    await instance.socket!.sendMessage(targetJid, buildContent(jid));
                     sent++;
 
                     // Update recipient status in DB
