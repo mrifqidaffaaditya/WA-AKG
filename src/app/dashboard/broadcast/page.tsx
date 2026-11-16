@@ -140,6 +140,26 @@ export default function BroadcastPage() {
         }
     };
 
+    const normalizeRecipientInput = (input: string): string | null => {
+        let clean = input.trim();
+        if (!clean) return null;
+        if (clean.endsWith("@g.us") || clean.endsWith("@newsletter")) {
+            return clean;
+        }
+        if (clean.includes("@")) {
+            const [user, server] = clean.split("@");
+            const numeric = user.replace(/\D/g, "");
+            if (!numeric) return null;
+            return `${numeric}@${server || "s.whatsapp.net"}`;
+        }
+        clean = clean.replace(/\D/g, "");
+        if (!clean) return null;
+        if (clean.startsWith("0")) {
+            clean = "62" + clean.substring(1);
+        }
+        return `${clean}@s.whatsapp.net`;
+    };
+
     const handleSend = async () => {
         if (!sessionId) return toast.error(t("noActiveSession"));
         if (!message.trim()) return toast.error(t("messageRequired"));
@@ -147,10 +167,9 @@ export default function BroadcastPage() {
         setBroadcastProgress(null);
 
         try {
-            const recipients = contacts.split(/[\n,]+/).map(s => s.trim()).filter(Boolean).map(s => {
-                if (!s.includes('@')) return `${s}@s.whatsapp.net`;
-                return s;
-            });
+            const recipients = Array.from(
+                new Set(contacts.split(/[\n,]+/).map(normalizeRecipientInput).filter((s): s is string => Boolean(s)))
+            );
 
             if (recipients.length === 0) {
                 toast.error(t("recipientsRequired"));
@@ -183,7 +202,9 @@ export default function BroadcastPage() {
         }
     };
 
-    const recipientCount = contacts.split(/[\n,]+/).map(s => s.trim()).filter(Boolean).length;
+    const recipientCount = Array.from(
+        new Set(contacts.split(/[\n,]+/).map(normalizeRecipientInput).filter((s): s is string => Boolean(s)))
+    ).length;
     const formatJid = (jid: string) => {
         if (!jid) return "-";
         return jid.replace("@s.whatsapp.net", "").replace("@g.us", " (Group)");

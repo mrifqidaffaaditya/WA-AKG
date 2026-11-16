@@ -703,16 +703,8 @@ export function buildNativeFlowAdditionalNodes(targetJid: string, buttonName: st
         }
     ];
 
-    // In direct 1-on-1 chats, WhatsApp expects the biz_bot attribute to recognize interactive bot messages
-    if (!isGroup && !isNewsletter) {
-        nodes.push({
-            tag: "bot",
-            attrs: {
-                biz_bot: "1"
-            }
-        });
-    }
-
+    // Note: Do not append <bot biz_bot="1"/> node for direct chats.
+    // As of Nov 2026, WhatsApp drops interactive messages that include the bot node in 1-on-1 chats (Issue #112).
     return nodes;
 }
 
