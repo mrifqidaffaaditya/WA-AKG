@@ -40,24 +40,24 @@ class AntiSpamManager {
      * Enqueue a message and wait for it to be processed.
      * Returns only when it's this message's turn to send.
      */
-    async enqueue(sessionId: string, jid: string, content: any): Promise<void> {
+    async enqueue(sessionId: string, jid: string, content: any): Promise<boolean> {
         const config = await this.getAntiSpamConfig(sessionId);
 
         if (!config || !config.antiSpamEnabled) {
-            return; // Anti-spam disabled, send immediately
+            return false; // Anti-spam disabled, send immediately
         }
 
         const messageType = this.detectMessageType(content);
         const msgId = ++this.messageCounter;
 
-        return new Promise<void>((resolve, reject) => {
+        return new Promise<boolean>((resolve, reject) => {
             const item: QueueItem = {
                 id: msgId,
                 sessionId,
                 jid,
                 messageType,
                 queuedAt: Date.now(),
-                resolve,
+                resolve: () => resolve(true),
                 reject,
             };
 
@@ -157,10 +157,10 @@ class AntiSpamManager {
     private recordSend(sessionId: string) {
         const history = this.sessionHistory.get(sessionId) || [];
         history.push(Date.now());
-        // Keep only last 60 seconds of history
+        // Keep 1h: processQueue trims to the configured spamInterval, which may exceed 60s
         this.sessionHistory.set(
             sessionId,
-            history.filter(ts => ts > Date.now() - 60000)
+            history.filter(ts => ts > Date.now() - 3600000)
         );
     }
 

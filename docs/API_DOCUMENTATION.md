@@ -3146,7 +3146,7 @@ Content-Type: application/json
 | :--- | :--- | :--- | :--- |
 | `message` | string | ✅ Yes | — |
 | `count` | integer | No | **Default:** `10` |
-| `delay` | integer | No | Delay in ms **Default:** `500` |
+| `delay` | integer | No | Base delay in ms between sends (+ up to 50% jitter). **Default:** random 10000-30000 |
 
 **Example:**
 

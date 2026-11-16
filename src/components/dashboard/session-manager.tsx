@@ -155,7 +155,7 @@ export function SessionManager({ user }: { user: any }) {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                         <div className="space-y-2">
                             <Label htmlFor="session-name">{t("nameLabel")}</Label>
                             <Input
@@ -175,7 +175,7 @@ export function SessionManager({ user }: { user: any }) {
                             />
                             <p className="text-[10px] text-muted-foreground">{t("customIdHint")}</p>
                         </div>
-                        <Button onClick={createSession} disabled={loading}>
+                        <Button className="md:mt-[22px]" onClick={createSession} disabled={loading}>
                             {loading ? t("creatingButton") : t("createButton")}
                         </Button>
                     </div>

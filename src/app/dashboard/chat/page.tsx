@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { ChatInterface } from "@/components/chat/chat-interface";
 import { ChatLayoutClient } from "@/components/chat/chat-layout-client";
 import { cookies } from "next/headers";
@@ -18,7 +19,9 @@ export default async function ChatPage() {
     if (sessionId) {
         // Validate access
         const hasAccess = await canAccessSession(session.user.id, session.user.role, sessionId);
-        if (hasAccess) {
+        // Admins pass canAccessSession even for deleted sessions (stale cookie), so confirm it exists
+        const exists = hasAccess && await prisma.session.findUnique({ where: { sessionId }, select: { id: true } });
+        if (exists) {
             // Ideally also check if CONNECTED but canAccessSession checks ownership.
             // We can do an extra check if needed.
             validSessionId = sessionId;

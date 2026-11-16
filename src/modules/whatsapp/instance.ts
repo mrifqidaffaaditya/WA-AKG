@@ -88,7 +88,16 @@ export class WhatsAppInstance {
         const sessionId = this.sessionId;
         const sock = this.socket;
         this.socket.sendMessage = async function (jid: string, content: any, options?: any) {
-            await antispam.enqueue(sessionId, jid, content);
+            const protectedSend = await antispam.enqueue(sessionId, jid, content);
+            if (protectedSend && typeof content?.text === "string" && !jid.endsWith("@newsletter")) {
+                // Human-like: show "typing..." proportional to text length (0.5-5s)
+                const typingMs = Math.min(5000, 500 + content.text.length * 30 + Math.random() * 500);
+                try {
+                    await sock.sendPresenceUpdate("composing", jid);
+                    await new Promise(r => setTimeout(r, typingMs));
+                    await sock.sendPresenceUpdate("paused", jid);
+                } catch { /* presence is best-effort */ }
+            }
             if (isInteractiveContent(content)) {
                 const interactiveMsg = await handleInteractiveMessageDispatch(sock, jid, content, options);
                 if (interactiveMsg) {
