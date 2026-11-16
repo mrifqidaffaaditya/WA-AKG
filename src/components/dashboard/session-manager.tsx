@@ -175,7 +175,7 @@ export function SessionManager({ user }: { user: any }) {
                             />
                             <p className="text-[10px] text-muted-foreground">{t("customIdHint")}</p>
                         </div>
-                        <Button className="md:mt-7" onClick={createSession} disabled={loading}>
+                        <Button className="md:mt-[22px]" onClick={createSession} disabled={loading}>
                             {loading ? t("creatingButton") : t("createButton")}
                         </Button>
                     </div>
