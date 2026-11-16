@@ -10,11 +10,18 @@ export const normalizeBroadcastJid = sanitizePhoneToJid;
 
 const DEFAULT_MIN_DELAY_MS = 10_000;
 const DEFAULT_MAX_DELAY_MS = 30_000;
+// Anti-ban limits: long pause every BATCH_SIZE sends, hard cap per rolling hour
+const BATCH_SIZE = 20;
+const BATCH_PAUSE_MIN_MS = 120_000;
+const BATCH_PAUSE_MAX_MS = 300_000;
+const MAX_PER_HOUR = 100;
+const HOUR_MS = 3_600_000;
 
 const broadcastBodySchema = z.object({
     recipients: z.array(z.string()),
     message: z.string().min(1),
-    delay: z.number().optional()
+    delay: z.number().optional(),
+    antiBan: z.boolean().default(true)
 });
 
 export async function POST(
@@ -35,7 +42,7 @@ export async function POST(
             return NextResponse.json({ error: parseResult.error.flatten() }, { status: 400 });
         }
 
-        const { recipients, message, delay } = parseResult.data;
+        const { recipients, message, delay, antiBan } = parseResult.data;
 
         // Sanitize & normalize recipients (strip '+', whitespace, non-digits, ensure valid WhatsApp JID format)
         const normalizedRecipients = Array.from(
@@ -100,9 +107,19 @@ export async function POST(
             let sent = 0;
             let failed = 0;
             const errors: { jid: string; error: string }[] = [];
+            const sendTimes: number[] = [];
 
             for (let i = 0; i < normalizedRecipients.length; i++) {
                 const jid = normalizedRecipients[i];
+
+                // Hourly cap: wait until the oldest send leaves the rolling hour
+                while (sendTimes.length && Date.now() - sendTimes[0] >= HOUR_MS) sendTimes.shift();
+                if (antiBan && sendTimes.length >= MAX_PER_HOUR) {
+                    await new Promise(r => setTimeout(r, sendTimes[0] + HOUR_MS - Date.now() + 1000));
+                    sendTimes.shift();
+                }
+                sendTimes.push(Date.now());
+
                 try {
                     await instance.socket!.sendMessage(jid, messageContent);
                     sent++;
@@ -151,7 +168,10 @@ export async function POST(
                     const randomDelay = delay
                         ? delay + Math.floor(Math.random() * (delay * 0.5))
                         : DEFAULT_MIN_DELAY_MS + Math.floor(Math.random() * (DEFAULT_MAX_DELAY_MS - DEFAULT_MIN_DELAY_MS));
-                    await new Promise(r => setTimeout(r, randomDelay));
+                    const batchPause = antiBan && (i + 1) % BATCH_SIZE === 0
+                        ? BATCH_PAUSE_MIN_MS + Math.floor(Math.random() * (BATCH_PAUSE_MAX_MS - BATCH_PAUSE_MIN_MS))
+                        : 0;
+                    await new Promise(r => setTimeout(r, randomDelay + batchPause));
                 }
             }
 

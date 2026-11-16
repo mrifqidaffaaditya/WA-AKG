@@ -383,7 +383,9 @@
     "errorSending": "Error sending broadcast",
     "historyPermanent": "History of sent broadcasts, stored permanently.",
     "noHistoryShort": "No broadcasts yet.",
-    "delayAntarPesan": "Delay between messages (+ random jitter)."
+    "delayAntarPesan": "Delay between messages (+ random jitter).",
+    "antiBanLabel": "Anti-ban protection",
+    "antiBanHint": "Batch pauses and hourly cap (100/h). Turn off at your own risk."
   },
   "interactive": {
     "title": "Interactive Tester",

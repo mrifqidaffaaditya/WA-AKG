@@ -383,7 +383,9 @@
     "errorSending": "Terjadi kesalahan mengirim broadcast",
     "historyPermanent": "Riwayat broadcast tersimpan permanen.",
     "noHistoryShort": "Belum ada broadcast.",
-    "delayAntarPesan": "Delay antar pesan (+ variasi acak)."
+    "delayAntarPesan": "Delay antar pesan (+ variasi acak).",
+    "antiBanLabel": "Perlindungan anti-banned",
+    "antiBanHint": "Jeda per batch dan batas 100/jam. Nonaktifkan dengan risiko sendiri."
   },
   "interactive": {
     "title": "Penguji Interaktif",

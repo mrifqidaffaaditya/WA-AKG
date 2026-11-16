@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
@@ -58,6 +59,7 @@ export default function BroadcastPage() {
     const [contacts, setContacts] = useState("");
     const [message, setMessage] = useState("");
     const [delay, setDelay] = useState([2000]);
+    const [antiBan, setAntiBan] = useState(true);
     const [loading, setLoading] = useState(false);
     const [broadcastProgress, setBroadcastProgress] = useState<BroadcastProgress | null>(null);
     const [activeTab, setActiveTab] = useState<"new" | "history">("new");
@@ -183,7 +185,8 @@ export default function BroadcastPage() {
                 body: JSON.stringify({
                     recipients,
                     message,
-                    delay: delay[0]
+                    delay: delay[0],
+                    antiBan
                 })
             });
 
@@ -300,6 +303,14 @@ export default function BroadcastPage() {
                                                 disabled={loading}
                                             />
                                             <p className="text-xs text-muted-foreground">{t("delayAntarPesan")}</p>
+                                        </div>
+
+                                        <div className="flex items-center justify-between gap-4">
+                                            <div className="space-y-0.5">
+                                                <Label htmlFor="antiBan">{t("antiBanLabel")}</Label>
+                                                <p className="text-xs text-muted-foreground">{t("antiBanHint")}</p>
+                                            </div>
+                                            <Switch id="antiBan" checked={antiBan} onCheckedChange={setAntiBan} disabled={loading} />
                                         </div>
 
                                         <Button

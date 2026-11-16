@@ -383,7 +383,9 @@
     "errorSending": "Erro ao enviar transmissão",
     "historyPermanent": "Histórico de transmissões salvas permanentemente.",
     "noHistoryShort": "Nenhuma transmissão ainda.",
-    "delayAntarPesan": "Atraso entre mensagens (+ intervalo aleatório)."
+    "delayAntarPesan": "Atraso entre mensagens (+ intervalo aleatório).",
+    "antiBanLabel": "Proteção anti-banimento",
+    "antiBanHint": "Pausas por lote e teto de 100/h. Desative por sua conta e risco."
   },
   "interactive": {
     "title": "Testador Interativo",
