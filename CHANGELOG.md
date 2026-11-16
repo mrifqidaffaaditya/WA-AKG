@@ -1,3 +1,27 @@
+## [v1.7.1-beta.3] - 2026-11-16
+
+WA-AKG v1.7.1-beta.3 brings critical bug fixes for interactive messaging and broadcasts, resolves Docker build environment issues, ports contact CSV export with i18n support, and patches dependency security vulnerabilities across the project.
+
+### Fixed
+- **Interactive Button Messages in Direct Chats (Fixes #112)**:
+  - Removed `<bot biz_bot="1"/>` node for direct 1-on-1 chats in `src/modules/whatsapp/interactive.ts`, preventing WhatsApp server drops and restoring message delivery and receipts across mobile and desktop devices.
+- **Broadcast Recipient Sanitization & Normalization (Fixes #90)**:
+  - Implemented `sanitizePhoneToJid` utility in `src/lib/jid-utils.ts` and integrated into `/api/messages/[sessionId]/broadcast` and the broadcast dashboard to automatically strip `+`, dashes, spaces, and normalize prefixes into valid WhatsApp JIDs (`...s.whatsapp.net`).
+- **Docker Build Environment Hardening (Fixes #88, #61)**:
+  - Configured fallback build-time environment variables in `Dockerfile` builder stage and copied `next.config.ts` into runner image, allowing `docker build .` to build and run cleanly immediately after `git clone` without requiring a pre-existing host `.env`.
+- **CI/CD Lockfile & Peer Dependency Hardening**:
+  - Added `.npmrc` with `legacy-peer-deps=true` and added `openapi-types` in `package-lock.json` to resolve `npm ci` EUSAGE lockfile mismatch errors in GitHub Actions.
+
+### Added
+- **Contacts CSV Export (PR #113)**:
+  - Added "Export CSV" functionality to the contacts page with full multi-language translations (`en`, `id`, `pt-BR`).
+
+### Security
+- **Dependency Security Vulnerability Patches**:
+  - Patched critical and high vulnerabilities in `next` (16.4.6), `next-auth` (5.0.0-beta.32), `systeminformation` (5.33.23), `zod` (4.6.7), and `moment` (2.31.0), reducing Critical vulnerabilities to 0.
+
+---
+
 ## [v1.7.1-beta.2] - 2026-10-26
 
 WA-AKG v1.7.1-beta.2 expands on the security remediations covering GitHub Security Advisories (`GHSA-49fm-mp8x-p3hh`, `GHSA-ccjm-wfv6-qf2v`, and `GHSA-wmvv-wg8q-hqpv`), delivering complete defense-in-depth sanitization across album messages, interactive messages, and path confinement.
