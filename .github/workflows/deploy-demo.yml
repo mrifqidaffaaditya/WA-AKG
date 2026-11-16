@@ -1,0 +1,70 @@
+name: Build & Auto Deploy WA-AKG (Demo)
+
+on:
+  push:
+    branches:
+      - demo
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 2. Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 3. Install Dependencies (di GitHub)
+        run: npm ci
+
+      - name: 4. Buat .env Sementara di GitHub, Generate Prisma & Build Next.js
+        run: |
+          cat << 'EOF' > .env
+          ${{ secrets.ENV_DEMO }}
+          EOF
+          ./node_modules/.bin/prisma generate
+          npm run build
+        env:
+          NODE_ENV: production
+
+      - name: 5. Compress (.next + node_modules)
+        run: |
+          # Jangan masukkan file .env GitHub ke dalam tar agar .env di VPS aman
+          tar -czf build-artifact.tar.gz .next node_modules
+
+      - name: 6. Kirim Paket Matang ke ~/project/WA-AKG via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "build-artifact.tar.gz"
+          target: "project/WA-AKG"
+
+      - name: 7. Ekstrak & Restart PM2 di VPS (Tanpa Mengubah .env VPS)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            cd ~/project/WA-AKG
+            
+            # 1. Tarik update kode terbaru dari branch demo (.env aman karena ada di .gitignore)
+            git fetch origin demo
+            git reset --hard origin/demo
+            
+            # 2. Ekstrak .next dan node_modules matang dari GitHub
+            rm -rf .next node_modules
+            tar -xzf build-artifact.tar.gz
+            rm build-artifact.tar.gz
+            
+            # 3. Restart aplikasi via PM2 menggunakan .env asli yang ada di VPS
+            pm2 reload wa-akg-demo --update-env || pm2 start npm --name "wa-akg-demo" -- start

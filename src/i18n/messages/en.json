@@ -479,7 +479,8 @@
     "pageInfo": "Page {page} of {totalPages}",
     "cardTitle": "Contact List",
     "totalContacts": "Total: {total} contacts found",
-    "perPagePlaceholder": "Per page"
+    "perPagePlaceholder": "Per page",
+    "exportCsv": "Export CSV"
   },
   "groups": {
     "title": "Groups",

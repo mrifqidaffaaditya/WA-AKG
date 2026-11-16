@@ -479,7 +479,8 @@
     "pageInfo": "Halaman {page} dari {totalPages}",
     "cardTitle": "Daftar Kontak",
     "totalContacts": "Total: {total} kontak ditemukan",
-    "perPagePlaceholder": "Per halaman"
+    "perPagePlaceholder": "Per halaman",
+    "exportCsv": "Ekspor CSV"
   },
   "groups": {
     "title": "Grup",

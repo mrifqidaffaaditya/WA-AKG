@@ -46,17 +46,26 @@ export function initScheduler() {
                         const type = msg.mediaType || "document";
                         let payload: any = {};
                         if (msg.content) payload.caption = msg.content;
-                        
-                        if (type === "image") {
-                            payload.image = { url: msg.mediaUrl };
-                        } else if (type === "video") {
-                            payload.video = { url: msg.mediaUrl };
+
+                        const { safeFetchBuffer } = await import("@/lib/security");
+                        const { buffer, fileName, contentType } = await safeFetchBuffer(msg.mediaUrl, {
+                            maxBytes: 50 * 1024 * 1024,
+                            timeoutMs: 15000
+                        });
+
+                        if (type === "video") {
+                            payload.video = buffer;
+                            payload.mimetype = contentType || "video/mp4";
                         } else if (type === "audio") {
-                            payload = { audio: { url: msg.mediaUrl } };
+                            payload.audio = buffer;
+                            payload.mimetype = contentType || "audio/mp4";
+                        } else if (type === "image") {
+                            payload.image = buffer;
+                            payload.mimetype = contentType || "image/jpeg";
                         } else {
-                            payload.document = { url: msg.mediaUrl };
-                            payload.mimetype = "application/octet-stream";
-                            payload.fileName = msg.mediaUrl.split('/').pop() || "file";
+                            payload.document = buffer;
+                            payload.mimetype = contentType || "application/octet-stream";
+                            payload.fileName = fileName || "document";
                         }
                         await instance.socket.sendMessage(msg.jid, payload);
                     } else {

@@ -1,3 +1,71 @@
+## [v1.7.1-beta.3] - 2026-11-16
+
+WA-AKG v1.7.1-beta.3 brings critical bug fixes for interactive messaging and broadcasts, resolves Docker build environment issues, ports contact CSV export with i18n support, and patches dependency security vulnerabilities across the project.
+
+### Fixed
+- **Interactive Button Messages in Direct Chats (Fixes #112)**:
+  - Removed `<bot biz_bot="1"/>` node for direct 1-on-1 chats in `src/modules/whatsapp/interactive.ts`, preventing WhatsApp server drops and restoring message delivery and receipts across mobile and desktop devices.
+- **Broadcast Recipient Sanitization & Normalization (Fixes #90)**:
+  - Implemented `sanitizePhoneToJid` utility in `src/lib/jid-utils.ts` and integrated into `/api/messages/[sessionId]/broadcast` and the broadcast dashboard to automatically strip `+`, dashes, spaces, and normalize prefixes into valid WhatsApp JIDs (`...s.whatsapp.net`).
+- **Docker Build Environment Hardening (Fixes #88, #61)**:
+  - Configured fallback build-time environment variables in `Dockerfile` builder stage and copied `next.config.ts` into runner image, allowing `docker build .` to build and run cleanly immediately after `git clone` without requiring a pre-existing host `.env`.
+- **CI/CD Lockfile & Peer Dependency Hardening**:
+  - Added `.npmrc` with `legacy-peer-deps=true` and added `openapi-types` in `package-lock.json` to resolve `npm ci` EUSAGE lockfile mismatch errors in GitHub Actions.
+
+### Added
+- **Contacts CSV Export (PR #113)**:
+  - Added "Export CSV" functionality to the contacts page with full multi-language translations (`en`, `id`, `pt-BR`).
+
+### Security
+- **Dependency Security Vulnerability Patches**:
+  - Patched critical and high vulnerabilities in `next` (16.4.6), `next-auth` (5.0.0-beta.32), `systeminformation` (5.33.23), `zod` (4.6.7), and `moment` (2.31.0), reducing Critical vulnerabilities to 0.
+
+---
+
+## [v1.7.1-beta.2] - 2026-10-26
+
+WA-AKG v1.7.1-beta.2 expands on the security remediations covering GitHub Security Advisories (`GHSA-49fm-mp8x-p3hh`, `GHSA-ccjm-wfv6-qf2v`, and `GHSA-wmvv-wg8q-hqpv`), delivering complete defense-in-depth sanitization across album messages, interactive messages, and path confinement.
+
+### Security & Hardening
+- **Album & Interactive Media Sanitization**:
+  - Hardened album messages (`POST /api/messages/[sessionId]/[jid]/album` and `ChatService.sendAlbumMessage`) to sanitize all media items through `materializeSafeMediaPayload`, eliminating local file read and SSRF vectors.
+  - Hardened interactive messages (`POST /api/messages/[sessionId]/[jid]/interactive`, `ChatService.sendInteractiveMessage`, and `buildInteractiveMessage`) to sanitize headers, thumbnails, and media attachments through `materializeSafeMediaPayload`.
+  - Added safe buffer extraction for product interactive messages (`sendProductMessage`).
+- **Path Traversal Boundary Hardening**:
+  - Enforced strict directory confinement with path separator boundary verification in `GET /api/messages/[sessionId]/download/[messageId]/media` to prevent sibling directory traversal.
+- **Automated Security Test Suite**:
+  - Expanded unit test suite `src/lib/__tests__/security.test.ts` to verify thumbnail, header media, and album item local file access rejections.
+
+---
+
+## [v1.7.1-beta.1] - 2026-10-19
+
+WA-AKG v1.7.1-beta.1 delivers critical security remediations covering three GitHub Security Advisories (`GHSA-49fm-mp8x-p3hh`, `GHSA-ccjm-wfv6-qf2v`, and `GHSA-wmvv-wg8q-hqpv`), automated security test suites, and core hardening.
+
+### Security & Hardening
+- **Baileys Media URL Local File Disclosure & Auth Bypass Mitigation** (`GHSA-49fm-mp8x-p3hh`):
+  - Implemented `materializeSafeMediaPayload` in `src/lib/security.ts` to inspect and safely download media URLs into in-memory `Buffer`s before reaching Baileys, ensuring Baileys never receives a raw URL object or local file path.
+  - Routed message reply endpoints (`POST /api/messages/[sessionId]/[jid]/reply` and `POST /api/messages/[sessionId]/[jid]/[messageId]/reply`) through `materializeSafeMediaPayload` to eliminate file read vectors.
+  - Hardened recurring scheduler cron runner in `src/lib/cron.ts` to download media via `safeFetchBuffer` instead of passing raw `{ url }` objects directly to Baileys `sendMessage`.
+  - Added strict `validateSafeUrl` validation on scheduler creation and update endpoints (`/api/scheduler/[sessionId]`).
+  - Added directory confinement check in `GET /api/messages/[sessionId]/download/[messageId]/media` to prevent directory traversal outside `data/media` or `public/uploads`.
+- **SSRF Hardening & Full-Read Response Disclosure Elimination** (`GHSA-ccjm-wfv6-qf2v`):
+  - Expanded `isPrivateOrReservedIp` to block Carrier-Grade NAT (`100.64.0.0/10`), benchmark testing (`198.18.0.0/15`), documentation ranges (`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`), 6to4 (`2002::/16`), and IPv6 translation addresses.
+  - Redacted `responseBody` in `testWebhook` and webhook log persistence to return safe metadata status summaries, completely preventing attackers from extracting internal/cloud metadata responses via SSRF.
+- **Socket.IO Room Join Authorization & Session ID Entropy Hardening** (`GHSA-wmvv-wg8q-hqpv`):
+  - Upgraded session ID generator in `WhatsAppManager.createSession` from low-entropy `Math.random().toString(36).substring(7)` to CSPRNG `crypto.randomUUID()`.
+  - Enforced strict Socket.IO handshake authentication middleware with support for NextAuth session cookies, API keys, and authorization bearer tokens (`socket.handshake.auth.token`).
+  - Restricted `join-session` room access to verified session owners via `canAccessSession(userId, role, sessionId)` and restricted `join-user-room` to the user's own ID or SUPERADMIN.
+  - Hardened CORS origin allowlist in `src/server/index.ts` to block wildcard browser origins, supporting `BASE_URL`, `NEXTAUTH_URL`, localhost, and optional `CORS_ORIGIN`.
+  - Updated dashboard `SessionManager` to join authenticated session rooms on connect for real-time status and QR updates.
+
+### Added
+- **Automated Security Test Suite**:
+  - Added unit test suite `src/lib/__tests__/security.test.ts` verifying IP filtering, anti-SSRF protections, and local file access rejections.
+  - Updated npm test script in `package.json` to automatically run all test suites under `src/**/__tests__/*.test.ts`.
+
+---
+
 ## [v1.7.0] - 2026-10-19
 
 WA-AKG v1.7.0 is a major milestone release delivering a Pure Baileys v7 WhatsApp engine, native flow interactive messages, full multi-language (i18n) support across the entire platform, granular role-based access control (RBAC), and critical security remediations.
