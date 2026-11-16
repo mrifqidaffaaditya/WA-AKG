@@ -2,8 +2,11 @@ import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
+import { sanitizePhoneToJid } from "@/lib/jid-utils";
 import type { AnyMessageContent } from "@whiskeysockets/baileys";
 import { z } from "zod";
+
+export const normalizeBroadcastJid = sanitizePhoneToJid;
 
 const broadcastBodySchema = z.object({
     recipients: z.array(z.string()),
@@ -31,6 +34,18 @@ export async function POST(
 
         const { recipients, message, delay } = parseResult.data;
 
+        // Sanitize & normalize recipients (strip '+', whitespace, non-digits, ensure valid WhatsApp JID format)
+        const normalizedRecipients = Array.from(
+            new Set(recipients.map(normalizeBroadcastJid).filter((j): j is string => Boolean(j)))
+        );
+
+        if (normalizedRecipients.length === 0) {
+            return NextResponse.json(
+                { status: false, message: "No valid recipient JIDs provided", error: "No valid recipient JIDs" },
+                { status: 400 }
+            );
+        }
+
         const canAccess = await canAccessSession(user.id, user.role, sessionId);
         if (!canAccess) {
             return NextResponse.json({ status: false, message: "Forbidden", error: "Forbidden" }, { status: 403 });
@@ -46,11 +61,11 @@ export async function POST(
             data: {
                 sessionId,
                 message,
-                total: recipients.length,
+                total: normalizedRecipients.length,
                 delay: delay || 2000,
                 status: "running",
                 recipients: {
-                    create: recipients.map(jid => ({
+                    create: normalizedRecipients.map(jid => ({
                         jid,
                         status: "pending"
                     }))
@@ -68,7 +83,7 @@ export async function POST(
             io.to(sessionId).emit("broadcast.progress", {
                 broadcastId,
                 status: "running",
-                total: recipients.length,
+                total: normalizedRecipients.length,
                 sent: 0,
                 failed: 0,
                 current: null,
@@ -83,8 +98,8 @@ export async function POST(
             let failed = 0;
             const errors: { jid: string; error: string }[] = [];
 
-            for (let i = 0; i < recipients.length; i++) {
-                const jid = recipients[i];
+            for (let i = 0; i < normalizedRecipients.length; i++) {
+                const jid = normalizedRecipients[i];
                 try {
                     await instance.socket!.sendMessage(jid, messageContent);
                     sent++;
@@ -106,7 +121,7 @@ export async function POST(
                     });
                 }
 
-                const progress = Math.round(((sent + failed) / recipients.length) * 100);
+                const progress = Math.round(((sent + failed) / normalizedRecipients.length) * 100);
 
                 // Update BroadcastLog progress in DB
                 await prisma.broadcastLog.update({
@@ -119,7 +134,7 @@ export async function POST(
                     io.to(sessionId).emit("broadcast.progress", {
                         broadcastId,
                         status: "running",
-                        total: recipients.length,
+                        total: normalizedRecipients.length,
                         sent,
                         failed,
                         current: jid,
@@ -128,7 +143,7 @@ export async function POST(
                 }
 
                 // Delay between sends
-                if (i < recipients.length - 1) {
+                if (i < normalizedRecipients.length - 1) {
                     const baseDelay = delay || 2000;
                     const randomDelay = baseDelay + Math.floor(Math.random() * (baseDelay * 0.5));
                     await new Promise(r => setTimeout(r, randomDelay));
@@ -146,7 +161,7 @@ export async function POST(
                 io.to(sessionId).emit("broadcast.progress", {
                     broadcastId,
                     status: "completed",
-                    total: recipients.length,
+                    total: normalizedRecipients.length,
                     sent,
                     failed,
                     errors,
@@ -154,13 +169,13 @@ export async function POST(
                     completedAt: new Date().toISOString()
                 });
             }
-            console.log(`Broadcast ${broadcastId} completed: ${sent} sent, ${failed} failed out of ${recipients.length}`);
+            console.log(`Broadcast ${broadcastId} completed: ${sent} sent, ${failed} failed out of ${normalizedRecipients.length}`);
         })();
 
         return NextResponse.json({
             status: true,
             message: "Broadcast started",
-            data: { broadcastId: log.id, total: recipients.length }
+            data: { broadcastId: log.id, total: normalizedRecipients.length }
         });
 
     } catch (e) {
