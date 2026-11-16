@@ -724,6 +724,7 @@
     "appConfigDesc": "Global settings for the application branding and access control.",
     "appNameDesc": "Changes the name in the sidebar and browser title.",
     "timezoneDesc": "Scheduler will use this timezone.",
+    "timezoneFilterPlaceholder": "Filter timezones...",
     "logoUrlDesc": "URL for the main dashboard logo.",
     "faviconUrl": "Favicon URL",
     "faviconUrlDesc": "URL for the browser tab icon.",

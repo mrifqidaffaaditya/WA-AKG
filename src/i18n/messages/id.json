@@ -724,6 +724,7 @@
     "appConfigDesc": "Pengaturan global untuk merek aplikasi dan kontrol akses.",
     "appNameDesc": "Mengubah nama di bilah samping dan judul peramban.",
     "timezoneDesc": "Penjadwal akan menggunakan zona waktu ini.",
+    "timezoneFilterPlaceholder": "Filter zona waktu...",
     "logoUrlDesc": "URL untuk logo dashboard utama.",
     "faviconUrl": "URL Favicon",
     "faviconUrlDesc": "URL untuk ikon tab peramban.",

@@ -724,6 +724,7 @@
     "appConfigDesc": "Configurações globais para a identidade visual do aplicativo e controle de acesso.",
     "appNameDesc": "Altera o nome na barra lateral e no título do navegador.",
     "timezoneDesc": "O agendador usará este fuso horário.",
+    "timezoneFilterPlaceholder": "Filtrar fusos horários...",
     "logoUrlDesc": "URL para o logotipo principal do painel.",
     "faviconUrl": "URL do Favicon",
     "faviconUrlDesc": "URL para o ícone da guia do navegador.",

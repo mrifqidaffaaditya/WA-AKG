@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { RefreshCw, Save, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { RefreshCw, Save, AlertCircle, Check, ChevronsUpDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
@@ -23,6 +25,8 @@ export default function SettingsPage() {
         enableRegistration: true
     });
     const [systemLoading, setSystemLoading] = useState(false);
+    const [tzFilter, setTzFilter] = useState("");
+    const [tzOpen, setTzOpen] = useState(false);
     const [timezones, setTimezones] = useState<string[]>(["UTC", "Asia/Jakarta", "Asia/Makassar", "Asia/Jayapura"]);
 
     useEffect(() => {
@@ -81,7 +85,8 @@ export default function SettingsPage() {
         }
     };
 
-    const inputClass = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+    const filteredTimezones = timezones.filter((tz) => tz.toLowerCase().includes(tzFilter.trim().toLowerCase()));
+    const inputClass ="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
 
     return (
         <div className="space-y-6">
@@ -128,18 +133,51 @@ export default function SettingsPage() {
 
                         <div className="grid gap-2">
                             <Label>{t("timezone")}</Label>
-                            <select
-                                className={inputClass}
-                                value={systemConfig.timezone}
-                                onChange={(e) => setSystemConfig(prev => ({ ...prev, timezone: e.target.value }))}
-                                disabled={!isSuperAdmin}
-                            >
-                                {timezones.map((tz) => (
-                                    <option key={tz} value={tz}>
-                                        {tz}
-                                    </option>
-                                ))}
-                            </select>
+                            <Popover open={tzOpen} onOpenChange={(o) => { setTzOpen(o); if (!o) setTzFilter(""); }}>
+                                <PopoverTrigger asChild>
+                                    <button
+                                        type="button"
+                                        role="combobox"
+                                        aria-expanded={tzOpen}
+                                        className={`${inputClass} items-center justify-between text-left`}
+                                        disabled={!isSuperAdmin}
+                                    >
+                                        <span className="truncate">{systemConfig.timezone}</span>
+                                        <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                                    </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-2" align="start">
+                                    <Input
+                                        autoFocus
+                                        value={tzFilter}
+                                        onChange={(e) => setTzFilter(e.target.value)}
+                                        placeholder={t("timezoneFilterPlaceholder")}
+                                        autoComplete="off"
+                                    />
+                                    <div className="mt-2 max-h-60 overflow-y-auto" role="listbox">
+                                        {filteredTimezones.length === 0 && (
+                                            <p className="px-2 py-3 text-center text-sm text-muted-foreground">—</p>
+                                        )}
+                                        {filteredTimezones.map((tz) => (
+                                            <button
+                                                key={tz}
+                                                type="button"
+                                                role="option"
+                                                aria-selected={tz === systemConfig.timezone}
+                                                className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                                                onClick={() => {
+                                                    setSystemConfig(prev => ({ ...prev, timezone: tz }));
+                                                    setTzOpen(false);
+                                                    setTzFilter("");
+                                                }}
+                                            >
+                                                {tz}
+                                                {tz === systemConfig.timezone && <Check className="h-4 w-4" />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
                             <p className="text-xs text-muted-foreground">{t("timezoneDesc")}</p>
                         </div>
                     </div>
