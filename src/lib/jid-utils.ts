@@ -23,6 +23,35 @@ export function normalizeJid(jid: string | undefined | null): string {
 }
 
 /**
+ * Sanitize and normalize any raw phone number or JID string into a valid WhatsApp JID.
+ * Strips '+', spaces, dashes, parentheses, converts local prefix (e.g. 08xx -> 628xx),
+ * and appends @s.whatsapp.net while preserving @g.us, @lid, and @newsletter JIDs.
+ */
+export function sanitizePhoneToJid(input: string | undefined | null): string | null {
+    if (!input || typeof input !== "string") return null;
+    let clean = input.trim();
+    if (!clean) return null;
+
+    if (clean.endsWith("@g.us") || clean.endsWith("@newsletter") || clean.endsWith("@lid")) {
+        return clean;
+    }
+
+    if (clean.includes("@")) {
+        const [user, server] = clean.split("@");
+        const numericUser = user.replace(/\D/g, "");
+        if (!numericUser) return null;
+        return `${numericUser}@${server || "s.whatsapp.net"}`;
+    }
+
+    clean = clean.replace(/\D/g, "");
+    if (!clean) return null;
+    if (clean.startsWith("0")) {
+        clean = "62" + clean.substring(1);
+    }
+    return `${clean}@s.whatsapp.net`;
+}
+
+/**
  * Resolve a @lid JID to @s.whatsapp.net phone number JID.
  * 
  * Resolution strategy:
