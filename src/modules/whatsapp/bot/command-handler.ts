@@ -280,7 +280,7 @@ export async function handleBotCommand(
                             formData.append('image_file', blob, 'image.png');
                             formData.append('size', 'auto');
 
-                            const res = await fetch('https://api.remove.bg/v1.0/removebg', {
+                            const res = await fetch(process.env.REMOVE_BG_API_URL || 'https://api.remove.bg/v1.0/removebg', {
                                 method: 'POST',
                                 headers: {
                                     'X-Api-Key': config.removeBgApiKey
