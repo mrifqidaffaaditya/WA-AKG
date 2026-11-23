@@ -42,13 +42,24 @@ import {
     PhoneCall,
     Copy,
     Upload,
-    X
+    X,
+    FileUp,
+    FileSpreadsheet,
+    Download,
+    Check,
+    Table,
+    Info
 } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/components/dashboard/session-provider";
 import { SessionGuard } from "@/components/dashboard/session-guard";
 import { useSocket } from "@/components/chat/socket-context";
 import { useTranslations } from "next-intl";
+import {
+    generateBroadcastCsvTemplate,
+    parseBroadcastRecipients,
+    BroadcastParseResult
+} from "@/lib/broadcast-import";
 
 type BroadcastMessageType = "text" | "image" | "video" | "audio" | "document" | "interactive";
 type ButtonType = "quick_reply" | "cta_url" | "cta_call" | "cta_copy" | "single_select";
@@ -162,6 +173,83 @@ export default function BroadcastPage() {
     const [selectedLog, setSelectedLog] = useState<BroadcastLog | null>(null);
     const [detailOpen, setDetailOpen] = useState(false);
     const [detailLoading, setDetailLoading] = useState(false);
+
+    // Recipient Import Modal State
+    const [importDialogOpen, setImportDialogOpen] = useState(false);
+    const [importTab, setImportTab] = useState<"file" | "paste">("file");
+    const [importRawText, setImportRawText] = useState("");
+    const [importFileName, setImportFileName] = useState("");
+    const [importParseResult, setImportParseResult] = useState<BroadcastParseResult | null>(null);
+    const [importMode, setImportMode] = useState<"append" | "replace">("append");
+    const [importSkipDuplicates, setImportSkipDuplicates] = useState(true);
+    const [importAutoFormatIndo, setImportAutoFormatIndo] = useState(true);
+    const [isDragOverImport, setIsDragOverImport] = useState(false);
+    const importFileInputRef = useRef<HTMLInputElement>(null);
+
+    // Re-parse when text or parsing options change
+    useEffect(() => {
+        if (!importRawText.trim()) {
+            setImportParseResult(null);
+            return;
+        }
+        const result = parseBroadcastRecipients(importRawText, {
+            autoFormatIndo: importAutoFormatIndo,
+            removeDuplicates: importSkipDuplicates
+        });
+        setImportParseResult(result);
+    }, [importRawText, importSkipDuplicates, importAutoFormatIndo]);
+
+    const handleDownloadTemplate = () => {
+        const csvContent = generateBroadcastCsvTemplate();
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "template_broadcast.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        toast.success(t("downloadTemplate") + " OK");
+    };
+
+    const handleCopyTemplate = () => {
+        const rawCsv = generateBroadcastCsvTemplate().replace(/^\uFEFF/, "");
+        navigator.clipboard.writeText(rawCsv);
+        toast.success(t("templateCopied"));
+    };
+
+    const handleFileImport = (file: File) => {
+        if (!file) return;
+        setImportFileName(file.name);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const content = (e.target?.result as string) || "";
+            setImportRawText(content);
+        };
+        reader.readAsText(file, "UTF-8");
+    };
+
+    const handleApplyImport = () => {
+        if (!importParseResult || importParseResult.validPhones.length === 0) {
+            toast.error(t("noValidContactsFound"));
+            return;
+        }
+
+        const newNumbers = importParseResult.validPhones;
+        if (importMode === "replace") {
+            setContacts(newNumbers.join("\n"));
+        } else {
+            const existing = contacts.trim()
+                ? contacts.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+                : [];
+            const merged = Array.from(new Set([...existing, ...newNumbers]));
+            setContacts(merged.join("\n"));
+        }
+
+        toast.success(t("importSuccessToast", { count: newNumbers.length }));
+        setImportDialogOpen(false);
+    };
 
     const { getSocket, joinSession } = useSocket();
 
@@ -627,9 +715,37 @@ export default function BroadcastPage() {
                         <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-12">
                             {/* Recipients Card (4 cols) */}
                             <Card className="lg:col-span-5 flex flex-col">
-                                <CardHeader>
-                                    <CardTitle>{t("recipientsTitle")}</CardTitle>
-                                    <CardDescription>{t("recipientsDescription")}</CardDescription>
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div>
+                                            <CardTitle>{t("recipientsTitle")}</CardTitle>
+                                            <CardDescription className="text-xs">{t("recipientsDescription")}</CardDescription>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setImportDialogOpen(true)}
+                                                disabled={loading}
+                                                className="gap-1 text-xs h-8 px-2.5"
+                                            >
+                                                <FileUp className="h-3.5 w-3.5 text-primary" />
+                                                <span>{t("importContacts")}</span>
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={handleDownloadTemplate}
+                                                disabled={loading}
+                                                className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                                                title={t("downloadTemplate")}
+                                            >
+                                                <Download className="h-3.5 w-3.5" />
+                                            </Button>
+                                        </div>
+                                    </div>
                                 </CardHeader>
                                 <CardContent className="space-y-4 flex-1 flex flex-col">
                                     <div className="space-y-2 flex-1 flex flex-col">
@@ -1428,6 +1544,272 @@ export default function BroadcastPage() {
                             <Button onClick={handleSaveTemplate} disabled={savingTemplate || !templateName.trim()}>
                                 {savingTemplate ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <BookmarkPlus className="mr-2 h-4 w-4" />}
                                 {t("saveTemplateBtn")}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Import Broadcast Recipients Dialog */}
+                <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+                    <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-6 overflow-hidden">
+                        <DialogHeader className="pb-2">
+                            <DialogTitle className="flex items-center gap-2 text-lg">
+                                <FileSpreadsheet className="h-5 w-5 text-primary" />
+                                {t("importDialogTitle")}
+                            </DialogTitle>
+                            <p className="text-xs text-muted-foreground">{t("importDialogDesc")}</p>
+                        </DialogHeader>
+
+                        <div className="flex-1 overflow-y-auto space-y-4 py-1 pr-1">
+                            {/* Format Template Guide Card */}
+                            <div className="bg-muted/40 rounded-lg p-3 border space-y-2">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                    <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                                        <Table className="h-4 w-4 text-primary" />
+                                        <span>{t("templateGuideTitle")}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleDownloadTemplate}
+                                            className="h-7 text-xs px-2 gap-1"
+                                        >
+                                            <Download className="h-3 w-3" />
+                                            {t("downloadTemplate")}
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={handleCopyTemplate}
+                                            className="h-7 text-xs px-2 gap-1 text-muted-foreground hover:text-foreground"
+                                        >
+                                            <Copy className="h-3 w-3" />
+                                            {t("copyTemplate")}
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <div className="text-[11px] text-muted-foreground space-y-0.5">
+                                    <p className="text-foreground font-medium">{t("templateGuideSubtitle")}</p>
+                                    <p>• <span className="font-semibold text-foreground">nomor / phone</span> (Wajib): {t("colPhoneDesc")}</p>
+                                    <p>• <span className="font-semibold text-foreground">nama / name</span> (Opsional): {t("colNameDesc")}</p>
+                                    <p>• <span className="font-semibold text-foreground">catatan / notes</span> (Opsional): {t("colNotesDesc")}</p>
+                                </div>
+
+                                {/* Example Preview */}
+                                <div className="bg-background rounded border p-2 font-mono text-[11px] text-muted-foreground overflow-x-auto">
+                                    <div className="text-primary font-semibold">nomor,nama,catatan</div>
+                                    <div>6281234567890,&quot;Budi Santoso&quot;,&quot;Pelanggan Prioritas&quot;</div>
+                                    <div>6289876543210,&quot;Siti Aminah&quot;,&quot;Pesanan Grosir #1024&quot;</div>
+                                    <div>085712345678,&quot;Ahmad Fauzi&quot;,&quot;Follow-up Penawaran&quot;</div>
+                                </div>
+                            </div>
+
+                            {/* Input Method Switch: File vs Paste */}
+                            <div className="space-y-3">
+                                <div className="flex gap-1 bg-muted/60 p-1 rounded-md w-fit">
+                                    <button
+                                        type="button"
+                                        onClick={() => setImportTab("file")}
+                                        className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded transition-all ${
+                                            importTab === "file"
+                                                ? "bg-background shadow-xs text-foreground"
+                                                : "text-muted-foreground hover:text-foreground"
+                                        }`}
+                                    >
+                                        <FileUp className="h-3.5 w-3.5" />
+                                        {t("tabUploadFile")}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setImportTab("paste")}
+                                        className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded transition-all ${
+                                            importTab === "paste"
+                                                ? "bg-background shadow-xs text-foreground"
+                                                : "text-muted-foreground hover:text-foreground"
+                                        }`}
+                                    >
+                                        <FileText className="h-3.5 w-3.5" />
+                                        {t("tabPasteText")}
+                                    </button>
+                                </div>
+
+                                {importTab === "file" ? (
+                                    <div>
+                                        <input
+                                            ref={importFileInputRef}
+                                            type="file"
+                                            accept=".csv,.txt,text/csv,text/plain"
+                                            className="hidden"
+                                            onChange={e => {
+                                                const file = e.target.files?.[0];
+                                                if (file) handleFileImport(file);
+                                            }}
+                                        />
+                                        <div
+                                            onClick={() => importFileInputRef.current?.click()}
+                                            onDragOver={e => { e.preventDefault(); setIsDragOverImport(true); }}
+                                            onDragLeave={() => setIsDragOverImport(false)}
+                                            onDrop={e => {
+                                                e.preventDefault();
+                                                setIsDragOverImport(false);
+                                                const file = e.dataTransfer.files?.[0];
+                                                if (file) handleFileImport(file);
+                                            }}
+                                            className={`border-2 border-dashed rounded-lg p-5 text-center cursor-pointer transition-all ${
+                                                isDragOverImport
+                                                    ? "border-primary bg-primary/10"
+                                                    : "border-muted-foreground/30 hover:border-primary/50 hover:bg-muted/30"
+                                            }`}
+                                        >
+                                            <FileSpreadsheet className="h-7 w-7 mx-auto text-primary mb-1.5" />
+                                            <p className="text-xs font-medium text-foreground">
+                                                {importFileName ? `File: ${importFileName}` : "Klik untuk memilih file CSV atau seret ke sini"}
+                                            </p>
+                                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                                                Mendukung format .csv atau .txt (koma, titik koma, atau tab)
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <Textarea
+                                        placeholder={t("pastePlaceholder")}
+                                        className="font-mono text-xs min-h-[110px]"
+                                        value={importRawText}
+                                        onChange={e => setImportRawText(e.target.value)}
+                                    />
+                                )}
+                            </div>
+
+                            {/* Parsing Stats & Live Preview */}
+                            {importParseResult && (
+                                <div className="space-y-3 pt-2 border-t">
+                                    <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                                        <div className="bg-muted/40 p-2 rounded border">
+                                            <span className="text-muted-foreground text-[10px] block">{t("importStatsTotal")}</span>
+                                            <span className="font-bold text-sm">{importParseResult.stats.totalRows}</span>
+                                        </div>
+                                        <div className="bg-green-500/10 p-2 rounded border border-green-500/20">
+                                            <span className="text-green-600 dark:text-green-400 text-[10px] block">{t("importStatsValid")}</span>
+                                            <span className="font-bold text-sm text-green-600 dark:text-green-400">{importParseResult.stats.validCount}</span>
+                                        </div>
+                                        <div className="bg-yellow-500/10 p-2 rounded border border-yellow-500/20">
+                                            <span className="text-yellow-600 dark:text-yellow-400 text-[10px] block">{t("importStatsDuplicate")}</span>
+                                            <span className="font-bold text-sm text-yellow-600 dark:text-yellow-400">{importParseResult.stats.duplicateCount}</span>
+                                        </div>
+                                        <div className="bg-red-500/10 p-2 rounded border border-red-500/20">
+                                            <span className="text-red-600 dark:text-red-400 text-[10px] block">{t("importStatsInvalid")}</span>
+                                            <span className="font-bold text-sm text-red-600 dark:text-red-400">{importParseResult.stats.invalidCount}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Preview Table */}
+                                    {importParseResult.items.length > 0 && (
+                                        <div className="space-y-1">
+                                            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                                                <span>{t("previewContacts")} (Menampilkan {Math.min(importParseResult.items.length, 6)} baris pertama):</span>
+                                                <Badge variant="outline" className="text-[10px] font-mono">
+                                                    Delimiter: {importParseResult.detectedDelimiter === "\t" ? "TAB" : importParseResult.detectedDelimiter === ";" ? "Semicolon (;)" : "Comma (,)"}
+                                                </Badge>
+                                            </div>
+                                            <div className="max-h-36 overflow-y-auto border rounded-md">
+                                                <table className="w-full text-[11px] text-left">
+                                                    <thead className="bg-muted/50 border-b text-muted-foreground text-[10px]">
+                                                        <tr>
+                                                            <th className="px-2 py-1">Status</th>
+                                                            <th className="px-2 py-1">WhatsApp JID</th>
+                                                            <th className="px-2 py-1">Nama</th>
+                                                            <th className="px-2 py-1">Catatan</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y">
+                                                        {importParseResult.items.slice(0, 6).map((item, idx) => (
+                                                            <tr key={idx} className={item.isValid ? (item.isDuplicate ? "bg-yellow-50/20" : "") : "bg-red-50/20"}>
+                                                                <td className="px-2 py-1 whitespace-nowrap">
+                                                                    {!item.isValid ? (
+                                                                        <Badge variant="destructive" className="text-[9px] px-1 py-0">{item.error || "Invalid"}</Badge>
+                                                                    ) : item.isDuplicate ? (
+                                                                        <Badge variant="outline" className="text-[9px] px-1 py-0 text-yellow-600">Duplikat</Badge>
+                                                                    ) : (
+                                                                        <Badge variant="secondary" className="text-[9px] px-1 py-0 text-green-600">Valid</Badge>
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-2 py-1 font-mono text-[10px]">{item.phone || item.raw}</td>
+                                                                <td className="px-2 py-1 text-muted-foreground truncate max-w-[120px]">{item.name || "-"}</td>
+                                                                <td className="px-2 py-1 text-muted-foreground truncate max-w-[120px]">{item.notes || "-"}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Options */}
+                            <div className="space-y-2 pt-2 border-t text-xs">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                    <Label className="text-xs font-semibold">Mode Import:</Label>
+                                    <div className="flex items-center gap-3">
+                                        <label className="flex items-center gap-1.5 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="importMode"
+                                                value="append"
+                                                checked={importMode === "append"}
+                                                onChange={() => setImportMode("append")}
+                                                className="accent-primary"
+                                            />
+                                            <span>{t("importModeAppend")}</span>
+                                        </label>
+                                        <label className="flex items-center gap-1.5 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="importMode"
+                                                value="replace"
+                                                checked={importMode === "replace"}
+                                                onChange={() => setImportMode("replace")}
+                                                className="accent-primary"
+                                            />
+                                            <span>{t("importModeReplace")}</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col sm:flex-row gap-3 pt-1">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <Switch
+                                            checked={importSkipDuplicates}
+                                            onCheckedChange={setImportSkipDuplicates}
+                                        />
+                                        <span className="text-muted-foreground">{t("importOptionSkipDup")}</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <Switch
+                                            checked={importAutoFormatIndo}
+                                            onCheckedChange={setImportAutoFormatIndo}
+                                        />
+                                        <span className="text-muted-foreground">{t("importOptionFormatIndo")}</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <DialogFooter className="pt-2 border-t mt-auto">
+                            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
+                                {tCommon("cancel")}
+                            </Button>
+                            <Button
+                                onClick={handleApplyImport}
+                                disabled={!importParseResult || importParseResult.validPhones.length === 0}
+                                className="gap-1.5"
+                            >
+                                <Check className="h-4 w-4" />
+                                {t("importApplyBtn", { count: importParseResult?.validPhones.length || 0 })}
                             </Button>
                         </DialogFooter>
                     </DialogContent>

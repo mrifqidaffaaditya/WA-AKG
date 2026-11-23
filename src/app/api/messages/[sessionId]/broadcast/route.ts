@@ -317,6 +317,48 @@ export async function POST(
 
             for (let i = 0; i < normalizedRecipients.length; i++) {
                 const jid = normalizedRecipients[i];
+
+                // Check if user is registered on WhatsApp (Fixes Issue #124)
+                if (jid.endsWith("@s.whatsapp.net")) {
+                    try {
+                        const checkResult = await instance.socket!.onWhatsApp(jid);
+                        const isRegistered = Array.isArray(checkResult) && checkResult.length > 0 && Boolean(checkResult[0]?.exists);
+                        if (!isRegistered) {
+                            failed++;
+                            const notRegErr = "Number not registered on WhatsApp";
+                            errors.push({ jid, error: notRegErr });
+                            await prisma.broadcastRecipient.updateMany({
+                                where: { broadcastLogId: broadcastId, jid },
+                                data: { status: "failed", error: notRegErr }
+                            });
+                            await prisma.broadcastLog.update({
+                                where: { id: broadcastId },
+                                data: { sent, failed }
+                            });
+                            if (io) {
+                                io.to(sessionId).emit("broadcast.progress", {
+                                    broadcastId,
+                                    status: "running",
+                                    total: normalizedRecipients.length,
+                                    sent,
+                                    failed,
+                                    current: jid,
+                                    progress: Math.round(((sent + failed) / normalizedRecipients.length) * 100),
+                                    errors
+                                });
+                            }
+                            if (i < normalizedRecipients.length - 1 && delay > 0) {
+                                const jitter = Math.floor(Math.random() * 500);
+                                await new Promise((r) => setTimeout(r, delay + jitter));
+                            }
+                            continue;
+                        }
+                    } catch (checkErr) {
+                        // Fallback to sendMessage if onWhatsApp verification encounters an error
+                        console.warn(`[Broadcast] onWhatsApp check error for ${jid}:`, checkErr);
+                    }
+                }
+
                 try {
                     const messageContent = buildRecipientMessageContent(
                         type,
