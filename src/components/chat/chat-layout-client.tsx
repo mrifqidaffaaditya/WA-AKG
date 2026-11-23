@@ -27,8 +27,10 @@ export function ChatLayoutClient({ sessionId, initialJid }: ChatLayoutClientProp
         if (typeof window === "undefined") return;
         const base = "/dashboard/chat";
         if (selectedChat) {
-            const number = selectedChat.jid.split("@")[0];
-            const newPath = `${base}/${number}`;
+            const jidSlug = selectedChat.jid.endsWith("@s.whatsapp.net")
+                ? selectedChat.jid.split("@")[0]
+                : encodeURIComponent(selectedChat.jid);
+            const newPath = `${base}/${jidSlug}`;
             if (window.location.pathname !== newPath) {
                 window.history.replaceState(null, "", newPath);
             }
@@ -44,10 +46,16 @@ export function ChatLayoutClient({ sessionId, initialJid }: ChatLayoutClientProp
         const handlePopState = () => {
             const path = window.location.pathname;
             if (path.startsWith("/dashboard/chat/")) {
-                const rawJid = path.replace("/dashboard/chat/", "");
-                let clean = rawJid.replace(/\D/g, "");
-                if (clean.startsWith("0")) clean = "62" + clean.substring(1);
-                setSelectedChat({ jid: `${clean}@s.whatsapp.net` });
+                const rawParam = decodeURIComponent(path.replace("/dashboard/chat/", ""));
+                if (rawParam.includes("@")) {
+                    setSelectedChat({ jid: rawParam });
+                } else if (rawParam.length >= 16 && rawParam.startsWith("120363")) {
+                    setSelectedChat({ jid: `${rawParam}@g.us` });
+                } else {
+                    let clean = rawParam.replace(/\D/g, "");
+                    if (clean.startsWith("0")) clean = "62" + clean.substring(1);
+                    setSelectedChat({ jid: `${clean}@s.whatsapp.net` });
+                }
             } else {
                 setSelectedChat(null);
             }

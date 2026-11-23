@@ -61,6 +61,56 @@ export async function runAutoMigration(): Promise<void> {
                     }
                 }
             }
+
+            // Ensure BroadcastLog columns exist
+            try {
+                const blColumns: any[] = await prisma.$queryRawUnsafe(`
+                    SELECT COLUMN_NAME 
+                    FROM information_schema.COLUMNS 
+                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'BroadcastLog';
+                `);
+                const blColNames = new Set((blColumns || []).map((c: any) => c.COLUMN_NAME));
+                if (blColNames.has('id')) {
+                    if (!blColNames.has('type')) {
+                        await prisma.$executeRawUnsafe(`ALTER TABLE \`BroadcastLog\` ADD COLUMN \`type\` VARCHAR(191) NOT NULL DEFAULT 'text';`);
+                    }
+                    if (!blColNames.has('mediaUrl')) {
+                        await prisma.$executeRawUnsafe(`ALTER TABLE \`BroadcastLog\` ADD COLUMN \`mediaUrl\` TEXT NULL;`);
+                    }
+                    if (!blColNames.has('mediaType')) {
+                        await prisma.$executeRawUnsafe(`ALTER TABLE \`BroadcastLog\` ADD COLUMN \`mediaType\` VARCHAR(191) NULL;`);
+                    }
+                    if (!blColNames.has('fileName')) {
+                        await prisma.$executeRawUnsafe(`ALTER TABLE \`BroadcastLog\` ADD COLUMN \`fileName\` VARCHAR(191) NULL;`);
+                    }
+                    if (!blColNames.has('interactiveData')) {
+                        await prisma.$executeRawUnsafe(`ALTER TABLE \`BroadcastLog\` ADD COLUMN \`interactiveData\` JSON NULL;`);
+                    }
+                }
+
+                // Ensure BroadcastTemplate table exists
+                await prisma.$executeRawUnsafe(`
+                    CREATE TABLE IF NOT EXISTS \`BroadcastTemplate\` (
+                        \`id\` VARCHAR(191) NOT NULL,
+                        \`userId\` VARCHAR(191) NULL,
+                        \`sessionId\` VARCHAR(191) NULL,
+                        \`name\` VARCHAR(191) NOT NULL,
+                        \`type\` VARCHAR(191) NOT NULL DEFAULT 'text',
+                        \`message\` TEXT NULL,
+                        \`mediaUrl\` TEXT NULL,
+                        \`mediaType\` VARCHAR(191) NULL,
+                        \`fileName\` VARCHAR(191) NULL,
+                        \`interactiveData\` JSON NULL,
+                        \`createdAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+                        \`updatedAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+                        PRIMARY KEY (\`id\`),
+                        INDEX \`BroadcastTemplate_userId_idx\` (\`userId\`),
+                        INDEX \`BroadcastTemplate_sessionId_idx\` (\`sessionId\`)
+                    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+                `);
+            } catch (e: any) {
+                logger.warn("Database", `BroadcastLog/BroadcastTemplate auto-migration check: ${e?.message || e}`);
+            }
         } else {
             // PostgreSQL Migration Handler
             try {
@@ -71,6 +121,32 @@ export async function runAutoMigration(): Promise<void> {
                 }
             } catch {
                 // Ignore if already migrated or table not initialized yet
+            }
+
+            try {
+                await prisma.$executeRawUnsafe(`ALTER TABLE "BroadcastLog" ADD COLUMN IF NOT EXISTS "type" VARCHAR(191) NOT NULL DEFAULT 'text';`);
+                await prisma.$executeRawUnsafe(`ALTER TABLE "BroadcastLog" ADD COLUMN IF NOT EXISTS "mediaUrl" TEXT NULL;`);
+                await prisma.$executeRawUnsafe(`ALTER TABLE "BroadcastLog" ADD COLUMN IF NOT EXISTS "mediaType" VARCHAR(191) NULL;`);
+                await prisma.$executeRawUnsafe(`ALTER TABLE "BroadcastLog" ADD COLUMN IF NOT EXISTS "fileName" VARCHAR(191) NULL;`);
+                await prisma.$executeRawUnsafe(`ALTER TABLE "BroadcastLog" ADD COLUMN IF NOT EXISTS "interactiveData" JSONB NULL;`);
+                await prisma.$executeRawUnsafe(`
+                    CREATE TABLE IF NOT EXISTS "BroadcastTemplate" (
+                        "id" VARCHAR(191) NOT NULL PRIMARY KEY,
+                        "userId" VARCHAR(191) NULL,
+                        "sessionId" VARCHAR(191) NULL,
+                        "name" VARCHAR(191) NOT NULL,
+                        "type" VARCHAR(191) NOT NULL DEFAULT 'text',
+                        "message" TEXT NULL,
+                        "mediaUrl" TEXT NULL,
+                        "mediaType" VARCHAR(191) NULL,
+                        "fileName" VARCHAR(191) NULL,
+                        "interactiveData" JSONB NULL,
+                        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    );
+                `);
+            } catch {
+                // Ignore
             }
         }
     } catch (err: any) {

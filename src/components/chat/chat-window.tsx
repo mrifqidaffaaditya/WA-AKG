@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Send, Paperclip, ArrowLeft, FileText, Image as ImageIcon, Music, Video, Download, ArrowDown, CornerUpLeft, Copy, Trash2, Info, X, Sparkles } from "lucide-react";
+import { Send, Paperclip, ArrowLeft, FileText, Image as ImageIcon, Music, Video, Download, ArrowDown, CornerUpLeft, Copy, Trash2, Info, X, Sparkles, RefreshCw } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
     AlertDialog,
@@ -15,6 +15,15 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { getChatMessages, sendChatMessage, sendMediaMessage } from "@/app/dashboard/chat/actions";
@@ -107,6 +116,30 @@ function useDateLabel() {
     };
 }
 
+function formatMessageContent(content: string) {
+    if (!content) return "";
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = content.split(urlRegex);
+    if (parts.length === 1) return content;
+    return parts.map((part, i) => {
+        if (part.match(urlRegex)) {
+            return (
+                <a
+                    key={i}
+                    href={part}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:opacity-80 font-medium break-all text-blue-500 dark:text-blue-400"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {part}
+                </a>
+            );
+        }
+        return part;
+    });
+}
+
 function handleDownload(url: string, fileName: string) {
     toast.info("Downloading...");
     fetch(url).then(res => { if (!res.ok) throw new Error(); return res.blob(); }).then(blob => {
@@ -175,12 +208,22 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const [uploadType, setUploadType] = useState<string>("image");
     const [isDragging, setIsDragging] = useState(false);
+    const dragCounter = useRef(0);
     const [loading, setLoading] = useState(true);
     const [hasMore, setHasMore] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const [oldestTimestamp, setOldestTimestamp] = useState<string | null>(null);
     const [autoScroll, setAutoScroll] = useState(true);
     const [newMsgBadge, setNewMsgBadge] = useState(false);
+
+    // Media confirmation dialog state
+    const [pendingMedia, setPendingMedia] = useState<{
+        file: File;
+        type: string;
+        previewUrl: string | null;
+    } | null>(null);
+    const [mediaCaption, setMediaCaption] = useState("");
+    const [sendingMedia, setSendingMedia] = useState(false);
 
     // Delete confirmation
     const [deleteConfirmMsg, setDeleteConfirmMsg] = useState<Message | null>(null);
@@ -304,9 +347,7 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
         return () => window.removeEventListener("keydown", handler);
     }, [replyingTo]);
 
-    const processFileUpload = async (file: File, explicitType?: string) => {
-        const formData = new FormData();
-        formData.append("file", file);
+    const openMediaConfirm = (file: File, explicitType?: string) => {
         let type = explicitType;
         if (!type || type === '*') {
             if (file.type.startsWith('image/')) type = 'image';
@@ -314,22 +355,52 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
             else if (file.type.startsWith('audio/')) type = 'audio';
             else type = 'document';
         }
-        formData.append("type", type);
-        formData.append("sessionId", sessionId);
-        formData.append("jid", jid);
-        try {
-            toast.info(`Sending ${file.name}...`);
-            await sendMediaMessage(formData);
-            toast.success("Sent!");
-            setTimeout(() => fetchMessages(), 800);
-        } catch (error: any) { toast.error(error.message || "Failed to send media"); }
+        const previewUrl = (file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/'))
+            ? URL.createObjectURL(file)
+            : null;
+
+        setPendingMedia({ file, type, previewUrl });
+        setMediaCaption(input.trim());
+        if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const closeMediaConfirm = () => {
+        if (pendingMedia?.previewUrl) {
+            URL.revokeObjectURL(pendingMedia.previewUrl);
+        }
+        setPendingMedia(null);
+        setMediaCaption("");
+        setSendingMedia(false);
+    };
+
+    const confirmAndSendMedia = async () => {
+        if (!pendingMedia) return;
+        setSendingMedia(true);
+        const formData = new FormData();
+        formData.append("file", pendingMedia.file);
+        formData.append("type", pendingMedia.type);
+        formData.append("sessionId", sessionId);
+        formData.append("jid", jid);
+        if (mediaCaption.trim()) {
+            formData.append("caption", mediaCaption.trim());
+        }
+        try {
+            toast.info(`Sending ${pendingMedia.file.name}...`);
+            await sendMediaMessage(formData);
+            toast.success("Sent!");
+            setInput("");
+            closeMediaConfirm();
+            setTimeout(() => fetchMessages(), 800);
+        } catch (error: any) {
+            toast.error(error.message || "Failed to send media");
+            setSendingMedia(false);
+        }
+    };
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        await processFileUpload(file, uploadType);
-        if (fileInputRef.current) fileInputRef.current.value = "";
+        openMediaConfirm(file, uploadType);
     };
 
     const triggerUpload = (type: string) => {
@@ -338,6 +409,39 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
             fileInputRef.current.accept = type === 'image' ? "image/*" : type === 'video' ? "video/*" : type === 'audio' ? "audio/*" : "*/*";
             fileInputRef.current.click();
         }
+    };
+
+    const handleDragEnter = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current++;
+        if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+            setIsDragging(true);
+        }
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current--;
+        if (dragCounter.current <= 0) {
+            dragCounter.current = 0;
+            setIsDragging(false);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current = 0;
+        setIsDragging(false);
+        const f = e.dataTransfer.files?.[0];
+        if (f) openMediaConfirm(f);
     };
 
     // Right-click handler
@@ -353,13 +457,10 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
     return (
         <div
             className="flex-1 flex flex-col bg-muted/20 min-w-0 min-h-0 relative"
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={(e) => {
-                e.preventDefault(); setIsDragging(false);
-                const f = e.dataTransfer.files?.[0];
-                if (f) processFileUpload(f);
-            }}
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
         >
             {/* Context menu */}
             {contextMenu && (
@@ -373,9 +474,9 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
                 />
             )}
 
-            {/* Drag overlay */}
+            {/* Drag overlay with pointer-events-none to prevent flickering */}
             {isDragging && (
-                <div className="absolute inset-0 z-50 bg-background/80 backdrop-blur-sm border-2 border-dashed border-primary flex items-center justify-center flex-col gap-3 rounded-lg m-2">
+                <div className="pointer-events-none absolute inset-0 z-50 bg-background/80 backdrop-blur-sm border-2 border-dashed border-primary flex items-center justify-center flex-col gap-3 rounded-lg m-2">
                     <Paperclip className="h-8 w-8 text-primary" />
                     <p className="text-lg font-semibold text-primary">Drop files here</p>
                 </div>
@@ -561,7 +662,7 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
                                         )}
                                         {/* Text */}
                                         <div className="flex items-end gap-2">
-                                            <span className="flex-1 text-sm break-all whitespace-pre-wrap">{msg.content}</span>
+                                            <span className="flex-1 text-sm break-all whitespace-pre-wrap">{formatMessageContent(msg.content)}</span>
                                             <span className={cn("text-[9px] shrink-0 leading-none", msg.fromMe ? "text-primary-foreground/60" : "text-muted-foreground")}>
                                                 {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
@@ -656,6 +757,88 @@ export function ChatWindow({ sessionId, jid, name, onBack }: ChatWindowProps) {
                     setTimeout(() => fetchMessages(), 600);
                 }}
             />
+
+            {/* Media Send Confirmation Dialog */}
+            <Dialog open={!!pendingMedia} onOpenChange={(open) => { if (!open) closeMediaConfirm(); }}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-base">
+                            <Paperclip className="h-4.5 w-4.5 text-primary" />
+                            Kirim File ke {displayName}
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    {pendingMedia && (
+                        <div className="space-y-4 py-2">
+                            {/* Preview */}
+                            {pendingMedia.type === "image" && pendingMedia.previewUrl && (
+                                <div className="max-h-60 overflow-hidden rounded-lg border bg-black/5 flex items-center justify-center">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={pendingMedia.previewUrl} alt="Preview" className="max-h-60 object-contain rounded-lg" />
+                                </div>
+                            )}
+                            {pendingMedia.type === "video" && pendingMedia.previewUrl && (
+                                <div className="max-h-60 overflow-hidden rounded-lg border bg-black flex items-center justify-center">
+                                    <video src={pendingMedia.previewUrl} controls className="max-h-60 rounded-lg" />
+                                </div>
+                            )}
+                            {pendingMedia.type === "audio" && pendingMedia.previewUrl && (
+                                <div className="p-3 bg-muted/40 rounded-lg border">
+                                    <audio src={pendingMedia.previewUrl} controls className="w-full" />
+                                </div>
+                            )}
+                            {pendingMedia.type === "document" && (
+                                <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-lg border">
+                                    <FileText className="h-8 w-8 text-blue-500 shrink-0" />
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-semibold truncate">{pendingMedia.file.name}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {(pendingMedia.file.size / 1024 / 1024).toFixed(2)} MB
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* File Name & Size badge */}
+                            <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+                                <span className="truncate max-w-[250px] font-medium">{pendingMedia.file.name}</span>
+                                <span className="font-mono text-[11px] shrink-0">
+                                    {(pendingMedia.file.size / 1024 / 1024).toFixed(2)} MB
+                                </span>
+                            </div>
+
+                            {/* Caption input */}
+                            {pendingMedia.type !== "audio" && (
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Keterangan / Caption (Opsional)</Label>
+                                    <Input
+                                        placeholder="Ketik keterangan media..."
+                                        value={mediaCaption}
+                                        onChange={(e) => setMediaCaption(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" && !e.shiftKey) {
+                                                e.preventDefault();
+                                                confirmAndSendMedia();
+                                            }
+                                        }}
+                                        autoFocus
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button variant="outline" size="sm" onClick={closeMediaConfirm} disabled={sendingMedia}>
+                            {tCommon("cancel")}
+                        </Button>
+                        <Button size="sm" onClick={confirmAndSendMedia} disabled={sendingMedia} className="gap-1.5">
+                            {sendingMedia ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                            {sendingMedia ? "Mengirim..." : "Kirim File"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
