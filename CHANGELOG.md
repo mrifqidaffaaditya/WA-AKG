@@ -1,3 +1,50 @@
+## [v1.7.1] - 2026-11-23
+
+WA-AKG v1.7.1 is a comprehensive feature and maintenance release delivering complete multi-format broadcast capabilities (media, documents, voice notes, and interactive buttons), recipient CSV/TXT contact importing with Excel-compatible templates, Baileys onWhatsApp recipient verification, dynamic auto-reply URL evaluations, configurable sticker background removal API, interactive button delivery fixes in direct chats, and critical UI/UX improvements across the live chat and dashboard.
+
+### Added
+- **Multi-Format Broadcast & Template Management (Fixes #123)**:
+  - Upgraded `/api/messages/[sessionId]/broadcast` and the Broadcast dashboard to support Image, Video, Audio (PTT / Voice Note), Document, and Interactive Button messages via both `multipart/form-data` and `application/json`.
+  - Added single-fetch in-memory media buffer caching to eliminate redundant network/disk overhead when broadcasting to large recipient lists.
+  - Added `BroadcastTemplate` database model with complete CRUD endpoints (`/api/messages/[sessionId]/broadcast/templates`) and a dedicated "Saved Templates" tab in the broadcast composer.
+- **Recipient Contact Import & Human-Readable CSV Templates**:
+  - Implemented contact importing in the broadcast composer supporting CSV (`.csv`) and text (`.txt`) file uploads as well as direct clipboard pasting from spreadsheets.
+  - Intelligent automatic detection for delimiters (comma `,`, semicolon `;`, tab `\t`, pipe `|`) and column headers (`nomor`/`phone`, `nama`/`name`, `catatan`/`notes`).
+  - Automatic phone number sanitization, Indonesian prefix normalization (`08...` → `628...`), duplicate filtering, and real-time validation preview table.
+  - Provided clean, Excel-ready CSV template with UTF-8 BOM (`\uFEFF`), on-screen format guide, 1-click clipboard copying, client-side download, and dedicated API endpoint (`GET /api/messages/[sessionId]/broadcast/template-csv`).
+- **Autoreply Dynamic `{{url:...}}` & Formatting Toolbar (PR #122)**:
+  - Added support for dynamic external HTTP data fetching in auto-reply templates via `{{url:...}}` tags.
+  - Added rich formatting toolbar (bold, italic, strikethrough, monospace) to auto-reply composer.
+- **Configurable Remove.bg API Endpoint (PR #125)**:
+  - Added support for custom `REMOVE_BG_API_URL` environment variable for sticker maker background removal service.
+- **Contacts CSV Export (PR #113)**:
+  - Added "Export CSV" functionality to the contacts page with full multi-language translations (`en`, `id`, `pt-BR`).
+
+### Fixed
+- **Unregistered Number Detection in Broadcasts (Fixes #124)**:
+  - Added proactive verification through `instance.socket.onWhatsApp(jid)` prior to dispatching individual messages.
+  - Unregistered WhatsApp numbers are now accurately classified as `failed` with error message `"Number not registered on WhatsApp"` rather than falsely marked as sent.
+- **Interactive Button Messages in Direct Chats (Fixes #112)**:
+  - Removed `<bot biz_bot="1"/>` node for direct 1-on-1 chats in `src/modules/whatsapp/interactive.ts`, preventing WhatsApp server drops and restoring message delivery and receipts across mobile and desktop devices.
+- **Broadcast Recipient Sanitization & Normalization (Fixes #90)**:
+  - Implemented `sanitizePhoneToJid` utility in `src/lib/jid-utils.ts` and integrated into `/api/messages/[sessionId]/broadcast` and the broadcast dashboard to automatically strip `+`, dashes, spaces, and normalize prefixes into valid WhatsApp JIDs (`...s.whatsapp.net`).
+- **Chat Window Drag-and-Drop Flickering Elimination**:
+  - Added `pointer-events-none` to drag-and-drop overlay and implemented a `dragCounter` ref in `src/components/chat/chat-window.tsx` to eliminate re-render flickering loops when dragging files into the chat interface.
+- **Media Send Confirmation Dialog**:
+  - Added interactive confirmation modal before dispatching media files in chat, complete with live thumbnail preview, file size/type metadata, and optional caption input.
+- **Dashboard Group Chat URL Resolution**:
+  - Fixed route parsing in `src/app/dashboard/chat/[jid]/page.tsx` and `chat-layout-client.tsx` to preserve `@g.us`, `@newsletter`, and `@lid` domains and query group records from the database, allowing direct navigation and bookmarking of group conversations.
+- **Chat Linkification**:
+  - Added automatic URL detection and clickable hyperlink formatting in chat message bubbles.
+- **Docker Build Environment Hardening (Fixes #88, #61)**:
+  - Configured fallback build-time environment variables in `Dockerfile` builder stage and copied `next.config.ts` into runner image, allowing `docker build .` to build and run cleanly immediately after `git clone` without requiring a pre-existing host `.env`.
+
+### Security
+- **Dependency Security Vulnerability Patches**:
+  - Patched critical and high vulnerabilities in `next` (16.4.6), `next-auth` (5.0.0-beta.32), `systeminformation` (5.33.23), `zod` (4.6.7), and `moment` (2.31.0), reducing Critical vulnerabilities to 0.
+
+---
+
 ## [v1.7.1-beta.4] - 2026-11-23
 
 WA-AKG v1.7.1-beta.4 introduces complete multi-format broadcast capabilities (media, documents, voice notes, and interactive buttons), recipient CSV/TXT contact importing with Excel-compatible templates, onWhatsApp recipient verification, dynamic auto-reply URL evaluations, sticker background removal API configuration, and critical UI/UX improvements across the live chat and dashboard.
