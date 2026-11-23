@@ -8,7 +8,7 @@ export const getApiDocs = () => {
             openapi: "3.0.0",
             info: {
                 title: "WA-AKG API Documentation",
-                version: "1.7.0",
+                version: "1.7.1",
                 description: `
 # WhatsApp AI Gateway - Complete API Reference
 
@@ -1232,8 +1232,21 @@ All endpoints require authentication via:
                                                 items: { type: "string" },
                                                 example: ["628123456789@s.whatsapp.net", "628987654321@s.whatsapp.net"]
                                             },
+                                            type: {
+                                                type: "string",
+                                                enum: ["text", "image", "video", "audio", "document", "interactive"],
+                                                default: "text",
+                                                description: "Broadcast message type"
+                                            },
                                             message: { type: "string", example: "Flash Sale! 50% off" },
-                                            delay: { type: "number", description: "Optional delay (unused)" }
+                                            mediaUrl: { type: "string", description: "URL or local media path for image/video/audio/document" },
+                                            fileName: { type: "string", description: "File name for document broadcast" },
+                                            ptt: { type: "boolean", description: "Push-To-Talk voice note flag for audio" },
+                                            interactiveData: {
+                                                type: "object",
+                                                description: "Interactive message configuration (title, body, footer, buttons)"
+                                            },
+                                            delay: { type: "number", description: "Delay in ms between sends (default: 2000)" }
                                         }
                                     }
                                 }

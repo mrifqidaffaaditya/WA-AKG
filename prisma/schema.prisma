@@ -361,18 +361,23 @@ model SessionAccess {
 
 // Broadcast/Blast history & logs
 model BroadcastLog {
-  id          String              @id @default(cuid())
-  sessionId   String              // WA session ID string
-  message     String              @db.Text
-  total       Int
-  sent        Int                 @default(0)
-  failed      Int                 @default(0)
-  status      String              @default("running") // running, completed, cancelled
-  delay       Int                 @default(2000)
-  startedAt   DateTime            @default(now())
-  completedAt DateTime?
+  id              String              @id @default(cuid())
+  sessionId       String              // WA session ID string
+  type            String              @default("text") // text, image, video, audio, document, interactive
+  message         String              @db.Text
+  mediaUrl        String?             @db.Text
+  mediaType       String?
+  fileName        String?
+  interactiveData Json?
+  total           Int
+  sent            Int                 @default(0)
+  failed          Int                 @default(0)
+  status          String              @default("running") // running, completed, cancelled
+  delay           Int                 @default(2000)
+  startedAt       DateTime            @default(now())
+  completedAt     DateTime?
 
-  recipients  BroadcastRecipient[]
+  recipients      BroadcastRecipient[]
 
   @@index([sessionId])
   @@index([sessionId, startedAt])
@@ -389,4 +394,23 @@ model BroadcastRecipient {
   broadcastLog    BroadcastLog @relation(fields: [broadcastLogId], references: [id], onDelete: Cascade)
 
   @@index([broadcastLogId])
+}
+
+// Saved broadcast templates / presets
+model BroadcastTemplate {
+  id              String    @id @default(cuid())
+  userId          String?
+  sessionId       String?   // null for all sessions, or specific session
+  name            String
+  type            String    @default("text") // text, image, video, audio, document, interactive
+  message         String?   @db.Text
+  mediaUrl        String?   @db.Text
+  mediaType       String?
+  fileName        String?
+  interactiveData Json?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([sessionId])
 }

@@ -15,10 +15,27 @@ export const messageContentSchema = z.union([
 ]);
 
 export const broadcastSchema = z.object({
-    sessionId: z.string().min(1),
+    sessionId: z.string().min(1).optional(),
     recipients: z.array(z.string()).min(1),
-    message: z.string().min(1), // Accept string from frontend, convert to object in API
+    type: z.enum(["text", "image", "video", "audio", "document", "interactive"]).optional().default("text"),
+    message: z.string().optional().default(""),
+    caption: z.string().optional(),
+    mediaUrl: z.string().optional().nullable(),
+    mediaType: z.string().optional().nullable(),
+    fileName: z.string().optional().nullable(),
+    ptt: z.boolean().optional(),
+    interactiveData: z.any().optional(),
     delay: z.number().min(500).max(60000).optional().default(2000)
+});
+
+export const broadcastTemplateSchema = z.object({
+    name: z.string().min(1),
+    type: z.enum(["text", "image", "video", "audio", "document", "interactive"]).default("text"),
+    message: z.string().optional().nullable(),
+    mediaUrl: z.string().optional().nullable(),
+    mediaType: z.string().optional().nullable(),
+    fileName: z.string().optional().nullable(),
+    interactiveData: z.any().optional().nullable(),
 });
 
 export const stickerSchema = z.object({

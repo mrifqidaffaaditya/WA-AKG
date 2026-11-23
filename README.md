@@ -6,7 +6,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/)
-[![Version](https://img.shields.io/badge/Version-1.7.0-blue?style=for-the-badge)](https://github.com/mrifqidaffaaditya/WA-AKG/releases)
+[![Version](https://img.shields.io/badge/Version-1.7.1-blue?style=for-the-badge)](https://github.com/mrifqidaffaaditya/WA-AKG/releases)
 [![Main Branch](https://img.shields.io/badge/Branch-Main-green?style=for-the-badge&logo=git)](https://github.com/mrifqidaffaaditya/WA-AKG)
 
 [![Active Apps](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi-wa-akg.aikeigroup.net%2Fapi%2Factive-apps&query=%24.activeCount&style=flat-square&color=25D366&logo=whatsapp&logoColor=white&label=)](https://api-wa-akg.aikeigroup.net/)

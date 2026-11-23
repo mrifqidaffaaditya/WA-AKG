@@ -78,6 +78,7 @@ Optional third-party integrations and experimental feature toggles.
 | Variable | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `REMOVE_BG_API_KEY` | string | — | API key from [remove.bg](https://www.remove.bg) for automatic sticker background removal. |
+| `REMOVE_BG_API_URL` | string | `https://api.remove.bg/v1.0/removebg` | Endpoint for sticker background removal. remove.bg ends its self-serve API on 1 December 2026; set this to any API that accepts the same requests. |
 | `ENABLE_NOTIFICATIONS` | boolean | `true` | Set to `false` to silence UI-based system alerts. |
 | `ENABLE_AUTO_UPDATE_CHECK` | boolean | `true` | Periodically query releases repository to check for updates. |
 | `ENABLE_EXPERIMENTAL_FEATURES` | boolean | `false` | Toggle experimental features. |
